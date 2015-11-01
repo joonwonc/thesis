@@ -2,5 +2,6 @@
 *.log
 *.lof
 *.lot
-*.pdf
 *.toc
+*.out
+*~
