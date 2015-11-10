@@ -22,7 +22,13 @@ pdftitle={Master Thesis Proposal - Joonwon Choi},pdfauthor={Joonwon Choi}]{hyper
 \usepackage{sectsty} 
 \usepackage[normalem]{ulem}
 \usepackage[fleqn]{amsmath}
+\usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{stmaryrd}
+
+%% In order to handle ``References'' as a normal section (no newpage!).
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\chapter*}{\section*}{}{}
 
 %% These have been added at the request of the MIT Libraries, because
 %% some PDF conversions mess up the ligatures.  -LB, 1/22/2014
@@ -33,13 +39,13 @@ pdftitle={Master Thesis Proposal - Joonwon Choi},pdfauthor={Joonwon Choi}]{hyper
 \newcommand{\dbsp}{\\\mbox{}\\}
 
 \begin{document}
+%% \pagestyle{plain}
 
-\include{cover}
-\include{body}
+\input{cover}
+\input{body}
 
-\pagestyle{plain}
-
-%% includes here!
+\bibliography{bib}{}
+\bibliographystyle{plain}
 
 \end{document}
 
