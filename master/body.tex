@@ -1,37 +1,52 @@
 \section{Introduction}
+Hardware system verification has been developed over a large number of
+years. Majority of works employed model checking to verify their
+target system, from processor verification~\cite{ProcVerif1,
+  ProcVerif2} to cluster verification~\cite{ClusterVerif}. In order to
+use model checking technique, one must first finitize the state-space
+for exhaustive exploration, which hinders generalization.
+Theorem-prover based verification is the other approach for general
+purposes; a microprocessor was verified using HOL~\cite{MicroVerif},
+and a cache coherence protocol was also verified using
+ACL2~\cite{CCVerif}. Using theorem provers, however, is sometimes
+regarded to be tedious in that one has to give manual proofs for all
+details.
 
-Hardware system verification has been developed over a large amount of
-years, but mostly with limited approaches. Most of works employed
-model checking to verify their target system, from processor
-verification~\cite{ProcVerif1, ProcVerif2} to cluster
-verification~\cite{ClusterVerif}. In order to use model checking
-technique, one must first finitize the state-space for exhaustive
-exploration, which inherently hinders generalization. Then what should
-be defined and developed if one desires to verify highly parametrized
-hardware system, such as complex pipelined processors or multi-level
-cache-coherence protocols?
+Hardware verification is considered to be even harder since a nature
+of hardware involves scheduling. For example, it should be proven that
+any resource elements are correctly employed. If a particular input
+port of a hardware component is used more than once, we do not have
+any guarantees for the output value, also causing incorrect use of
+values. Hence, for complete proof both the correctness of schedule and
+that of design should be verified at the same time.
 
-Defining formal hardware semantics is the very first step to answer
-such question. In model checking it is not required to define
-semantics for general hardware system, since checkers have their own
-specific targets. However, in order to deal with all aspects of
-hardware system, one should be able to define semantics which can
-describe all system behaviors. Finally, when formal semantics and
-proofs are correctly attached to Hardware Description Languages
-(HDLs), it can be claimed that real hardware components are verified.
+Guarded Atomic Action (GAA) is a design paradigm that separates design
+and scheduling, which also allows users to verify the correctness of
+them separately. The main idea of GAA is that any hardware system has
+a state component that can be captured by a set of variables that
+represent registers or storage, and state transition is done by a set
+of rules, which are fired by a scheduler. (See
+Section~\ref{sec:background} for details) Now in viewpoint of
+verification, we can divide a proof for design correctness, and that
+for scheduler correctness on the GAA paradigm.
 
-Now the focus is moved to semantics design: what is good semantics for
-hardware system? First of all it should be intuitively understandable,
+Now for the verification on GAA, the very first step to do is to
+develop hardware semantics which follows the notion of it.
+Operational semantics for GAA has once been provided~\cite{SemGAA},
+but it seems not enough for dealing with various verification aspects,
+such as modular proof or proof automation. Thus the focus moves to
+semantics design: what is good semantics for hardware system
+verification? First of all it should be intuitively understandable,
 which implies that the semantics should logically simulate system
 behaviors. Moreover, if it is employed for formal proofs, it should
 also be in harmony with various proof aspects.
 
 In this proposal, I propose to introduce a number of hardware
 semantics, and to compare their pros and cons for better
-understanding. I also propose to give formal consistency proofs for
-those semantics, which guarantee that the semantics are convertible to
-each other. All definitions and proofs will be formally given using
-Coq theorem-proving system.
+understanding. I also propose to define the soundness of semantics and
+to give formal consistency proofs for those semantics, which guarantee
+that the semantics are convertible to each other. All definitions and
+proofs will be formally given using Coq theorem-proving system.
 
 \section{Background: Guarded Atomic Action}\label{sec:background}
 Traditional Register-Transfer Level (RTL) designs require hardware
@@ -44,9 +59,6 @@ any guarantees for the output value, also causing incorrect use of
 values. A well-known RTL design framework, Verilog, let users take
 responsibility of this, thus one should carefully investigate if there
 is an assignment which makes incorrect state transition.
-%% This low-level approach, however, gives user a chance to directly
-%% determine which values should be written in a cycle, therefore to
-%% build a well-optimized hardware.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/pipeline.pdf}
@@ -81,9 +93,6 @@ storage. State transition is done by a set of rules, where a rule is a
 series of actions on this state. These actions should be atomic -- an
 execution of an action should be guaranteed to make a state transition
 purely caused by the action.
-%% An atomic action induce a guard, a predicate to execute the
-%% action. Guards are interpreted by a scheduler to generate a correct
-%% schedule, which will be explained in the next section.
 
 \section{Research Questions}
 
@@ -118,12 +127,19 @@ solutions can be given for it. We can globally check whether name
 conflict occurs on a module syntax, or we can rather always do
 $\alpha$-conversion for all names before two modules are combined.
 
+\subsection{The Meaning of Module Composition}
 Once all syntactic issues are resolved, the next step is to give the
 meaning of module. It requires to describe the semantics of the basic
-module \Sem{\ModC{s}{\vec{r}}{\vec{m}}} and that of \ModP{} operator
-\Sem{\ModP{}}. Each semantics should have its own meaning for these
-ingredients, which also includes an ability to confirm valid execution
-cases and to reject invalid ones.
+module \Sem{\ModC{s}{\vec{r}}{\vec{m}}} and that of the \ModP{}
+operator \Sem{\ModP{}}. Then how can we know a given semantics is
+correct, i.e., when does the semantics simulate behaviors of hardware
+system?  One must develop a number of (necessary) conditions, which we
+will call the \emph{soundness of hardware semantics}. For instance,
+defining \ModP{} as a purely syntactic composition $\oplus$ just by
+merging two modules, the semantics should satisfy following equation:
+$$\Sem{M_1 \ModP{} M_2} \equiv \Sem{M_1 \oplus M_2}$$ Note that
+$\oplus$ should be formally defined and other conditions should be
+also defined carefully later.
 
 \subsection{Modular Semantics Inspired by Labeled Transition System}
 \label{sec:mod}
@@ -171,18 +187,19 @@ if a module is composed of a number of basic modules, it is still
 possible to define the semantics inductively, e.g., $\Sem{(M_1 \ModP{}
   M_2) \ModP{} M_3} = \Sem{M_{12} \ModP{} M_3} = \Sem{M_{123}}$.
 
-Inlined semantics has its own advantage in that it is intuitive to
-understand, but it lacks modularity. Inlining has been broadly used
-for any languages to describe the semantics where a number of
-interface calls happen. The concept is quite intuitive -- we
-substitute a method call to its body to obtain same effect. However,
-once we derive an inlined module on the semantics, we lose information
-which can be deduced from the original modules. For example, if one
-want to claim two combined modules $M_1 \ModP{} M_2$ and $M_1 \ModP{}
-M_3$ are similar to each other, on inlined semantics, one should deal
-with inlined modules $M_{12}$ and $M_{13}$ directly. Whereas on
-modular semantics described in the previous section, we only need to
-say $M_2$ and $M_3$ are similar.
+Inlined semantics has its own advantage in that it eventually reduces
+the problem from multiple complex modules to the single one, but it
+lacks modularity. Inlining has been broadly used for any languages to
+describe the semantics where a number of interface calls happen. The
+concept is quite intuitive -- we substitute a method call to its body
+to obtain same effect. However, once we derive an inlined module on
+the semantics, we lose information which can be deduced from the
+original modules. For example, if one want to claim two combined
+modules $M_1 \ModP{} M_2$ and $M_1 \ModP{} M_3$ are similar to each
+other, on inlined semantics, one should deal with inlined modules
+$M_{12}$ and $M_{13}$ directly. Whereas on modular semantics described
+in the previous section, we only need to say $M_2$ and $M_3$ are
+similar.
 
 \subsection{Small-step and Deterministic Semantics}
 
@@ -228,10 +245,10 @@ On the other hand, inlined semantics and small-step semantics should
 be formally defined, which is the very first step to do now. Currently
 I am defining formal inlining functions by Coq with some correctness
 proofs. I hope these semantics will be defined by the end of
-January. In addition to the semantics definitions, consistency proof
-should be given, which would be one of final goals of the project. I
-expect a month is enough to finish the proof, thus all things should
-be done by the end of March.
+January. In addition to the semantics definitions, soundness and
+consistency proof should be given, which would be one of final goals
+of the project. I expect a month is enough to finish the proof, thus
+all things should be done by the end of March.
 
 Finally, I will be spending $1.5$ -- $2$ months to write my thesis.
 Following is the briefly organized plan for my master thesis:
@@ -244,7 +261,7 @@ Following is the briefly organized plan for my master thesis:
       \hline
       Nov, 2015 -- Dec, 2015 & Define inlined semantics and prove its correctness \\
       Jan, 2016 -- Feb, 2016 & Define small-step semantics \\
-      Mar, 2016 & Prove consistencies among semantics \\
+      Mar, 2016 & Prove soundness and consistency for each semantics \\
       Apr, 2016 -- May, 2016 & Write the thesis \\
       \hline
     \end{tabular}
