@@ -8,17 +8,17 @@ for exhaustive exploration, which hinders generalization.
 Theorem-prover based verification is the other approach for general
 purposes; a microprocessor was verified using HOL~\cite{MicroVerif},
 and a cache coherence protocol was also verified using
-ACL2~\cite{CCVerif}. Using theorem provers, however, is sometimes
-regarded to be tedious in that one has to give manual proofs for all
-details.
+ACL2~\cite{CCVerif}. Using theorem provers is sometimes regarded to be
+tedious in that one has to give manual proofs for all details.
 
-Hardware verification is considered to be even harder since a nature
-of hardware involves scheduling. For example, it should be proven that
-any resource elements are correctly employed. If a particular input
-port of a hardware component is used more than once, we do not have
-any guarantees for the output value, also causing incorrect use of
-values. Hence, for complete proof both the correctness of schedule and
-that of design should be verified at the same time.
+Hardware verification is considered to be even harder since it
+essentially requires the correctness of scheduling. For example, it
+should be proven that any resource elements are correctly employed. If
+a particular input port of a hardware component is used more than
+once, we do not have any guarantees for the output value, also causing
+incorrect use of values. Hence, for complete proof both the
+correctness of schedule and that of design should be verified at the
+same time.
 
 Guarded Atomic Action (GAA) is a design paradigm that separates design
 and scheduling, which also allows users to verify the correctness of
@@ -27,15 +27,15 @@ a state component that can be captured by a set of variables that
 represent registers or storage, and state transition is done by a set
 of rules, which are fired by a scheduler. (See
 Section~\ref{sec:background} for details) Now in viewpoint of
-verification, we can divide a proof for design correctness, and that
-for scheduler correctness on the GAA paradigm.
+verification, we can separate a proof for design correctness and that
+for rule scheduler correctness on the GAA paradigm.
 
 Now for the verification on GAA, the very first step to do is to
-develop hardware semantics which follows the notion of it.
+develop hardware semantics which follows the concept of it.
 Operational semantics for GAA has once been provided~\cite{SemGAA},
-but it seems not enough for dealing with various verification aspects,
-such as modular proof or proof automation. Thus the focus moves to
-semantics design: what is good semantics for hardware system
+but it is seemingly not enough for dealing with various verification
+aspects, such as modular proof or proof automation. Thus the focus
+moves to semantics design: what is good semantics for hardware system
 verification? First of all it should be intuitively understandable,
 which implies that the semantics should logically simulate system
 behaviors. Moreover, if it is employed for formal proofs, it should
@@ -110,10 +110,10 @@ defining semantics. First, a basic module $\Mod{} =
 $\vec{r}$, and methods $\vec{m}$. Each rule or method is a series of
 actions, explained in Section~\ref{sec:background}, which only affects
 the internal state. Rules are fired by a scheduler which controls the
-entire system. Methods can be called by some other modules. Once
-modules are defined, we can combine two modules to build a combined
-module, using \ModP{} operator. Following is the inductive definition
-of a module:
+entire system. Methods are called by some other modules, which act as
+a communication interface. Once modules are defined, we can combine
+two modules to build a combined module, using \ModP{}
+operator. Following is the inductive definition of a module:
 
 $$\begin{array}{rcl}
   \Mod{} & := & \ModC{s}{\vec{r}}{\vec{m}} \\
