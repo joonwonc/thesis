@@ -1,24 +1,22 @@
 \section{Introduction}
-Hardware system verification has been developed over a large number of
-years. Majority of works employed model checking to verify their
-target system, from processor verification~\cite{ProcVerif1,
-  ProcVerif2} to cluster verification~\cite{ClusterVerif}. In order to
-use model checking technique, one must first finitize the state-space
-for exhaustive exploration, which hinders generalization.
-Theorem-prover based verification is the other approach for general
-purposes; a microprocessor was verified using HOL~\cite{MicroVerif},
-and a cache coherence protocol was also verified using
-ACL2~\cite{CCVerif}. Using theorem provers is sometimes regarded to be
-tedious in that one has to give manual proofs for all details.
+Hardware system verification has been developed over many years. The
+majority of works have employed model checking to verify their target
+system, from processor verification~\cite{ProcVerif1, ProcVerif2} to
+cluster verification~\cite{ClusterVerif}. In order to use model
+checking technique, one must first finitize the state-space for
+exhaustive exploration, which hinders generalization.  Theorem-prover
+based verification is the other approach for general purposes; a
+microprocessor was verified using HOL~\cite{MicroVerif}, and a cache
+coherence protocol was also verified using ACL2~\cite{CCVerif}. Using
+theorem provers is sometimes regarded as being tedious in that one has
+to give manual proofs for all details.
 
-Hardware verification is considered to be even harder since it
-essentially requires the correctness of scheduling. For example, it
-should be proven that any resource elements are correctly employed. If
-a particular input port of a hardware component is used more than
-once, we do not have any guarantees for the output value, also causing
-incorrect use of values. Hence, for complete proof both the
-correctness of schedule and that of design should be verified at the
-same time.
+Hardware verification is considered to be hard because it requires the
+correctness of scheduling. For example, it has to be proved that a
+particular input port of a hardware component is not used more than
+once, otherwise the output value would be indeterministic. Hence, for
+complete proof, both the correctness of schedule and that of design
+should be verified at the same time.
 
 Guarded Atomic Action (GAA) is a design paradigm that separates design
 and scheduling, which also allows users to verify the correctness of
@@ -26,39 +24,44 @@ them separately. The main idea of GAA is that any hardware system has
 a state component that can be captured by a set of variables that
 represent registers or storage, and state transition is done by a set
 of rules, which are fired by a scheduler. (See
-Section~\ref{sec:background} for details) Now in viewpoint of
-verification, we can separate a proof for design correctness and that
+Section~\ref{sec:background} for details) Now with the perspective of
+verification, we can separate a proof for design correctness and one
 for rule scheduler correctness on the GAA paradigm.
 
 Now for the verification on GAA, the very first step to do is to
 develop hardware semantics which follows the concept of it.
 Operational semantics for GAA has once been provided~\cite{SemGAA},
-but it is seemingly not enough for dealing with various verification
-aspects, such as modular proof or proof automation. Thus the focus
-moves to semantics design: what is good semantics for hardware system
+but the semantics itself did not deal with the whole aspects of system
+behaviors; it was defined only for actions. Furthermore, it is
+seemingly not enough for dealing with various verification aspects,
+such as modular proof or proof automation. Thus the focus moves to
+semantics design: what is good semantics for hardware system
 verification? First of all it should be intuitively understandable,
 which implies that the semantics should logically simulate system
-behaviors. Moreover, if it is employed for formal proofs, it should
-also be in harmony with various proof aspects.
+behaviors. If it is employed for formal proofs, it should also be in
+harmony with various proof aspects. Eventually, the language should
+provide those semantics without restrictions: if one wants to use a
+number of semantics at the same time, they should be consistently
+convertible during verification.
 
-In this proposal, I propose to introduce a number of hardware
-semantics, and to compare their pros and cons for better
-understanding. I also propose to define the soundness of semantics and
-to give formal consistency proofs for those semantics, which guarantee
-that the semantics are convertible to each other. All definitions and
-proofs will be formally given using Coq theorem-proving system.
+In this proposal, I introduce a number of hardware semantics and
+present when and where they can be effectively employed. I also
+propose the soundness of semantics and to give formal consistency
+proofs for those semantics, which guarantee that the semantics are
+convertible to each other. All definitions and proofs will be formally
+given using Coq theorem-proving system.
 
 \section{Background: Guarded Atomic Action}\label{sec:background}
 Traditional Register-Transfer Level (RTL) designs require hardware
 designers to consider scheduling for all resources. During hardware
 design, one has to ensure that any resource elements are correctly
-employed, e.g., one should not write a register more than once in a
-same cycle, which causes incorrect assignment. If a particular input
-port of a hardware component is used more than once, we do not have
-any guarantees for the output value, also causing incorrect use of
-values. A well-known RTL design framework, Verilog, let users take
-responsibility of this, thus one should carefully investigate if there
-is an assignment which makes incorrect state transition.
+employed, e.g., one should not write a register more than once in the
+same cycle, which would cause incorrect assignment. If a particular
+input port of a hardware component is used more than once, we do not
+have any guarantees for the output value, also causing incorrect use
+of values. A well-known RTL design framework, Verilog, lets users take
+responsibility for this, thus one should carefully investigate if
+there is an assignment which makes an incorrect state transition.
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.5\textwidth]{figures/pipeline.pdf}
@@ -72,20 +75,25 @@ harder. Consider a pipelined system where three systems $f_1$, $f_2$,
 and $f_3$ are connected by fifos, as shown in
 Fig.~\ref{fig:pipeline}. For simplicity, suppose that only one element
 can reside in a fifo. Since there is only one element in a fifo, push
-and pop cannot be requested in a same cycle -- it will cause
+and pop cannot be requested in the same cycle -- it will cause
 double-write. Now the problem occurs because we have no information
 whether push and pop will be requested simultaneously or not. Thus in
 this case, we cannot avoid an implementation tightly coupled with
 scheduling logic; for each case of push and pop, there is no way for
-user but to define different implementations. The design process
-entangled with scheduling logic also makes verification harder. We
-first have more cases to verify, as there will be different functional
-parts as much as scheduling cases. We also have to determine whether
-it is caused by funcaional parts or scheduling logic if there is an
-error.
+user except to define different implementations.
+
+For this reason, in some frameworks like Verilog, designers tend to
+specify the data path first, and then to define the controlling logic
+which is entangled with the data path design. The problem with this
+conventional design approach is that it is not flexible in perspective
+of verification. If a designer specifies the controlling logic clearly
+for a specific hardware system, it would be easy to verify
+it. However, since that specification is only for one hardware system,
+the verification approach used for the system may not be reusable for
+other systems.
 
 Guarded atomic action is a design paradigm for correct and effective
-scheduling as well as making up shortcomings of the RTL designs. It is
+scheduling that makes up for shortcomings of the RTL designs. It is
 different from the traditional RTL designs mentioned above. The main
 idea is that any hardware system has a (structural) state component
 that can be captured by a set of variables that represent registers or
@@ -120,26 +128,24 @@ $$\begin{array}{rcl}
   & | & \Mod{} \ModP{} \Mod{} \\
 \end{array}$$
 
-One might raise several issues with this syntax definition. For
-example, it can be asked whether rule and method names are globally
-unique among all modules. This question is interesting in that several
-solutions can be given for it. We can globally check whether name
-conflict occurs on a module syntax, or we can rather always do
-$\alpha$-conversion for all names before two modules are combined.
+Note that in the definition we assume rule and method names are
+globally unique among all modules.
 
 \subsection{The Meaning of Module Composition}
 Once all syntactic issues are resolved, the next step is to give the
-meaning of module. It requires to describe the semantics of the basic
-module \Sem{\ModC{s}{\vec{r}}{\vec{m}}} and that of the \ModP{}
+meaning of a module. This requires describing the semantics of the
+basic module \Sem{\ModC{s}{\vec{r}}{\vec{m}}} and that of the \ModP{}
 operator \Sem{\ModP{}}. Then how can we know a given semantics is
-correct, i.e., when does the semantics simulate behaviors of hardware
-system?  One must develop a number of (necessary) conditions, which we
-will call the \emph{soundness of hardware semantics}. For instance,
-defining \ModP{} as a purely syntactic composition $\oplus$ just by
-merging two modules, the semantics should satisfy following equation:
-$$\Sem{M_1 \ModP{} M_2} \equiv \Sem{M_1 \oplus M_2}$$ Note that
-$\oplus$ should be formally defined and other conditions should be
-also defined carefully later.
+correct, i.e., when does the semantics simulate behaviors of a
+hardware system?  One must develop a number of (necessary) conditions,
+which we will call the \emph{soundness of hardware semantics}. For
+instance, defining \ModP{} as a purely syntactic composition $\oplus$
+just by merging two modules, the semantics should satisfy the
+following equation:
+$$\Sem{M_1} \Sem{\ModP{}} \Sem{M_2} \equiv \Sem{M_1 \oplus M_2}$$ Note
+that $\oplus$ should be formally defined and other conditions should
+be also defined carefully later.
+% TODO: one-rule-at-a-time semantics as a criterion?
 
 \subsection{Modular Semantics Inspired by Labeled Transition System}
 \label{sec:mod}
@@ -167,13 +173,13 @@ communicate by method calls shown in Fig.~\ref{fig:mod}, semantics of
 module $A$ should contain execution of rule $r$ and method $g$, and
 that of module $B$ should contain execution of method $f$. That is, in
 order to deal with \Sem{\ModP{}} on \Sem{M_1 \ModP{} M_2}, we should
-be able to deduce entire relevant information from \Sem{M_1} and
+be able to deduce all the relevant information from \Sem{M_1} and
 \Sem{M_2}. It is quite easy to extract such information if $M_1$ and
 $M_2$ are basic modules, but what if they are combined modules? Then
 we have to inductively obtain information from them again. From the
 perspective of (mechanical) proof, algorithms for deriving such
 correctness of labels should be efficiently defined for proof
-automation performance. It would be a good research question to study
+automation performance. For my master thesis, I have a plan to study
 inherent limitation of modular semantics and to find efficient
 algorithms for overcoming it.
 
@@ -181,20 +187,21 @@ algorithms for overcoming it.
 
 Inlined semantics regards \ModP{} as a syntactic (static) inlining
 operator. In other words, $\Sem{M_1 \ModP{} M_2} \triangleq
-\Sem{M_{12}}$, where $M_{12}$ is a basic module resulted from inlining
-between $M_1$ and $M_2$, which are also basic modules. Note that even
-if a module is composed of a number of basic modules, it is still
-possible to define the semantics inductively, e.g., $\Sem{(M_1 \ModP{}
-  M_2) \ModP{} M_3} = \Sem{M_{12} \ModP{} M_3} = \Sem{M_{123}}$.
+\Sem{M_{12}}$, where $M_{12}$ is a basic module resulting from
+inlining between $M_1$ and $M_2$, which are also basic modules. Note
+that even if a module is composed of a number of basic modules, it is
+still possible to define the semantics inductively, e.g., $\Sem{(M_1
+  \ModP{} M_2) \ModP{} M_3} = \Sem{M_{12} \ModP{} M_3} =
+\Sem{M_{123}}$.
 
 Inlined semantics has its own advantage in that it eventually reduces
-the problem from multiple complex modules to the single one, but it
+the problem from multiple complex modules to a single one, but it
 lacks modularity. Inlining has been broadly used for any languages to
 describe the semantics where a number of interface calls happen. The
-concept is quite intuitive -- we substitute a method call to its body
-to obtain same effect. However, once we derive an inlined module on
-the semantics, we lose information which can be deduced from the
-original modules. For example, if one want to claim two combined
+concept is quite intuitive -- we substitute a method call into its
+body to obtain the same effect. However, once we derive an inlined
+module on the semantics, we lose information which can be deduced from
+the original modules. For example, if one wants to claim two combined
 modules $M_1 \ModP{} M_2$ and $M_1 \ModP{} M_3$ are similar to each
 other, on inlined semantics, one should deal with inlined modules
 $M_{12}$ and $M_{13}$ directly. Whereas on modular semantics described
@@ -214,23 +221,23 @@ connect method calls and their bodies.
 The core advantage of the small-step semantics is that executions can
 be \emph{evaluated} through global module structure, which in turn
 hinders modular reasoning. That is, one can define small-step and
-\emph{deterministic} semantics for hardware system. Having global
-module definition makes it possible -- one should know which other
-modules will be affected by each method call. However, to put it the
-other way, we cannot give the semantics for a basic module, say
-\Sem{M_1} alone on \Sem{M_1 \ModP{} M_2}, since interfaces of $M_2$
-should be given.
+\emph{deterministic} semantics for hardware systems. Having global
+module definition makes such semantics possible -- one should know
+which other modules will be affected by each method call. However, to
+put it the other way, we cannot give the semantics for a basic module,
+say \Sem{M_1} alone on \Sem{M_1 \ModP{} M_2}, since interfaces of
+$M_2$ should be given.
 
 \subsection{Semantics Consistency}
 
 Once various semantics are defined, we should be able to prove
 consistency among semantics. As briefly stated in previous sections,
-each semantics has its own pros and cons. However, it does not mean
-that a specific semantics should be chosen and thus other semantics'
-advantages cannot be gained. It should be possible to convert
-semantics whenever we want so that all advantages of the semantics can
-be enjoyed. Proving semantics consistency is hence an essential work
-for building better environment.
+each semantics has its own advantages and disadvantages. However, it
+does not mean that a specific semantics should be chosen and thus
+other semantics' advantages cannot be gained. It should be possible to
+convert semantics whenever we want so that all advantages of the
+semantics can be enjoyed. Proving semantics' consistency is hence an
+essential work for building a better environment.
 
 \section{Work Plan}
 
@@ -238,17 +245,17 @@ Currently we have a firm basis for modular semantics~\cite{CAV},
 described in Section~\ref{sec:mod}. We have designed and implemented
 the semantics using Coq theorem proving system. The semantics has been
 actively used to prove non-trivial facts of hardware
-systems. Therefore it should be enough to claim valid arguments that
-when the modular semantics is strong and when is not.
+systems. Therefore it should be enough to claim valid arguments when
+the modular semantics is strong and when it is not.
 
 On the other hand, inlined semantics and small-step semantics should
 be formally defined, which is the very first step to do now. Currently
 I am defining formal inlining functions by Coq with some correctness
 proofs. I hope these semantics will be defined by the end of
 January. In addition to the semantics definitions, soundness and
-consistency proof should be given, which would be one of final goals
-of the project. I expect a month is enough to finish the proof, thus
-all things should be done by the end of March.
+consistency proofs should be given, which would be one of the final
+goals of the project. I expect a month is enough to finish the proofs,
+thus all things should be done by the end of March.
 
 Finally, I will be spending $1.5$ -- $2$ months to write my thesis.
 Following is the briefly organized plan for my master thesis:
