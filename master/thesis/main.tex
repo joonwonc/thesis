@@ -1,0 +1,51 @@
+% -*- Mode:TeX -*-
+\documentclass[11pt, letterpaper]{article}
+
+% PDF SETUP
+% ---- FILL IN HERE THE DOC TITLE AND AUTHOR
+\usepackage[bookmarks, colorlinks, breaklinks,
+pdftitle={Master Thesis - Joonwon Choi},pdfauthor={Joonwon Choi}]{hyperref}  
+\hypersetup{
+  linkcolor=[named]{WildStrawberry},
+  citecolor=magenta,
+  filecolor=magenta,
+  urlcolor=[named]{WildStrawberry}
+  ,colorlinks=false
+  ,pdfborder={0 0 0}
+}
+
+\usepackage[top=0.8in, bottom=0.8in]{geometry}
+\setlength\parindent{0.3in}
+%% \documentclass[12pt,twoside]{mitthesis}
+%% \usepackage{lgrind}
+
+\usepackage{sectsty} 
+\usepackage[normalem]{ulem}
+\usepackage[fleqn]{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+
+%% In order to handle ``References'' as a normal section (no newpage!).
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\chapter*}{\section*}{}{}
+
+%% These have been added at the request of the MIT Libraries, because
+%% some PDF conversions mess up the ligatures.  -LB, 1/22/2014
+\usepackage{cmap}
+\usepackage[T1]{fontenc}
+\pagestyle{plain}
+
+\newcommand{\dbsp}{\\\mbox{}\\}
+
+\begin{document}
+%% \pagestyle{plain}
+
+%% \input{cover}
+%% \input{body}
+
+\bibliography{bib}{}
+\bibliographystyle{plain}
+
+\end{document}
+
