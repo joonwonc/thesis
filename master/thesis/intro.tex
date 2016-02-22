@@ -1,0 +1,43 @@
+\chapter{Introduction}
+
+Modularity has been considered as an effective way to design complex
+hardware.
+
+(TODO: necessary?) Bluespec~\cite{bsdef, bsref} allows to design
+hardware based on modularity, by using the prevalent paradigm called
+``guarded atomic actions.''
+
+Modularity also fits for scalable verification, especially with
+theorem provers.
+
+Following such concepts, we have defined the framework Kami, which is
+to specify and verify Bluespec-style hardware components.
+
+However, modular verification has an inherent drawback that it is hard
+to infer internal state changes by internal communications.
+
+(TODO: an intuitive example, some following paragraphs)
+
+A number of semantics, which do not have such a drawback, have been
+defined but all of them lack modularity.
+
+Hence, in this thesis, I present two semantics for open systems
+(inlining and operational semantics), none of which has the drawback.
+
+Consistency among semantics are also formally proven, thus
+verification developers can use all semantics by converting them.
+
+The main contributions of this thesis are:
+\begin{itemize}
+\item To define two consistent formal semantics for open hardware
+  systems.
+\item To prove consistency among the modular, inlining, and
+  operational semantics.
+\end{itemize}
+
+\paragraph{Overview} The thesis is organized as follows:
+
+
+
+
+
