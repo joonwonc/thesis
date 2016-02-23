@@ -1,0 +1,31 @@
+
+%% Proper names
+\newcommand{\Kami}[0]{Kami}
+
+%% For Latex convenience
+\newcommand{\refsect}[1]{Section~\ref{#1}}
+
+%% Sets
+\newcommand{\setconst}{\ensuremath{\mathcal{C}}}
+\newcommand{\setregs}{\ensuremath{\mathcal{R}}}
+\newcommand{\setmeths}{\ensuremath{\mathcal{F}}}
+
+%% Syntax
+\newcommand{\listof}[1]{\ensuremath{\vec{#1}}}
+\newcommand{\wordlet}{\ensuremath{\textsf{let}\ }}
+\newcommand{\wordassert}{\ensuremath{\textsf{assert}\ }}
+\newcommand{\wordret}{\ensuremath{\textsf{return}\ }}
+\newcommand{\eop}[1]{\ensuremath{\textsf{op}(\listof{#1})}}
+
+\newcommand{\actwrite}[3]{\ensuremath{#1 := #2\,;\ #3}}
+%% \newcommand{\actcall}[4]{\ensuremath{\wordlet{} #1 = #2(#3)\,;\ #4}}
+\newcommand{\actcall}[4]{\ensuremath{#2(#3)\,;\ \lambda #1.#4}}
+\newcommand{\actassert}[2]{\ensuremath{\wordassert{} #1\,;\ #2}}
+\newcommand{\actret}[1]{\ensuremath{\wordret{} #1}}
+
+\newcommand{\regpair}[2]{\ensuremath{(#1, #2)}}
+\newcommand{\rulepair}[2]{\ensuremath{(#1, #2)}}
+\newcommand{\methodpair}[2]{\ensuremath{(#1, #2)}}
+\newcommand{\modbasic}[3]{\ensuremath{(\listof{#1}, \listof{#2}, \listof{#3})}}
+\newcommand{\modcomp}[2]{\ensuremath{#1 \oplus #2}}
+

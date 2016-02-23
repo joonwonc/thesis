@@ -1,0 +1,95 @@
+\chapter{Formal Semantics for Hardware Systems}
+
+\section{Syntax}
+
+\paragraph{Expressions}
+We begin by defining syntax for expressions in \Kami{}. Expressions
+consist of constant, register read, variable, and an inductive
+operation among expressions.
+
+\begin{center}
+  \begin{math}
+    \begin{array}{rcll}
+      \textrm{Expression}\quad e & ::= & c & \textrm{(constant)} \\
+      & | & r & \textrm{(register read)} \\
+      & | & x & \textrm{(variable)} \\
+      & | & \eop{e} & \textrm{(operation)} \\
+    \end{array}
+  \end{math}
+\end{center}
+
+Constants denotes all concrete values in hardware design. A number of
+constants with different bit-widths may exist in real hardware design,
+but they are abstracted into a single type. Let \setconst{} be the set
+of such constants. $c \in \setconst{}$ will be used as a typical
+charater representing a constant throughout the thesis.
+
+$r \in \setregs{}$ in expression represents the value of a register
+$r$, where \setregs{} is the set of register names. $x$ denotes a
+variable bound by a continuation. We define syntax as a
+continuation-passing style (CPS), hence the variable is used to get
+the value of a continuation argument. Lastly, \eop{e} abstracts all
+inductive operations among expressions. Notation $\vec{\cdot}\ $ is
+used to denote the list of objects.
+
+\paragraph{Actions}
+As explained in \refsect{TODO}, an action is a unit for describing
+hardware behaviors, which should ensure atomicity. Actions consist of
+a write to a register, a method call, an assert, and a return.
+
+\begin{center}
+  \begin{math}
+    \begin{array}{rcll}
+      \textrm{Action}\quad a & ::= & \actwrite{r}{e}{a} & \textrm{(register write)} \\
+      & | & \actcall{x}{f}{e}{a} & \textrm{(method call)} \\
+      & | & \actassert{e}{a} & \textrm{(assert)} \\
+      & | & \actret{e} & \textrm{(return)} \\
+    \end{array}
+  \end{math}
+\end{center}
+
+A register write action takes a register name $r$ and an expression
+$e$ to assign the evaluation of $e$ to $r$. A method call action takes
+a method name $f \in \setmeths{}$ to call, an expression $e$ as an
+argument. A return value for the call is bound to a variable $x$ in a
+lambda continuation. \setmeths{} denotes the set of method names. An
+assert action takes an expression $e$ to be checked to progress the
+continuation. Lastly, A return action takes $e$ as a return
+value. Note that all action components except a return action also
+takes an action $a$ as a continuation.
+
+\paragraph{Modules}
+A module is a unit of hardware component which has its own state (a
+set of registers), introduces internal state change fired by actions,
+and creates method calls to communicate with other modules. A module
+syntactically consists of registers, rules, and methods.
+
+\begin{center}
+  \begin{math}
+    \begin{array}{rcll}
+      \textrm{Module}\quad m & ::=
+      & \modbasic{\regpair{r}{c}}{\rulepair{l}{a}}{\methodpair{f}{\lambda x.a}}
+      & \textrm{(basic module)} \\
+      & | & \modcomp{m}{m} & \textrm{(composed module)}
+    \end{array}
+  \end{math}
+\end{center}
+
+Modules is either a \emph{basic module} or a \emph{composed module}
+where two modules are composed inductively. In a basic module,
+registers has a form of $\listof{\regpair{r}{c}}$, where $c$ is the
+default value for a corresponding register $r$. Rules are defined as
+$\listof{\rulepair{l}{a}}$, where $l$ is the name of a rule and $a$ is
+the body of it. Methods are defined as $\listof{\methodpair{f}{\lambda
+    x.a}}$, where $f$ is the name of a method and $\lambda x.a$ is the
+body of it. $x$ in the lambda form serves to take an argument of the
+method.
+
+Note that all names for registers, rules, and methods are assumed to
+be globally unique in the module. A simple static checker can be
+implemented to confirm there are no name conflicts inside a module.
+
+\section{Criteria for Hardware Semantics} %% define open systems here
+\section{Modular Semantics}
+\section{Inlining Semantics}
+\section{Operational Semantics}
