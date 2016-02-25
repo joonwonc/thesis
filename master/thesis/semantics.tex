@@ -1,4 +1,4 @@
-\chapter{Formal Semantics for Hardware Systems}
+\chapter{Various Semantics for Hardware Systems}
 
 \section{Syntax}
 
@@ -7,16 +7,20 @@ We begin by defining syntax for expressions in \Kami{}. Expressions
 consist of constant, register read, variable, and an inductive
 operation among expressions.
 
-\begin{center}
-  \begin{math}
-    \begin{array}{rcll}
-      \textrm{Expression}\quad e & ::= & c & \textrm{(constant)} \\
-      & | & r & \textrm{(register read)} \\
-      & | & x & \textrm{(variable)} \\
-      & | & \eop{e} & \textrm{(operation)} \\
-    \end{array}
-  \end{math}
-\end{center}
+\begin{definition}
+  \label{def-expression}
+  An expression $e$ is inductively defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcll}
+        \textrm{Expression}\quad e & ::= & c & \textrm{(constant)} \\
+        & | & r & \textrm{(register read)} \\
+        & | & x & \textrm{(variable)} \\
+        & | & \eop{e} & \textrm{(operation)} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
 
 Constants denotes all concrete values in hardware design. A number of
 constants with different bit-widths may exist in real hardware design,
@@ -37,16 +41,20 @@ As explained in \refsect{TODO}, an action is a unit for describing
 hardware behaviors, which should ensure atomicity. Actions consist of
 a write to a register, a method call, an assert, and a return.
 
-\begin{center}
-  \begin{math}
-    \begin{array}{rcll}
-      \textrm{Action}\quad a & ::= & \actwrite{r}{e}{a} & \textrm{(register write)} \\
-      & | & \actcall{x}{f}{e}{a} & \textrm{(method call)} \\
-      & | & \actassert{e}{a} & \textrm{(assert)} \\
-      & | & \actret{e} & \textrm{(return)} \\
-    \end{array}
-  \end{math}
-\end{center}
+\begin{definition}
+  \label{def-action}
+  An action $a$ is inductively defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcll}
+        \textrm{Action}\quad a & ::= & \actwrite{r}{e}{a} & \textrm{(register write)} \\
+        & | & \actcall{x}{f}{e}{a} & \textrm{(method call)} \\
+        & | & \actassert{e}{a} & \textrm{(assert)} \\
+        & | & \actret{e} & \textrm{(return)} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
 
 A register write action takes a register name $r$ and an expression
 $e$ to assign the evaluation of $e$ to $r$. A method call action takes
@@ -64,16 +72,20 @@ set of registers), introduces internal state change fired by actions,
 and creates method calls to communicate with other modules. A module
 syntactically consists of registers, rules, and methods.
 
-\begin{center}
-  \begin{math}
-    \begin{array}{rcll}
-      \textrm{Module}\quad m & ::=
-      & \modbasic{\regpair{r}{c}}{\rulepair{l}{a}}{\methodpair{f}{\lambda x.a}}
-      & \textrm{(basic module)} \\
-      & | & \modcomp{m}{m} & \textrm{(composed module)}
-    \end{array}
-  \end{math}
-\end{center}
+\begin{definition}
+  \label{def-module}
+  A module $m$ is inductively defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcll}
+        \textrm{Module}\quad m & ::=
+        & \modbasic{\regpair{r}{c}}{\rulepair{l}{a}}{\methodpair{f}{\lambda x.a}}
+        & \textrm{(basic module)} \\
+        & | & \modcomp{m}{m} & \textrm{(composed module)}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
 
 Modules is either a \emph{basic module} or a \emph{composed module}
 where two modules are composed inductively. In a basic module,
@@ -89,7 +101,119 @@ Note that all names for registers, rules, and methods are assumed to
 be globally unique in the module. A simple static checker can be
 implemented to confirm there are no name conflicts inside a module.
 
-\section{Criteria for Hardware Semantics} %% define open systems here
 \section{Modular Semantics}
+
+In this section, we present modular semantics for hardware design. A
+version of modular semantics has been defined in \cite{murali-thesis}.
+However, this section defines a slightly different version of it, in
+which the current \Kami{} framework uses. The motivation is kept
+unchanged: semantics are defined with respect to the module
+definition, which includes the one for combining modules. The
+semantics defined in this section will be used throughout the thesis,
+including the consistency proofs in \refsect{TODO}. Specifically, the
+semantics for expressions and actions are completely borrowed from
+\cite{murali-thesis}. Other higher semantics differ.
+
+\paragraph{Expressions}
+
+We start defining semantics from the one for expressions.
+\refdef{def-semexpr} describes denotational semantics \ssemexpr{\cdot}
+for expressions.
+
+\begin{definition}
+  \label{def-semexpr}
+  $\ssemexpr{\cdot} : (\sttype{}) \to \setconst$ is
+  defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \semexpr{c}{o} & = & c \\
+        \semexpr{r}{o} & = & o(r) \\
+        \semexpr{x}{o} & = & \textsf{undefined} \\
+        \semexpr{\eop{e}}{o} & = & \denot{\seop{}}(\listof{\semexpr{e}{o}}) \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+The semantics for constant and register read are straightforward. The
+constant itself is returned for a constant. Register read is performed
+by reading its value from the \emph{old state} $o: \sttype$.
+
+The semantics for variable is not defined, since it should be
+substituted to the value by $\beta$-reduction in higher
+semantics. Technically, in the \Kami{} framework, syntax is defined by
+PHOAS~\cite{adam-icfp}, thus the variable term is abstracted into a
+syntax constructor. In this case, we rather can define $\semexpr{x}{o}
+= x$, where $x$ is eventually handled by meta-level reduction.
+
+Lastly, the semantics for operation is defined by using the semantic
+definition for \seop{}, denoted as $\denot{\seop{}}$. Arguments are
+inductively evaluated by the same semantics function.
+
+\paragraph{Actions}
+
+Action is the basic unit where the communication among modules are
+triggered by method calls. As defined in \refdef{def-action}, actions
+contain a method call. A method call can be either internal (calling a
+method in the module), or external (calling a method not in the
+module).
+
+In the modular semantics, all method calls are treated
+nondeterministically. In other words, the semantics for method calls,
+on the level of action, are defined as if we know the return value of
+the method for every argument. The validity of such assumptions are
+checked on higher-level semantics.
+
+The semantics for actions have a form of a judgment relation
+\semact{o}{a}{u}{cs}{v}, where $o : \sttype{}$ is the old state, $a$
+is the target action, $u : \sttype{}$ is the \emph{updated state}
+after executing $a$, $cs : \lbtype{}$ is the map from method names to
+pairs of argument and return values. Lastly, $v$ is the return value
+of $a$.
+
+\begin{definition}
+  \label{def-semaction}
+  The judgment \semact{o}{a}{u}{cs}{v} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[ActionWriteReg:]{\semact{o}{a}{u}{cs}{v} & \semexpr{e}{o} = v_r}
+                  {\semact{o}{\actwrite{r}{e}{a}}{\stupd{u}{r}{v_r}}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionCall:]{\semact{o}{(\lambda x.a)\ v_r}{u}{cs}{v} & \semexpr{e}{o} = v_a}
+                  {\semact{o}{\actcall{x}{f}{e}{a}}{u}{\lblupd{cs}{f}{(v_a, v_r)}}{v}} \\
+        \mbox{} \\
+        \inference[ActionAssert:]{\semact{o}{a}{u}{cs}{v} & \semexpr{e}{o} = \btrue{}}
+                  {\semact{o}{\actassert{e}{a}}{u}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionReturn:]{\semexpr{e}{o} = v}
+                  {\semact{o}{\actret{e}}{\emptymap{}}{\emptymap{}}{v}} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+Semantics for actions do not check double-writes of registers or
+double-calls of method calls. For instance, in the rule
+ActionWriteReg, an evaluated value is simply updated to the updated
+state $u$ by the register name $r$, without confirming $u$ does not
+have the value for $r$. Similarly, ActionCall does not check $cs$
+already has the value for $f$. The reason is that these conditions can
+be checked \emph{statically}; we call such conditions
+\emph{well-formedness} of actions. Detailed static checks and
+properties will be discussed in \refsect{TODO}.
+
+An assert and a return action have straightforward semantics. Assert
+requires its argument $e$ to be \btrue{}, in order to continue
+execution. Return simply evaluates the expression $e$ to return the
+value.
+
+\paragraph{Substep}
+
+
+
+\section{Well-formedness of Modules}
 \section{Inlining Semantics}
 \section{Operational Semantics}
+

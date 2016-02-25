@@ -1,9 +1,17 @@
+%% Definitions and theorems
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{corollary}[definition]{Corollary}
+
+\renewcommand\qedsymbol{$\blacksquare$}
 
 %% Proper names
 \newcommand{\Kami}[0]{Kami}
 
 %% For Latex convenience
 \newcommand{\refsect}[1]{Section~\ref{#1}}
+\newcommand{\refdef}[1]{Definition~\ref{#1}}
 
 %% Sets
 \newcommand{\setconst}{\ensuremath{\mathcal{C}}}
@@ -11,11 +19,13 @@
 \newcommand{\setmeths}{\ensuremath{\mathcal{F}}}
 
 %% Syntax
-\newcommand{\listof}[1]{\ensuremath{\vec{#1}}}
+\newcommand{\listof}[1]{\ensuremath{\overrightarrow{#1}}}
 \newcommand{\wordlet}{\ensuremath{\textsf{let}\ }}
 \newcommand{\wordassert}{\ensuremath{\textsf{assert}\ }}
 \newcommand{\wordret}{\ensuremath{\textsf{return}\ }}
-\newcommand{\eop}[1]{\ensuremath{\textsf{op}(\listof{#1})}}
+
+\newcommand{\seop}{\ensuremath{\textsf{op}}}
+\newcommand{\eop}[1]{\ensuremath{\seop{}(\listof{#1})}}
 
 \newcommand{\actwrite}[3]{\ensuremath{#1 := #2\,;\ #3}}
 %% \newcommand{\actcall}[4]{\ensuremath{\wordlet{} #1 = #2(#3)\,;\ #4}}
@@ -29,3 +39,19 @@
 \newcommand{\modbasic}[3]{\ensuremath{(\listof{#1}, \listof{#2}, \listof{#3})}}
 \newcommand{\modcomp}[2]{\ensuremath{#1 \oplus #2}}
 
+%% Semantics
+
+\newcommand{\btrue}{\ensuremath{\textsf{true}}}
+\newcommand{\bfalse}{\ensuremath{\textsf{false}}}
+
+\newcommand{\emptymap}{\ensuremath{[]}}
+\newcommand{\sttype}{\ensuremath{\setregs \stackrel{\textrm{\footnotesize{fin}}}{\longrightarrow} \setconst}}
+\newcommand{\lbtype}{\ensuremath{\setmeths \stackrel{\textrm{\footnotesize{fin}}}{\longrightarrow} \setconst \times \setconst}}
+\newcommand{\stupd}[3]{\ensuremath{#1 [ #2 \leftarrow #3 ]}}
+\newcommand{\lblupd}[3]{\ensuremath{#1 [ #2 \leftarrow #3 ]}}
+
+\newcommand{\denot}[1]{\ensuremath{\llbracket #1 \rrbracket}}
+\newcommand{\ssemexpr}[1]{\ensuremath{\denot{#1}_{\textsf{e}}}}
+\newcommand{\semexpr}[2]{\ensuremath{\ssemexpr{#1}\ #2}}
+
+\newcommand{\semact}[5]{\ensuremath{#1 |- (#2) \Downarrow \langle #3, #4, #5 \rangle}}
