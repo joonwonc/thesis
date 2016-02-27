@@ -7,7 +7,8 @@
 \renewcommand\qedsymbol{$\blacksquare$}
 
 %% Proper names
-\newcommand{\Kami}[0]{Kami}
+\newcommand{\Bluespec}{Bluespec}
+\newcommand{\Kami}{Kami}
 
 %% For Latex convenience
 \newcommand{\refsect}[1]{Section~\ref{#1}}
@@ -16,6 +17,7 @@
 %% Sets
 \newcommand{\setconst}{\ensuremath{\mathcal{C}}}
 \newcommand{\setregs}{\ensuremath{\mathcal{R}}}
+\newcommand{\setrules}{\ensuremath{\mathcal{L}}}
 \newcommand{\setmeths}{\ensuremath{\mathcal{F}}}
 
 %% Syntax
@@ -55,3 +57,35 @@
 \newcommand{\semexpr}[2]{\ensuremath{\ssemexpr{#1}\ #2}}
 
 \newcommand{\semact}[5]{\ensuremath{#1 |- (#2) \Downarrow \langle #3, #4, #5 \rangle}}
+\newcommand{\semlbl}[3]{\ensuremath{\langle #1, #2, #3 \rangle}}
+\newcommand{\semsstepr}[4]{\ensuremath{\langle #1, #2 \rangle \Downarrow \langle #3, #4 \rangle}}
+\newcommand{\semsstep}[6]{\ensuremath{\langle #1, #2 \rangle \Downarrow \langle #3, \semlbl{#4}{#5}{#6} \rangle}}
+\newcommand{\semsss}[4]{\ensuremath{\langle #1, #2 \rangle \Downarrow^{\ast} \langle #3, #4 \rangle}}
+
+\newcommand{\Substep}{Substep}
+\newcommand{\Substeps}{Substeps}
+\newcommand{\Step}{Step}
+
+\newcommand{\alpharule}[1]{\ensuremath{\textsf{Rule}\ #1}}
+\newcommand{\alphameth}{\ensuremath{\textsf{Meth}}}
+
+\newcommand{\rulesof}[1]{\ensuremath{\textsf{rulesOf}\ #1}}
+\newcommand{\methsof}[1]{\ensuremath{\textsf{methodsOf}\ #1}}
+
+\newcommand{\sdisj}[2]{\ensuremath{#1 \ast #2}}
+\newcommand{\splus}[2]{\ensuremath{#1 \uplus #2}}
+\newcommand{\domof}[1]{\ensuremath{\textsf{domain}\ #1}}
+
+\newcommand{\ldisj}[2]{\ensuremath{#1 \ast #2}}
+\newcommand{\lplus}[2]{\ensuremath{#1 \uplus #2}}
+
+\newcommand{\annotof}[1]{\ensuremath{\textsf{annot}\ #1}}
+\newcommand{\defsof}[1]{\ensuremath{\textsf{defs}\ #1}}
+\newcommand{\callsof}[1]{\ensuremath{\textsf{calls}\ #1}}
+
+\newcommand{\anndisj}[2]{\ensuremath{#1 \ast #2}}
+\newcommand{\mdisj}[2]{\ensuremath{#1 \ast #2}}
+
+\newcommand{\annplus}[2]{\ensuremath{#1 \uplus #2}}
+\newcommand{\mplus}[2]{\ensuremath{#1 \uplus #2}}
+

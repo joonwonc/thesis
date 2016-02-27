@@ -3,7 +3,7 @@
 \section{Syntax}
 
 \paragraph{Expressions}
-We begin by defining syntax for expressions in \Kami{}. Expressions
+We begin by defining syntax for expressions. Expressions
 consist of constant, register read, variable, and an inductive
 operation among expressions.
 
@@ -79,7 +79,7 @@ syntactically consists of registers, rules, and methods.
     \begin{math}
       \begin{array}{rcll}
         \textrm{Module}\quad m & ::=
-        & \modbasic{\regpair{r}{c}}{\rulepair{l}{a}}{\methodpair{f}{\lambda x.a}}
+        & \modbasic{\regpair{r}{c}}{\rulepair{s}{a}}{\methodpair{f}{\lambda x.a}}
         & \textrm{(basic module)} \\
         & | & \modcomp{m}{m} & \textrm{(composed module)}
       \end{array}
@@ -91,7 +91,7 @@ Modules is either a \emph{basic module} or a \emph{composed module}
 where two modules are composed inductively. In a basic module,
 registers has a form of $\listof{\regpair{r}{c}}$, where $c$ is the
 default value for a corresponding register $r$. Rules are defined as
-$\listof{\rulepair{l}{a}}$, where $l$ is the name of a rule and $a$ is
+$\listof{\rulepair{s}{a}}$, where $s$ is the name of a rule and $a$ is
 the body of it. Methods are defined as $\listof{\methodpair{f}{\lambda
     x.a}}$, where $f$ is the name of a method and $\lambda x.a$ is the
 body of it. $x$ in the lambda form serves to take an argument of the
@@ -144,8 +144,9 @@ The semantics for variable is not defined, since it should be
 substituted to the value by $\beta$-reduction in higher
 semantics. Technically, in the \Kami{} framework, syntax is defined by
 PHOAS~\cite{adam-icfp}, thus the variable term is abstracted into a
-syntax constructor. In this case, we rather can define $\semexpr{x}{o}
-= x$, where $x$ is eventually handled by meta-level reduction.
+syntax constructor $\textsf{Var}$. In this case, we rather can define
+$\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is already substituted
+to a value but still contained in the constructor.
 
 Lastly, the semantics for operation is defined by using the semantic
 definition for \seop{}, denoted as $\denot{\seop{}}$. Arguments are
@@ -210,6 +211,188 @@ execution. Return simply evaluates the expression $e$ to return the
 value.
 
 \paragraph{Substep}
+Once the semantics for actions are defined, it should be applied to
+describe the semantics of rule or method executions. As explained in
+\refsect{TODO}, \Bluespec{} and \Kami{} follow the one-rule-at-a-time
+semantics; only one rule is executed in a cycle, while multiple method
+calls are executed. The \Substep{} semantics defines a single
+execution by a rule or a method. It is simply a lift from the
+semantics for actions, since a rule or a method is defined by an
+action.
+
+A label is firstly employed on this semantics, representing
+communications with other external modules. A label has a form of
+\semlbl{\alpha}{ds}{cs}. $\alpha$ contains the information whether the
+label is formed by a rule or not. If the label is formed by a rule $s
+\in \setrules$, it takes \alpharule{s}. Otherwise, it takes
+\alphameth{}. $\alpha$ is used to ensure that the label follows the
+one-rule-at-a-time semantics. $ds$ denotes \emph{defined methods},
+indicating multiple methods executed in a cycle. Similarly, $cs$
+denotes \emph{called methods}, indicating methods which are called in
+a cycle.
+
+The \Substep{} semantics have a form of a judgment relation
+\semsstep{m}{o}{u}{\alpha}{ds}{cs}, where $m$ is the target module,
+$o$ is the old state, $u$ is the updated state, and
+\semlbl{\alpha}{ds}{cs} is the label formed in a cycle.
+
+\begin{definition}
+  \label{def-semsstep}
+  The judgment \semsstep{m}{o}{u}{\alpha}{ds}{cs} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[EmptyRule:]{}
+                  {\semsstep{m}{o}{\emptymap}
+                    {\alpharule{\epsilon}}{\emptymap}{\emptymap}} \\
+        \mbox{} \\
+        \inference[EmptyMeth:]{}
+                  {\semsstep{m}{o}{\emptymap}
+                    {\alphameth}{\emptymap}{\emptymap}} \\
+        \mbox{} \\
+        \inference[SingleRule:]{\rulepair{s}{a} \in \rulesof{m} & \semact{o}{a}{u}{cs}{v}}
+                  {\semsstep{m}{o}{u}{\alpharule{s}}{\emptymap}{cs}} \\
+        \mbox{} \\
+        \inference[SingleMeth:]{\methodpair{f}{\lambda x.a} \in \methsof{m} &
+          \semact{o}{(\lambda x.a)\ v_a}{u}{cs}{v_r}}
+                  {\semsstep{m}{o}{u}{\alphameth{}}{\lblupd{}{f}{(v_a, v_r)}}{cs}} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+EmptyRule and EmptyMeth describe cases where no progress is made in a
+cycle. These cases are similar to $\epsilon$-steps for describing
+program behaviors, like the one in CompCert~\cite{TODO}. However, an
+empty step by a rule and one by a method should be separately defined
+in the \Substep{} semantics, in order to give explicit information
+when defining the refinement relation. See \refsect{TODO} for details.
+
+SingleRule and SingleMeth describe the case where a rule or a method
+is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
+should be defined in the module $m$. \rulesof{m} is a function which
+collects all rules in the module, inductively defined as follow:
+\begin{definition}
+  \label{def-rulesof}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \rulesof{(\_, \listof{\rulepair{s}{a}}, \_)} & = & \listof{\rulepair{s}{a}}\\
+        \rulesof{(\modcomp{m1}{m2})} & = & (\rulesof{m1}) \cup (\rulesof{m2})\\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+Similarly, a method $(f, \lambda x.a)$ should be defined in $m$ in the
+SingleMeth case. \methsof{m} is also similarly defined as follow:
+\begin{definition}
+  \label{def-methsof}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \methsof{(\_, \_, \listof{\methodpair{f}{\lambda x.a}})} & = & \listof{\methodpair{f}{\lambda x.a}} \\
+        \methsof{(\modcomp{m1}{m2})} & = & (\methsof{m1}) \cup (\methsof{m2})\\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+Once a rule or a method is found, proper labels are formed simply by
+using information from the semantics of actions.
+
+\paragraph{Substeps}
+The \Substeps{} semantics collect multiple substeps which are
+simultaneously executed in a cycle. There are a few conditions whether
+substeps can be merged or not. Basically the updated states and labels
+from \Substep{} are used. Firstly, two substeps with \alpharule{\cdot}
+labels cannot be merge, since it breaks the one-rule-at-a-time
+semantics. Two updated states should be disjoint unless it breaks the
+double-write policy. Similarly, two defined methods and two called
+methods should be disjoint not to break double-call.
+
+The \Substeps{} semantics have a form of a judgment relation
+\semsss{m}{o}{u}{l}, arguments mostly have the same meaning as in
+\Substep{}. $l$ denotes the label formed in a cycle.
+
+\begin{definition}
+  \label{def-semsss}
+  The judgment \semsss{m}{o}{u}{l} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[SubstepsNil:]{}
+                  {\semsss{m}{o}{\emptymap}
+                    {\semlbl{\alphameth}{\emptymap}{\emptymap}}} \\
+        \mbox{} \\
+        \inference[SubstepsCons:]{\semsss{m}{o}{u_1}{l_1} & \semsstepr{m}{o}{u_2}{l_2} & \sdisj{u_1}{u_2} & \ldisj{l_1}{l_2}}
+                  {\semsss{m}{o}{\splus{u_1}{u_2}}{\lplus{l_1}{l_2}}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+In SubstepsCons, disjointnesses of states and labels are both denoted
+by the operation \sdisj{}{}, while definitions differ. For states
+$u_1$ and $u_2$, \sdisj{u_1}{u_2} defines the two finite state maps
+are disjoint, which can be defined naturally:
+
+\begin{center}
+  \begin{math}
+    \sdisj{u_1}{u_2} \triangleq \forall r. r \notin \domof{u_1} \vee r \notin \domof{u_2}
+  \end{math}
+\end{center}
+
+For labels $l_1$ and $l_2$, \ldisj{l_1}{l_2} defines the two labels
+are combinable:
+
+\begin{definition}
+  \label{def-ldisj}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \ldisj{l_1}{l_2} & \triangleq &
+        \anndisj{(\annotof{l_1})}{(\annotof{l_2})} \wedge
+        \mdisj{(\defsof{l_1})}{(\defsof{l_2})} \wedge
+        \mdisj{(\callsof{l_1})}{(\callsof{l_2})} \textrm{, where} \\
+        \anndisj{\alpha_1}{\alpha_2} & \triangleq &
+        (\alpha_1 = \alphameth) \vee (\alpha_2 = \alphameth) \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+Once the disjointnesses are defined, we can use the disjoint union for
+updated states \splus{u_1}{u_2} and the merged label \lplus{l_1}{l_2},
+where the label merging is defined as follows:
+
+\begin{definition}
+  \label{def-lplus}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \lplus{l_1}{l_2} & \triangleq &
+        \semlbl{\annplus{\annotof{l_1}}{\annotof{l_2}}}
+               {\mplus{\defsof{l_1}}{\defsof{l_2}}}
+               {\mplus{\callsof{l_1}}{\callsof{l_2}}} \textrm{, where} \\
+        \annplus{\alpha_1}{\alpha_2} & \triangleq &
+        \textsf{if}\ \alpha_1 = \alpharule{s}\ \textsf{then}\ \alpha_1\
+        \textsf{else}\ \alpha_2 \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+The only nontrivial definition is \annplus{\alpha_1}{\alpha_2}, which
+is to take the rule annotation from two annotations, \alphameth{} if
+both of them are not a rule annotation. Note that the two annotations
+cannot both be the rule annotation by the condition
+\anndisj{\alpha_1}{\alpha_2}.
+
+\paragraph{Step}
 
 
 
