@@ -190,6 +190,7 @@ of $a$.
         \mbox{} \\
         \inference[ActionReturn:]{\semexpr{e}{o} = v}
                   {\semact{o}{\actret{e}}{\emptymap{}}{\emptymap{}}{v}} \\
+        \mbox{} \\
       \end{array}
     \end{math}
   \end{center}
@@ -250,12 +251,13 @@ $o$ is the old state, $u$ is the updated state, and
                   {\semsstep{m}{o}{\emptymap}
                     {\alphameth}{\emptymap}{\emptymap}} \\
         \mbox{} \\
-        \inference[SingleRule:]{\rulepair{s}{a} \in \rulesof{m} & \semact{o}{a}{u}{cs}{v}}
+        \inference[SingleRule:]{\rulepair{s}{a} \in \rulesofm{m} & \semact{o}{a}{u}{cs}{v}}
                   {\semsstep{m}{o}{u}{\alpharule{s}}{\emptymap}{cs}} \\
         \mbox{} \\
-        \inference[SingleMeth:]{\methodpair{f}{\lambda x.a} \in \methsof{m} &
+        \inference[SingleMeth:]{\methodpair{f}{\lambda x.a} \in \methsofm{m} &
           \semact{o}{(\lambda x.a)\ v_a}{u}{cs}{v_r}}
                   {\semsstep{m}{o}{u}{\alphameth{}}{\lblupd{}{f}{(v_a, v_r)}}{cs}} \\
+        \mbox{} \\
       \end{array}
     \end{math}
   \end{center}
@@ -270,30 +272,30 @@ when defining the refinement relation. See \refsect{TODO} for details.
 
 SingleRule and SingleMeth describe the case where a rule or a method
 is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
-should be defined in the module $m$. \rulesof{m} is a function which
+should be defined in the module $m$. \rulesofm{m} is a function which
 collects all rules in the module, inductively defined as follow:
 \begin{definition}
-  \label{def-rulesof}
+  \label{def-rulesofm}
   \mbox{}
   \begin{center}
     \begin{math}
       \begin{array}{lcl}
-        \rulesof{(\_, \listof{\rulepair{s}{a}}, \_)} & = & \listof{\rulepair{s}{a}}\\
-        \rulesof{(\modcomp{m1}{m2})} & = & (\rulesof{m1}) \cup (\rulesof{m2})\\
+        \rulesofm{(\_, \listof{\rulepair{s}{a}}, \_)} & = & \listof{\rulepair{s}{a}}\\
+        \rulesofm{(\modcomp{m1}{m2})} & = & (\rulesofm{m1}) \cup (\rulesofm{m2})\\
       \end{array}
     \end{math}
   \end{center}
 \end{definition}
 Similarly, a method $(f, \lambda x.a)$ should be defined in $m$ in the
-SingleMeth case. \methsof{m} is also similarly defined as follow:
+SingleMeth case. \methsofm{m} is also similarly defined as follow:
 \begin{definition}
   \label{def-methsof}
   \mbox{}
   \begin{center}
     \begin{math}
       \begin{array}{lcl}
-        \methsof{(\_, \_, \listof{\methodpair{f}{\lambda x.a}})} & = & \listof{\methodpair{f}{\lambda x.a}} \\
-        \methsof{(\modcomp{m1}{m2})} & = & (\methsof{m1}) \cup (\methsof{m2})\\
+        \methsofm{(\_, \_, \listof{\methodpair{f}{\lambda x.a}})} & = & \listof{\methodpair{f}{\lambda x.a}} \\
+        \methsofm{(\modcomp{m1}{m2})} & = & (\methsofm{m1}) \cup (\methsofm{m2})\\
       \end{array}
     \end{math}
   \end{center}
@@ -393,8 +395,81 @@ cannot both be the rule annotation by the condition
 \anndisj{\alpha_1}{\alpha_2}.
 
 \paragraph{Step}
+The \Step{} semantics describe behaviors of a module where all
+internal communications are hidden. It employes the \Substep{}
+semantics, and hides all internal calls of the label from the
+substeps. Hiding internal calls includes to check whether the calls
+are correctly defined, \ie{}, if a label of substeps contains a called
+method $f$ with an argument and a return value $(v_a, v_r)$, then the
+label also should contain a defined method with the same name and the
+value.
 
+The \Step{} semantics have a form of a judgment relation
+(\semstep{m}{o}{u}{l}), arguments have the same meaning as in
+\Substeps{}.
 
+\begin{definition}
+  \label{def-semstep}
+  The judgment \semstep{m}{o}{u}{l} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepIntro:]{\semsss{m}{o}{u}{l} & \wellhidden{m}{(\hide{l})}}
+                  {\semstep{m}{o}{u}{l}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+(\hide{l}) computes the label where all internal (corresponding) calls
+are removed, defined as follow:
+
+\begin{definition}
+  \label{def-hide}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \hide{\semlbl{\alpha}{ds}{cs}} = \semlbl{\alpha}{ds - cs}{cs - ds},
+    \end{math}
+  \end{center}
+\end{definition}
+where a finite map subtraction operation $(-)$ is naturally defined; it
+removes all pairs $(k, v)$ on the left-hand side map if the right-hand
+side map contains $(k, v)$.
+
+(\wellhidden{m}{l}) ensures $l$ does not contain internal calls with
+respect to $m$, defined as follow:
+
+\begin{definition}
+  \label{def-wellhidden}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \wellhidden{m}{\semlbl{\alpha}{ds}{cs}} \triangleq (\keysdisj{ds}{\callsofm{m}}) \wedge (\keysdisj{cs}{\methsofm{m}}),
+    \end{math}
+  \end{center}
+\end{definition}
+where a \callsofm{m} operator statically collects all method names
+which are called in $m$.
+
+\begin{definition}
+  \label{def-callsof}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \callsofm{(\_, \rulepair{s}{a_r}, \methodpair{f}{\lambda x.a_m})}
+        & = & \listof{\callsofa{a_r}} \cup \listof{\callsofa{a_m}} \\
+        \callsofm{(\modcomp{m_1}{m_2})} & = & \callsofm{m_1} \cup \callsofm{m_2} \\
+        \callsofa{(\actwrite{r}{e}{a})} & = & \callsofa{a} \\
+        \callsofa{(\actcall{x}{f}{e}{a})} & = & \{ f \} \cup \callsofa{a} \\
+        \callsofa{(\actassert{e}{a})} & = & \callsofa{a} \\
+        \callsofa{(\actret{e})} & = & \emptyset \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
 
 \section{Well-formedness of Modules}
 \section{Inlining Semantics}

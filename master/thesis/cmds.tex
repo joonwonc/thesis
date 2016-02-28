@@ -6,6 +6,9 @@
 
 \renewcommand\qedsymbol{$\blacksquare$}
 
+%% Keywords
+\newcommand{\ie}{\emph{i.e.,}}
+
 %% Proper names
 \newcommand{\Bluespec}{Bluespec}
 \newcommand{\Kami}{Kami}
@@ -46,6 +49,7 @@
 \newcommand{\btrue}{\ensuremath{\textsf{true}}}
 \newcommand{\bfalse}{\ensuremath{\textsf{false}}}
 
+\renewcommand{\emptyset}{\ensuremath{\varnothing}}
 \newcommand{\emptymap}{\ensuremath{[]}}
 \newcommand{\sttype}{\ensuremath{\setregs \stackrel{\textrm{\footnotesize{fin}}}{\longrightarrow} \setconst}}
 \newcommand{\lbtype}{\ensuremath{\setmeths \stackrel{\textrm{\footnotesize{fin}}}{\longrightarrow} \setconst \times \setconst}}
@@ -61,6 +65,7 @@
 \newcommand{\semsstepr}[4]{\ensuremath{\langle #1, #2 \rangle \Downarrow \langle #3, #4 \rangle}}
 \newcommand{\semsstep}[6]{\ensuremath{\langle #1, #2 \rangle \Downarrow \langle #3, \semlbl{#4}{#5}{#6} \rangle}}
 \newcommand{\semsss}[4]{\ensuremath{\langle #1, #2 \rangle \Downarrow^{\ast} \langle #3, #4 \rangle}}
+\newcommand{\semstep}[4]{\ensuremath{#2 \stackrel[#1]{#4}{\longrightarrow} #3}}
 
 \newcommand{\Substep}{Substep}
 \newcommand{\Substeps}{Substeps}
@@ -69,8 +74,10 @@
 \newcommand{\alpharule}[1]{\ensuremath{\textsf{Rule}\ #1}}
 \newcommand{\alphameth}{\ensuremath{\textsf{Meth}}}
 
-\newcommand{\rulesof}[1]{\ensuremath{\textsf{rulesOf}\ #1}}
-\newcommand{\methsof}[1]{\ensuremath{\textsf{methodsOf}\ #1}}
+\newcommand{\rulesofm}[1]{\ensuremath{\textsf{rulesOf}\ #1}}
+\newcommand{\methsofm}[1]{\ensuremath{\textsf{methodsOf}\ #1}}
+\newcommand{\callsofm}[1]{\ensuremath{\textsf{callsOf}\ #1}}
+\newcommand{\callsofa}[1]{\ensuremath{\textsf{callsOfA}\ #1}}
 
 \newcommand{\sdisj}[2]{\ensuremath{#1 \ast #2}}
 \newcommand{\splus}[2]{\ensuremath{#1 \uplus #2}}
@@ -85,7 +92,11 @@
 
 \newcommand{\anndisj}[2]{\ensuremath{#1 \ast #2}}
 \newcommand{\mdisj}[2]{\ensuremath{#1 \ast #2}}
+\newcommand{\setdisj}[2]{\ensuremath{#1 \ast #2}}
+\newcommand{\keysdisj}[2]{\ensuremath{\setdisj{\domof{#1}}{#2}}}
 
 \newcommand{\annplus}[2]{\ensuremath{#1 \uplus #2}}
 \newcommand{\mplus}[2]{\ensuremath{#1 \uplus #2}}
 
+\newcommand{\wellhidden}[2]{\ensuremath{\textsf{wellHidden}\ #1\ #2}}
+\newcommand{\hide}[1]{\ensuremath{\textsf{hide}\ #1}}
