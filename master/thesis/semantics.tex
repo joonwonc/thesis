@@ -584,8 +584,8 @@ single method is closely related to semantic labels. See
 \refsect{TODO} for the detailed reason why this inlining is easier to
 prove properties.
 
-For a target action $a$ and an inlining method $dm$, we define an
-inlining function $(\inlinedmsymb)$ as follows:
+For a target action $a$ and an inlining method $dm$, we define a
+method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
 
 \begin{definition}
   \label{def-inlinedm}
@@ -610,6 +610,96 @@ inlining function $(\inlinedmsymb)$ as follows:
     \end{math}
   \end{center}
 \end{definition}
+
+A method-inlining operator for a module is naturally defined by
+extending the operator for an action. For a target module $m$ and an
+inlining \emph{method name} $f$, a method-inlining operator for a
+module, denoted as $(\inlinedmmsymb)$, is defined as follows:
+
+\begin{definition}
+  \label{def-inlinedmm}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \inlinedmm{m}{f} & \triangleq & \pgmlet{} dm = (\methsofm{m})[f]\ \pgmin{} \\
+        & & \pgmif{} \isrec{dm}\ \pgmthen{} \fail{} \\
+        & & \pgmelse{} \\
+        & & \pgmlet{} \listof{\regpair{r}{c}} = \regsofm{m}\ \pgmin{} \\
+        & & \pgmlet{} \listof{\rulepair{s}{a_s}} = \rulesofm{m}\ \pgmin{} \\
+        & & \pgmlet{} \listof{\methodpair{f}{\lambda x.a_f}} = \methsofm{m}\ \pgmin{} \\
+        & & \modbasic{\regpair{r}{c}}
+                  {\rulepair{s}{(\inlinedm{a}{dm})}}
+                  {\methodpair{f}{\lambda x.(\inlinedm{a}{dm})}} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+\paragraph{Inlining all defined methods}
+
+Using the method-inlining operator $(\inlinedmsymb)$, now it is
+straightforward to define an inlining function for a module. We simply
+apply $(\inlinedmsymb)$ for all defined methods in the module.
+
+However, inlining gets complicated when there is \emph{a call cycle}
+in the module. \reffig{ex-inlining-callcycle} shows the case where
+inlining for a module is problematic. TODO: explain more.
+\begin{figure}[h]
+  \label{ex-inlining-callcycle}
+  \begin{center}
+    TODO
+  \end{center}
+\end{figure}
+
+In order to avoid such cases, the method-inlining operator checks
+whether the method which will be inlined has a \emph{self-recursive}
+method call or not. As described in \refdef{def-inlinedmm},
+(\isrec{dm}) ensures that $dm$ is not recursive. We have proved the
+self-recursive call check for each method in a module during the whole
+inlining implies that there is no call cycles in the original
+module. (See \refsect{TODO} for details)
+
+We naturally extend the method-inlining operator to a methods-inlining
+operator $(\inlinedmssymb)$.
+\begin{definition}
+  \label{def-inlinedms}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \inlinedms{m}{\emptymap} & \triangleq & m \\
+        \inlinedms{m}{f : fs} & \triangleq & \inlinedms{(\inlinedmm{m}{f})}{fs} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+Using the methods-inlining operator $(\inlinedmssymb)$, we finally define the
+inlining operator $\inline{\cdot}$ for a target module $m$.
+\begin{definition}
+  \label{def-inline}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \inline{m} \triangleq \inlinedms{m}{(\namesof{(\methsofm{m})})}
+    \end{math}
+  \end{center}
+\end{definition}
+
+Why are method names used for inlining, instead of actual method
+bodies? The reason is when we do inlining once for a particular
+method, then all related other method bodies are changed. In other
+words, when a method-inlining is done, we should take a new method
+which will be inlined next, by taking it from the \emph{inlined
+  module}, not from the original one.
+
+\paragraph{Filtering internal methods}
+
+Ipsum
+
+\paragraph{Inlining semantics}
+
+Ipsum
 
 \section{Operational Semantics}
 

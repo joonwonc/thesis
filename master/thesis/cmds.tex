@@ -16,6 +16,7 @@
 %% For Latex convenience
 \newcommand{\refsect}[1]{Section~\ref{#1}}
 \newcommand{\refdef}[1]{Definition~\ref{#1}}
+\newcommand{\reffig}[1]{Figure~\ref{#1}}
 
 %% Sets
 \newcommand{\setconst}{\ensuremath{\mathcal{C}}}
@@ -25,6 +26,8 @@
 
 %% Syntax
 \newcommand{\listof}[1]{\ensuremath{\overrightarrow{#1}}}
+\newcommand{\fail}{\ensuremath{\textsf{fail}}}
+
 \newcommand{\wordlet}{\ensuremath{\textsf{let}\ }}
 \newcommand{\wordassert}{\ensuremath{\textsf{assert}\ }}
 \newcommand{\wordret}{\ensuremath{\textsf{return}\ }}
@@ -36,6 +39,9 @@
 \newcommand{\pgmif}{\ensuremath{\textbf{if}\ }}
 \newcommand{\pgmthen}{\ensuremath{\textbf{then}\ }}
 \newcommand{\pgmelse}{\ensuremath{\textbf{else}\ }}
+\newcommand{\pgmmodule}[1]{\ensuremath{\textbf{Module}\ #1\,;}}
+\newcommand{\pgmlet}{\ensuremath{\textbf{let}\ }}
+\newcommand{\pgmin}{\ensuremath{\textbf{in}\ }}
 
 \newcommand{\seop}{\ensuremath{\textsf{op}}}
 \newcommand{\eop}[1]{\ensuremath{\seop{}(\listof{#1})}}
@@ -84,6 +90,8 @@
 \newcommand{\alpharule}[1]{\ensuremath{\textsf{Rule}\ #1}}
 \newcommand{\alphameth}{\ensuremath{\textsf{Meth}}}
 
+\newcommand{\namesof}[1]{\ensuremath{\textsf{namesOf}\ #1}}
+\newcommand{\regsofm}[1]{\ensuremath{\textsf{regsOf}\ #1}}
 \newcommand{\rulesofm}[1]{\ensuremath{\textsf{rulesOf}\ #1}}
 \newcommand{\methsofm}[1]{\ensuremath{\textsf{methodsOf}\ #1}}
 \newcommand{\callsofm}[1]{\ensuremath{\textsf{callsOf}\ #1}}
@@ -122,3 +130,10 @@
 \newcommand{\concataction}[2]{\ensuremath{#1 \concatsymb{} \lambda x.#2}}
 \newcommand{\inlinedmsymb}{\ensuremath{\hookleftarrow}}
 \newcommand{\inlinedm}[2]{\ensuremath{#1 \inlinedmsymb{} #2}}
+\newcommand{\inlinedmssymb}{\ensuremath{\hookleftarrow}}
+\newcommand{\inlinedms}[2]{\ensuremath{#1 \inlinedmssymb{} #2}}
+\newcommand{\inlinedmmsymb}{\ensuremath{\hookleftarrow}}
+\newcommand{\inlinedmm}[2]{\ensuremath{#1 \inlinedmmsymb{} #2}}
+\newcommand{\inline}[1]{\ensuremath{\| #1 \|}}
+
+\newcommand{\isrec}[1]{\ensuremath{\textsf{isRecursive}\ #1}}
