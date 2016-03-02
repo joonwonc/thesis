@@ -49,6 +49,8 @@ a write to a register, a method call, an assert, and a return.
       \begin{array}{rcll}
         \textrm{Action}\quad a & ::= & \actwrite{r}{e}{a} & \textrm{(register write)} \\
         & | & \actcall{x}{f}{e}{a} & \textrm{(method call)} \\
+        & | & \actlet{e}{x}{a} & \textrm{(let bind)} \\
+        & | & \actifelse{e}{a}{a}{x}{a} & \textrm{(conditional branch)} \\
         & | & \actassert{e}{a} & \textrm{(assert)} \\
         & | & \actret{e} & \textrm{(return)} \\
       \end{array}
@@ -102,6 +104,7 @@ be globally unique in the module. A simple static checker can be
 implemented to confirm there are no name conflicts inside a module.
 
 \section{Modular Semantics}
+\label{sec-semmod}
 
 In this section, we present modular semantics for hardware design. A
 version of modular semantics has been defined in \cite{murali-thesis}.
@@ -185,6 +188,19 @@ of $a$.
         \inference[ActionCall:]{\semact{o}{(\lambda x.a)\ v_r}{u}{cs}{v} & \semexpr{e}{o} = v_a}
                   {\semact{o}{\actcall{x}{f}{e}{a}}{u}{\lblupd{cs}{f}{(v_a, v_r)}}{v}} \\
         \mbox{} \\
+        \inference[ActionLet:]{\semact{o}{(\lambda x.a)\ v_l}{u}{cs}{v} & \semexpr{e}{o} = v_l}
+                  {\semact{o}{\actlet{e}{x}{a}}{u}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionIfElseT:]{\semact{o}{a_t}{u_t}{cs_t}{v_t} &
+          \semact{o}{(\lambda x.a)\ v_t}{u}{cs}{v} &
+          \semexpr{e}{o} = \btrue{}}
+                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_t}{u}}{\splus{cs_t}{cs}}{v}} \\
+        \mbox{} \\
+        \inference[ActionIfElseF:]{\semact{o}{a_f}{u_f}{cs_f}{v_f} &
+          \semact{o}{(\lambda x.a)\ v_f}{u}{cs}{v} &
+          \semexpr{e}{o} = \bfalse{}}
+                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_f}{u}}{\splus{cs_f}{cs}}{v}} \\
+        \mbox{} \\
         \inference[ActionAssert:]{\semact{o}{a}{u}{cs}{v} & \semexpr{e}{o} = \btrue{}}
                   {\semact{o}{\actassert{e}{a}}{u}{cs}{v}} \\
         \mbox{} \\
@@ -204,7 +220,7 @@ have the value for $r$. Similarly, ActionCall does not check $cs$
 already has the value for $f$. The reason is that these conditions can
 be checked \emph{statically}; we call such conditions
 \emph{well-formedness} of actions. Detailed static checks and
-properties will be discussed in \refsect{TODO}.
+properties will be discussed in \refsect{sec-wf}.
 
 An assert and a return action have straightforward semantics. Assert
 requires its argument $e$ to be \btrue{}, in order to continue
@@ -464,6 +480,8 @@ which are called in $m$.
         \callsofm{(\modcomp{m_1}{m_2})} & = & \callsofm{m_1} \cup \callsofm{m_2} \\
         \callsofa{(\actwrite{r}{e}{a})} & = & \callsofa{a} \\
         \callsofa{(\actcall{x}{f}{e}{a})} & = & \{ f \} \cup \callsofa{a} \\
+        \callsofa{(\actlet{e}{x}{a})} & = & \callsofa{a} \\
+        \callsofa{(\actifelse{e}{a_t}{a_f}{a})} & = & \callsofa{a_t} \cup \callsofa{a_f} \cup \callsof{a} \\
         \callsofa{(\actassert{e}{a})} & = & \callsofa{a} \\
         \callsofa{(\actret{e})} & = & \emptyset \\
       \end{array}
@@ -472,6 +490,126 @@ which are called in $m$.
 \end{definition}
 
 \section{Well-formedness of Modules}
+\label{sec-wf}
+
+In this section, we present a number of well-formedness conditions of
+modules. Well-formedness for a programming language is a set of
+conditions which can be \emph{statically determined} by traversing a
+target program. Since it is static, it is usually defined independent
+to the semantics definition. For instance, as briefly discussed in
+\refsect{sec-modsem}, it is not allowed within an action to write the
+same register twice, or to call the same method twice. These
+conditions can be statically determined by iterating the action.
+
+Whereas, a number of conditions cannot be statically confirmed, thus
+should be defined in part of semantics. For instance, when combining
+two substep, two corresponding updated states and labels are required
+to be disjoint, defined in the \Substeps{} semantics.
+
+TODO: better explanation with examples?
+
+We describe two well-formedness conditions. All the conditions are
+used to describe certain properties of a correct module
+definition. The conditions are directly related to semantics
+implications, which is one of main topics of the thesis (See
+\refsect{TODO} for details). The two conditions are as follows:
+\begin{itemize}
+  \item $(\wfdouble{m})$ ensures that there are no double writes or
+    double calls for all actions in a module $m$.
+  \item $(\wfcycle{m})$ ensures that there are no call cycles in a
+    module $m$.
+\end{itemize}
+
+\paragraph{Well-formedness for avoiding double writes and calls}
+
+Ipsum
+
+\paragraph{Well-formedness for avoiding cycles}
+
+Ipsum
+
 \section{Inlining Semantics}
+
+\subsection{Motivation}
+
+\subsection{Defining Inlining Function}
+
+\paragraph{Concatenating two actions}
+In order to implement an inlining function, we first have to implement
+a function which simply connects two actions. An operator
+$(\concatsymb)$ concatenates two actions, inductively defined as
+follows:
+
+\begin{definition}
+  \label{def-concataction}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \concataction{(\actwrite{r}{e}{a})}{a_c} & \triangleq & \actwrite{r}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actcall{x}{f}{e}{a})}{a_c} & \triangleq & \actcall{x}{f}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actlet{e}{x}{a})}{a_c} & \triangleq & \actlet{e}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actifelse{e}{a_t}{a_f}{x}{a})}{a_c} & \triangleq &
+        \actifelse{e}{a_t}{a_f}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actassert{e}{a})}{a_c} & \triangleq & \actassert{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actret{e})}{a_c} & \triangleq & \actlet{e}{x}{a_c} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+The only nontrivial definition comes from the return statement
+\actret{e}. Concatenating two actions involves to pass the return
+value of the left action as an argument of the right action. However,
+dynamic evaluation of an expression cannot be involved with the static
+concatenation. The problem can be solved by using \wordlet{} syntax
+structure, saying that we declare a name in which $e$ is bound, and
+the value is used in the body ($\lambda x.a_c$). Considering the
+semantics for \wordlet{}, it is natural to define concatenation in
+such a way.
+
+\paragraph{Inlining a method}
+There are several ways to implement an inlining. One way is to define
+it like a breadth-first search; during the iteration of a target
+action, called methods are inlined for each method call. This inlining
+process is applied repeatedly until there are no internal method
+calls.
+
+We define an inlining function in a somewhat different way. First, we
+pick a function which will be inlined. Then for every action in a
+target module, we search for all method calls to the target function,
+and inline all of them. This process is applied for every defined
+method in the module. The reason we chose this way is that inlining a
+single method is closely related to semantic labels. See
+\refsect{TODO} for the detailed reason why this inlining is easier to
+prove properties.
+
+For a target action $a$ and an inlining method $dm$, we define an
+inlining function $(\inlinedmsymb)$ as follows:
+
+\begin{definition}
+  \label{def-inlinedm}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \inlinedm{(\actwrite{r}{e}{a})}{dm} & \triangleq &
+        \actwrite{r}{e}{(\inlinedm{a}{dm})} \\
+        \inlinedm{(\actcall{x}{f}{e}{a})}{(f_i, \lambda x.a_f)} & \triangleq &
+        \pgmif{} f = f_i \\
+        & & \pgmthen{} \concataction{(\actlet{e}{y}{(\lambda x.a_f)\ y})}{(\inlinedm{a}{(f_i, \lambda x.a_f)})} \\
+        & & \pgmelse{} \actcall{x}{f}{e}{(\inlinedm{a}{(f_i, \lambda x.a_f)})} \\
+        \inlinedm{(\actlet{e}{x}{a})}{dm} & \triangleq &
+        \actlet{e}{x}{(\inlinedm{a}{dm})} \\
+        \inlinedm{(\actifelse{e}{a_t}{a_f}{x}{a})}{dm} & \triangleq &
+        \actifelse{e}{(\inlinedm{a_t}{dm})}{(\inlinedm{a_f}{dm})}{x}{(\inlinedm{a}{dm})} \\
+        \inlinedm{(\actassert{e}{a})}{dm} & \triangleq &
+        \actassert{e}{(\inlinedm{a}{dm})} \\
+        \inlinedm{(\actret{e})}{dm} & \triangleq & \actret{e} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
 \section{Operational Semantics}
 

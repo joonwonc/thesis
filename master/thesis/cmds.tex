@@ -28,6 +28,14 @@
 \newcommand{\wordlet}{\ensuremath{\textsf{let}\ }}
 \newcommand{\wordassert}{\ensuremath{\textsf{assert}\ }}
 \newcommand{\wordret}{\ensuremath{\textsf{return}\ }}
+\newcommand{\wordin}{\ensuremath{\textsf{in}\ }}
+\newcommand{\wordif}{\ensuremath{\textsf{if}\ }}
+\newcommand{\wordthen}{\ensuremath{\textsf{then}\ }}
+\newcommand{\wordelse}{\ensuremath{\textsf{else}\ }}
+
+\newcommand{\pgmif}{\ensuremath{\textbf{if}\ }}
+\newcommand{\pgmthen}{\ensuremath{\textbf{then}\ }}
+\newcommand{\pgmelse}{\ensuremath{\textbf{else}\ }}
 
 \newcommand{\seop}{\ensuremath{\textsf{op}}}
 \newcommand{\eop}[1]{\ensuremath{\seop{}(\listof{#1})}}
@@ -35,6 +43,8 @@
 \newcommand{\actwrite}[3]{\ensuremath{#1 := #2\,;\ #3}}
 %% \newcommand{\actcall}[4]{\ensuremath{\wordlet{} #1 = #2(#3)\,;\ #4}}
 \newcommand{\actcall}[4]{\ensuremath{#2(#3)\,;\ \lambda #1.#4}}
+\newcommand{\actlet}[3]{\ensuremath{\wordlet{} #1\ \wordin{} \lambda #2.#3}}
+\newcommand{\actifelse}[5]{\ensuremath{\wordif{} #1\ \wordthen{} #2\ \wordelse{} #3\,;\ \lambda #4.#5}}
 \newcommand{\actassert}[2]{\ensuremath{\wordassert{} #1\,;\ #2}}
 \newcommand{\actret}[1]{\ensuremath{\wordret{} #1}}
 
@@ -100,3 +110,15 @@
 
 \newcommand{\wellhidden}[2]{\ensuremath{\textsf{wellHidden}\ #1\ #2}}
 \newcommand{\hide}[1]{\ensuremath{\textsf{hide}\ #1}}
+
+%% well-formedness
+
+\newcommand{\wfdouble}[1]{\ensuremath{\textsf{WfDouble}\ #1}}
+\newcommand{\wfcycle}[1]{\ensuremath{\textsf{WfCycle}\ #1}}
+
+%% inlining
+
+\newcommand{\concatsymb}{\ensuremath{::}}
+\newcommand{\concataction}[2]{\ensuremath{#1 \concatsymb{} \lambda x.#2}}
+\newcommand{\inlinedmsymb}{\ensuremath{\hookleftarrow}}
+\newcommand{\inlinedm}[2]{\ensuremath{#1 \inlinedmsymb{} #2}}
