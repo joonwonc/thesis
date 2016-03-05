@@ -6,6 +6,150 @@
 
 \renewcommand\qedsymbol{$\blacksquare$}
 
+%% Program keywords
+
+\newcommand{\pgmcalls}{\ensuremath{\textbf{call}\ }}
+\newcommand{\pgmif}{\ensuremath{\textbf{if}\ }}
+\newcommand{\pgmthen}{\ensuremath{\textbf{then}\ }}
+\newcommand{\pgmelse}{\ensuremath{\textbf{else}\ }}
+\newcommand{\pgmlet}{\ensuremath{\textbf{let}\ }}
+\newcommand{\pgmin}{\ensuremath{\textbf{in}\ }}
+\newcommand{\pgmasserts}{\ensuremath{\textbf{assert}\ }}
+\newcommand{\pgmrets}{\ensuremath{\textbf{ret}\ }}
+
+\newcommand{\pgmmodule}[1]{\ensuremath{\textbf{Module}\ #1}}
+\newcommand{\pgmregs}[1]{\ensuremath{\textbf{Regs}\ #1}}
+\newcommand{\pgmrule}[1]{\ensuremath{\textbf{Rule}\ #1}}
+\newcommand{\pgmmeth}[1]{\ensuremath{\textbf{Method}\ #1}}
+
+\newcommand{\pgmwrite}[2]{\ensuremath{#1 := #2\,;}\\}
+\newcommand{\pgmcall}[3]{\ensuremath{#1 = \pgmcalls{} #2(#3)\,;}\\}
+\newcommand{\pgmletin}[2]{\ensuremath{\pgmlet{} #1 = #2 \pgmin{}}\\}
+\newcommand{\pgmifelse}[4]{\ensuremath{\pgmif{} #1\ \pgmthen{} #2\ \pgmelse{} #3\,;}\\}
+\newcommand{\pgmassert}[1]{\ensuremath{\pgmasserts{} #1\,;}\\}
+\newcommand{\pgmret}[1]{\ensuremath{\pgmrets{} #1}\\}
+
+%% BSV boxes by Murali
+
+%BSV block
+\newcommand{\bsvblock}[1]{
+\ensuremath{
+\begin{array}{@{\;\;\;\;\;\;}l}
+#1
+\end{array}}\\
+}
+
+%BSV normal rule
+\newcommand{\bsv}[6]{
+\begin{tabular}{@{}p{7cm}@{}}
+\ensuremath{#1}\;\textit{#2}\ensuremath{#3}:\\
+\hline
+\ensuremath{
+\begin{array}{@{}l}
+#4
+\begin{array}{@{}l@{}l}
+\when ( & 
+#5) \pmb{\Rightarrow} \\
+\end{array}\\
+\bsvblock{#6}
+\end{array}
+}\\\\
+\end{tabular}
+}
+
+%BSV rule without guard or let
+\newcommand{\bsvnone}[4]{
+\begin{tabular}{@{}p{7cm}@{}}
+\ensuremath{#1 \; \textit{#2} #3}:\\
+\hline
+\ensuremath{
+\begin{array}{@{}l@{}}
+#4\\
+\end{array}
+}
+\end{tabular}
+}
+
+%BSV rule without guard or let
+\newcommand{\bsvnonesmall}[5]{
+\begin{tabular}{@{}p{#5}@{}}
+\ensuremath{#1 \; \textit{#2} #3}:\\
+\hline
+\ensuremath{
+\begin{array}{@{}l@{}}
+#4\\
+\end{array}
+}
+\end{tabular}
+}
+
+%BSV module
+
+\newcommand{\bsvmod}[3]{
+\scriptsize
+\centering
+\begin{tabular}{|l|}
+\hline\\
+\pgmmodule{} #1:\\
+\pgmregs \ensuremath{#2};\\[.5em]
+\hline\\[-.5em]
+#3\\
+\hline
+\end{tabular}
+}
+
+\newcommand{\bsvmodnoreg}[2]{
+\scriptsize
+\centering
+\begin{tabular}{|l|}
+\hline\\
+\pgmmodule{} #1:\\
+\hline\\[-.5em]
+#2\\
+\hline
+\end{tabular}
+}
+
+\newcommand{\bsvmodtbig}[3]{
+\scriptsize
+\centering
+\begin{tabular}{|p{\textwidth}|}
+\hline\\
+\pgmmodule{}:\\
+\pgmregs \ensuremath{#1};\\[.5em]
+\hline\\[-.5em]
+\begin{tabular}{cc}
+\begin{minipage}{.5\textwidth}
+#2
+\end{minipage} &
+\begin{minipage}{.5\textwidth}
+#3
+\end{minipage}
+\end{tabular}\\
+\hline
+\end{tabular}
+}
+
+\newcommand{\bsvmodtsmall}[3]{
+\scriptsize
+\centering
+\begin{tabular}{|p{\textwidth}|}
+\hline\\[-.8em]
+\pgmmodule{}:\\
+\pgmregs \ensuremath{#1};\\[.2em]
+\hline\\[-.5em]
+\begin{tabular}{cc}
+\begin{minipage}{.5\textwidth}
+#2
+\end{minipage} &
+\begin{minipage}{.5\textwidth}
+#3
+\end{minipage}
+\end{tabular}\\
+\hline
+\end{tabular}
+}
+
 %% Keywords
 \newcommand{\ie}{\emph{i.e.,}}
 
@@ -25,7 +169,7 @@
 \newcommand{\setmeths}{\ensuremath{\mathcal{F}}}
 
 %% Syntax
-\newcommand{\listof}[1]{\ensuremath{\overrightarrow{#1}}}
+\renewcommand{\listof}[1]{\ensuremath{\overrightarrow{#1}}}
 \newcommand{\fail}{\ensuremath{\textsf{fail}}}
 
 \newcommand{\wordlet}{\ensuremath{\textsf{let}\ }}
@@ -36,12 +180,7 @@
 \newcommand{\wordthen}{\ensuremath{\textsf{then}\ }}
 \newcommand{\wordelse}{\ensuremath{\textsf{else}\ }}
 
-\newcommand{\pgmif}{\ensuremath{\textbf{if}\ }}
-\newcommand{\pgmthen}{\ensuremath{\textbf{then}\ }}
-\newcommand{\pgmelse}{\ensuremath{\textbf{else}\ }}
-\newcommand{\pgmmodule}[1]{\ensuremath{\textbf{Module}\ #1\,;}}
-\newcommand{\pgmlet}{\ensuremath{\textbf{let}\ }}
-\newcommand{\pgmin}{\ensuremath{\textbf{in}\ }}
+\newcommand{\tab}{\ensuremath{\quad}}
 
 \newcommand{\seop}{\ensuremath{\textsf{op}}}
 \newcommand{\eop}[1]{\ensuremath{\seop{}(\listof{#1})}}
@@ -134,6 +273,12 @@
 \newcommand{\inlinedms}[2]{\ensuremath{#1 \inlinedmssymb{} #2}}
 \newcommand{\inlinedmmsymb}{\ensuremath{\hookleftarrow}}
 \newcommand{\inlinedmm}[2]{\ensuremath{#1 \inlinedmmsymb{} #2}}
-\newcommand{\inline}[1]{\ensuremath{\| #1 \|}}
+\newcommand{\inline}[1]{\ensuremath{| #1 |}}
+\newcommand{\inlineF}[1]{\ensuremath{\| #1 \|}}
 
 \newcommand{\isrec}[1]{\ensuremath{\textsf{isRecursive}\ #1}}
+
+\newcommand{\mapfiltsymb}{\ensuremath{\smallsetminus}}
+\newcommand{\mapfilt}[2]{\ensuremath{#1 \mapfiltsymb{} #2}}
+
+%% \newcommand{\semstepin}

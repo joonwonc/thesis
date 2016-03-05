@@ -644,24 +644,47 @@ apply $(\inlinedmsymb)$ for all defined methods in the module.
 
 However, inlining gets complicated when there is \emph{a call cycle}
 in the module. \reffig{ex-inlining-callcycle} shows the case where
-inlining for a module is problematic. TODO: explain more.
+inlining for such module is problematic. A module $m$ has two methods
+$f$ and $g$. It has a call cycle since $f$ calls $g$ and $g$ calls
+$f$. When inlining $g$ first, $f$ eventually has a
+\emph{self-recursive} call (a right figure). In this case, inlining
+for $f$ cannot be progressed, since inlining itself will cause
+register double-writes by $r_1$ and $r_2$. In order to avoid such
+cases, the method-inlining operator checks whether the method which
+will be inlined has a self-recursive method call or not. As described
+in \refdef{def-inlinedmm}, (\isrec{dm}) ensures that $dm$ is not
+self-recursive.
+
 \begin{figure}[h]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{m}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmcall{x}{g}{}
+      }\\
+      \bsvnone{\pgmmeth}{g}{}{
+        \pgmwrite{r_2}{2}
+        \pgmcall{y}{f}{}
+      }
+    }
+    \subcaption{Before inlining $g$}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{m}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmwrite{r_2}{2}
+        \pgmcall{y}{f}{}
+      }
+    }
+    \subcaption{After inlining $g$}
+  \end{subfigure}
+  \caption{A call cycle during inlining}
   \label{ex-inlining-callcycle}
-  \begin{center}
-    TODO
-  \end{center}
 \end{figure}
 
-In order to avoid such cases, the method-inlining operator checks
-whether the method which will be inlined has a \emph{self-recursive}
-method call or not. As described in \refdef{def-inlinedmm},
-(\isrec{dm}) ensures that $dm$ is not recursive. We have proved the
-self-recursive call check for each method in a module during the whole
-inlining implies that there is no call cycles in the original
-module. (See \refsect{TODO} for details)
-
-We naturally extend the method-inlining operator to a methods-inlining
-operator $(\inlinedmssymb)$.
+Now we naturally extend the method-inlining operator to a
+methods-inlining operator $(\inlinedmssymb)$.
 \begin{definition}
   \label{def-inlinedms}
   \mbox{}
@@ -693,13 +716,44 @@ words, when a method-inlining is done, we should take a new method
 which will be inlined next, by taking it from the \emph{inlined
   module}, not from the original one.
 
-\paragraph{Filtering internal methods}
+\paragraph{Hiding internal methods}
 
-Ipsum
+The last step for inlining is to hide internal methods so that they
+cannot be called from external modules. It is to ensure an original
+module and the inlined one have the same behaviors. According to the
+semantics, all methods which are internally called cannot be called by
+external methods anymore. In terms of inlining, when all internal
+calls are inlined, then the module should not have interfaces for
+these inlined methods.
+
+How do we know which defined methods should be hidden? The way to hide
+such methods is simple; we just filter defined methods by checking
+whether the target method is internally called by some rules or
+methods. The complete inlining operator $\inlineF{\cdot}$ is defined
+as follow:
+
+\begin{definition}
+  \label{def-inlineF}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \inlineF{m} \triangleq
+      (\regsofm{\inline{m}},
+      \rulesofm{\inline{m}},
+      \mapfilt{(\methsofm{\inline{m}})}{(\callsofm{m})}),
+    \end{math}
+  \end{center}
+\end{definition}
+where the map filtering operator $(\mapfilt{m}{l})$ filters out
+elements of $m$ where the key is not in $l$.
 
 \paragraph{Inlining semantics}
 
-Ipsum
+%% Inlining semantics borrow the \Step{} semantics from the modular
+%% semantics. The \Step{} semantics have a form of a judgment relation
+%% (\semstep{m}{o}{u}{l}), arguments have the same meaning as in
+%% \Substeps{}.
+
 
 \section{Operational Semantics}
 
