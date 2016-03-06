@@ -655,16 +655,16 @@ will be inlined has a self-recursive method call or not. As described
 in \refdef{def-inlinedmm}, (\isrec{dm}) ensures that $dm$ is not
 self-recursive.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}
     \bsvmodnoreg{m}{
       \bsvnone{\pgmmeth}{f}{}{
         \pgmwrite{r_1}{1}
-        \pgmcall{x}{g}{}
+        \pgmcalln{g}{}
       }\\
       \bsvnone{\pgmmeth}{g}{}{
         \pgmwrite{r_2}{2}
-        \pgmcall{y}{f}{}
+        \pgmcalln{f}{}
       }
     }
     \subcaption{Before inlining $g$}
@@ -674,7 +674,7 @@ self-recursive.
       \bsvnone{\pgmmeth}{f}{}{
         \pgmwrite{r_1}{1}
         \pgmwrite{r_2}{2}
-        \pgmcall{y}{f}{}
+        \pgmcalln{f}{}
       }
     }
     \subcaption{After inlining $g$}
@@ -749,11 +749,64 @@ elements of $m$ where the key is not in $l$.
 
 \paragraph{Inlining semantics}
 
-%% Inlining semantics borrow the \Step{} semantics from the modular
-%% semantics. The \Step{} semantics have a form of a judgment relation
-%% (\semstep{m}{o}{u}{l}), arguments have the same meaning as in
-%% \Substeps{}.
+\begin{figure}[t]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{m}{
+      \bsvnone{\pgmrule}{s}{}{
+        \pgmwrite{r_1}{1}
+        \pgmcalln{f}{}
+      }\\
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_2}{2}
+        \pgmcalln{g}{}
+      }\\
+      \bsvnone{\pgmmeth}{g}{}{
+        \pgmwrite{r_3}{3}
+      }
+    }
+    \subcaption{Before applying the inlining operator $\inlineF{\cdot}$}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{\inlineF{m}}{
+      \bsvnone{\pgmrule}{r}{}{
+        \pgmwrite{r_1}{1}
+        \pgmwrite{r_2}{2}
+        \pgmwrite{r_3}{3}
+      }
+    }
+    \subcaption{After applying the inlining}
+  \end{subfigure}
+  \caption{Inlining efficiency with respect to the \Step{} semantics}
+  \label{ex-inlining-efficiency}
+\end{figure}
 
+Inlining semantics borrow the \Step{} semantics from the modular
+semantics. The \StepInl{} semantics have a form of a judgment relation
+(\semstepin{m}{o}{u}{l}), arguments have the same meaning as in
+\Step{}.
+
+\begin{definition}
+  \label{def-semstepin}
+  The judgment \semstepin{m}{o}{u}{l} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepInlIntro:]{\semstep{\inlineF{m}}{o}{u}{l}}
+                  {\semstepin{m}{o}{u}{l}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+\Step{} semantics can be efficiently handled by using inlining. In
+other words, dealing with \Step{} with inlined modules is easier than
+with ordinary modules. \reffig{ex-inlining-efficiency} describes two
+modules, where the left module is an original module (which is not
+inlined), while the right one is inlined.
+
+TODO: explain more.
 
 \section{Operational Semantics}
+
 

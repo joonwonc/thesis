@@ -24,6 +24,7 @@
 
 \newcommand{\pgmwrite}[2]{\ensuremath{#1 := #2\,;}\\}
 \newcommand{\pgmcall}[3]{\ensuremath{#1 = \pgmcalls{} #2(#3)\,;}\\}
+\newcommand{\pgmcalln}[2]{\ensuremath{\pgmcalls{} #1(#2)\,;}\\}
 \newcommand{\pgmletin}[2]{\ensuremath{\pgmlet{} #1 = #2 \pgmin{}}\\}
 \newcommand{\pgmifelse}[4]{\ensuremath{\pgmif{} #1\ \pgmthen{} #2\ \pgmelse{} #3\,;}\\}
 \newcommand{\pgmassert}[1]{\ensuremath{\pgmasserts{} #1\,;}\\}
@@ -281,4 +282,5 @@
 \newcommand{\mapfiltsymb}{\ensuremath{\smallsetminus}}
 \newcommand{\mapfilt}[2]{\ensuremath{#1 \mapfiltsymb{} #2}}
 
-%% \newcommand{\semstepin}
+\newcommand{\StepInl}{StepInl}
+\newcommand{\semstepin}[4]{\ensuremath{#2 \stackrel[#1]{#4}{\hookrightarrow} #3}}
