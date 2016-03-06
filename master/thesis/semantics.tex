@@ -251,7 +251,7 @@ a cycle.
 The \Substep{} semantics have a form of a judgment relation
 \semsstep{m}{o}{u}{\alpha}{ds}{cs}, where $m$ is the target module,
 $o$ is the old state, $u$ is the updated state, and
-\semlbl{\alpha}{ds}{cs} is the label formed in a cycle.
+\semlbl{\alpha}{ds}{cs} is the label formed by the execution.
 
 \begin{definition}
   \label{def-semsstep}
@@ -747,7 +747,7 @@ as follow:
 where the map filtering operator $(\mapfilt{m}{l})$ filters out
 elements of $m$ where the key is not in $l$.
 
-\paragraph{Inlining semantics}
+\subsection{Inlining semantics}
 
 \begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}
@@ -807,6 +807,153 @@ inlined), while the right one is inlined.
 
 TODO: explain more.
 
-\section{Operational Semantics}
+\section{Big-step Semantics}
 
+\subsection{Motivation}
+
+\subsection{Definition of the Semantics}
+
+\paragraph{Actions}
+
+The only difference between the modular semantics and the big-step one
+for Actions is how method calls are handled. In the modular semantics,
+all method calls are collected regardless of the fact that the calls
+are internal or not. In contrast, external calls are collected in the
+big-step semantics, while internal calls are \emph{executed} by
+looking at their actual bodies.
+
+The semantics for actions have a form of a judgment relation
+\sembigact{m}{o}{a}{u}{cs}{v}, where the arguments are similar to the
+modular semantics. $m$ is the target module, $o : \sttype{}$ is the
+old state, $a$ is the target action, $u : \sttype{}$ is the updated
+state $a$, $cs : \lbtype{}$ is the called methods, and $v$ is the
+return value.
+
+\begin{definition}
+  \label{def-sembigact}
+  The judgment \sembigact{m}{o}{a}{u}{cs}{v} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[ActionWriteRegBig:]{\sembigact{m}{o}{a}{u}{cs}{v} & \semexpr{e}{o} = v_r}
+                  {\sembigact{m}{o}{\actwrite{r}{e}{a}}{\stupd{u}{r}{v_r}}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionCallExtBig:]{\sembigact{m}{o}{(\lambda x.a)\ v_r}{u}{cs}{v}
+          & \semexpr{e}{o} = v_a \\
+          f \notin (\namesof{(\methsofm{m})})
+        }
+                  {\sembigact{m}{o}{\actcall{x}{f}{e}{a}}{u}{\lblupd{cs}{f}{(v_a, v_r)}}{v}} \\
+        \mbox{} \\
+        \inference[ActionCallIntBig:]{\sembigact{m}{o}{(\lambda x.a)\ v_r}{u}{cs}{v}
+          & \semexpr{e}{o} = v_a \\
+          (f, \lambda x.a_f) \in (\methsofm{m}) \\
+          \sembigact{m}{o}{(\lambda x.a_f)\ v_a}{u_f}{cs_f}{v_r}
+          & \sdisj{u}{u_f}
+          & \ldisj{cs}{cs_f}
+        }
+                  {\sembigact{m}{o}{\actcall{x}{f}{e}{a}}{\splus{u}{u_f}}{\lplus{cs}{cs_f}}{v}} \\
+        \mbox{} \\
+        \inference[ActionLetBig:]{\sembigact{m}{o}{(\lambda x.a)\ v_l}{u}{cs}{v} & \semexpr{e}{o} = v_l}
+                  {\sembigact{m}{o}{\actlet{e}{x}{a}}{u}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionIfElseTBig:]{\sembigact{m}{o}{a_t}{u_t}{cs_t}{v_t} &
+          \sembigact{m}{o}{(\lambda x.a)\ v_t}{u}{cs}{v} \\
+          \semexpr{e}{o} = \btrue{}}
+                  {\sembigact{m}{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_t}{u}}{\splus{cs_t}{cs}}{v}} \\
+        \mbox{} \\
+        \inference[ActionIfElseFBig:]{\sembigact{m}{o}{a_f}{u_f}{cs_f}{v_f} &
+          \sembigact{m}{o}{(\lambda x.a)\ v_f}{u}{cs}{v} \\
+          \semexpr{e}{o} = \bfalse{}}
+                  {\sembigact{m}{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_f}{u}}{\splus{cs_f}{cs}}{v}} \\
+        \mbox{} \\
+        \inference[ActionAssertBig:]{\sembigact{m}{o}{a}{u}{cs}{v} & \semexpr{e}{o} = \btrue{}}
+                  {\sembigact{m}{o}{\actassert{e}{a}}{u}{cs}{v}} \\
+        \mbox{} \\
+        \inference[ActionReturnBig:]{\semexpr{e}{o} = v}
+                  {\sembigact{m}{o}{\actret{e}}{\emptymap{}}{\emptymap{}}{v}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+According to the semantics, only external calls are collected by $cs$
+during an action execution. Inference rules are separated for internal
+calls and external ones. ActionCallExtBig describes the case of
+external calls. A target method $f$ should be guaranteed to be an
+external call, by showing $f \notin (\namesof{(\methsofm{m})})$.
+Whereas, in ActionCallIntBig, $f$ should be guaranteed to be an
+internal call, by showing $(f, \lambda x.a_f) \in
+(\methsofm{m})$. When we know the execution result of $(\lambda
+x.a_f)\ v_a)$, where $v_a$ is the evaluated argument, we can describe
+the final semantics for the internal call. The semantics are defined
+in a big-step manner, since it requires the execution result by an
+internal call.
+
+\paragraph{BigSubstep}
+
+The big-step semantics also have a notion of \Substep{}, called
+\Bigsubstep{}. The concept is similar to \Substep{}; it simply lifts
+the semantics for Actions to one for a single rule or a method.
+
+The \Bigsubstep{} semantics have a form of a judgment relation
+\sembigss{m}{o}{u}{\alpha}{ds}{cs}, where arguments are similarly
+defined as in \Substep{}. $m$ is the target module, $o$ is the old
+state, $u$ is the updated state, and \semlbl{\alpha}{ds}{cs} is the
+label formed by the execution.
+
+\begin{definition}
+  \label{def-sembigss}
+  The judgment \sembigss{m}{o}{u}{\alpha}{ds}{cs} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[EmptyRuleBig:]{}
+                  {\sembigss{m}{o}{\emptymap}
+                    {\alpharule{\epsilon}}{\emptymap}{\emptymap}} \\
+        \mbox{} \\
+        \inference[EmptyMethBig:]{}
+                  {\sembigss{m}{o}{\emptymap}
+                    {\alphameth}{\emptymap}{\emptymap}} \\
+        \mbox{} \\
+        \inference[SingleRuleBig:]{\rulepair{s}{a} \in \rulesofm{m} & \sembigact{m}{o}{a}{u}{cs}{v}}
+                  {\sembigss{m}{o}{u}{\alpharule{s}}{\emptymap}{cs}} \\
+        \mbox{} \\
+        \inference[SingleMethBig:]{\methodpair{f}{\lambda x.a} \in \methsofm{m} &
+          \sembigact{m}{o}{(\lambda x.a)\ v_a}{u}{cs}{v_r}}
+                  {\sembigss{m}{o}{u}{\alphameth{}}{\lblupd{}{f}{(v_a, v_r)}}{cs}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+\paragraph{BigStep}
+
+TODO: introduction.
+
+The \Bigstep{} semantics are defined as a judgment relation
+(\sembigstep{m}{o}{u}{l}), arguments have the same meaning as in
+\Bigsubstep{}.
+
+\begin{definition}
+  \label{def-sembigstep}
+  The judgment \sembigstep{m}{o}{u}{l} is defined as follows:
+  \begin{center}
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepNilBig:]{}
+                  {\sembigstep{m}{o}{\emptymap}{\semlbl{\alphameth}{\emptymap}{\emptymap}}} \\
+        \mbox{} \\
+        \inference[StepConsBig:]{\sembigstep{m}{o}{u_1}{l_1} & \sembigssr{m}{o}{u_2}{l_2}
+          & \sdisj{u_1}{u_2} & \ldisj{l_1}{l_2}}
+                  {\sembigstep{m}{o}{\splus{u_1}{u_2}}{\lplus{l_1}{l_2}}} \\
+        \mbox{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+Note that the \Bigstep{} semantics does not need to hide label
+elements by internal calls.
 
