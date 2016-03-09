@@ -481,7 +481,7 @@ which are called in $m$.
         \callsofa{(\actwrite{r}{e}{a})} & = & \callsofa{a} \\
         \callsofa{(\actcall{x}{f}{e}{a})} & = & \{ f \} \cup \callsofa{a} \\
         \callsofa{(\actlet{e}{x}{a})} & = & \callsofa{a} \\
-        \callsofa{(\actifelse{e}{a_t}{a_f}{a})} & = & \callsofa{a_t} \cup \callsofa{a_f} \cup \callsof{a} \\
+        \callsofa{(\actifelse{e}{a_t}{a_f}{x}{a})} & = & \callsofa{a_t} \cup \callsofa{a_f} \cup \callsof{a} \\
         \callsofa{(\actassert{e}{a})} & = & \callsofa{a} \\
         \callsofa{(\actret{e})} & = & \emptyset \\
       \end{array}
@@ -493,40 +493,150 @@ which are called in $m$.
 \label{sec-wf}
 
 In this section, we present a number of well-formedness conditions of
-modules. Well-formedness for a programming language is a set of
-conditions which can be \emph{statically determined} by traversing a
-target program. Since it is static, it is usually defined independent
-to the semantics definition. For instance, as briefly discussed in
-\refsect{sec-modsem}, it is not allowed within an action to write the
-same register twice, or to call the same method twice. These
-conditions can be statically determined by iterating the action.
+modules. Well-formedness for a programming language usually means a
+set of conditions which can be \emph{statically checked} with a given
+program. Since the conditions are static, they are usually defined
+independent to the semantics definition, which has a dynamic aspect.
+For instance, as briefly discussed in \refsect{sec-semmod}, it is not
+allowed within an action to write the same register twice, or to call
+the same method twice. These conditions can be statically determined
+by iterating the action.
 
-Whereas, a number of conditions cannot be statically confirmed, thus
+Whereas, a number of conditions cannot be statically checked, thus
 should be defined in part of semantics. For instance, when combining
-two substep, two corresponding updated states and labels are required
-to be disjoint, defined in the \Substeps{} semantics.
+two substeps, two corresponding updated states and labels are required
+to be disjoint, defined in the \Substeps{} semantics. However, in some
+cases, it is too challenging to statically ensure the updated states
+and the labels are disjoint.
 
-TODO: better explanation with examples?
+\begin{figure}[h]
+  \centering{
+    \begin{subfigure}[b]{0.5\textwidth}
+      \bsvmodnoreg{m}{
+        \bsvnone{\pgmmeth}{f}{(p)}{
+          \pgmif{} p \\
+          \pgmthen{} \pgmwrite{r_1}{1}
+          \pgmelse{} \pgmwrite{r_2}{2}
+        }\\
+        \bsvnone{\pgmmeth}{g}{(q)}{
+          \pgmif{} q \\
+          \pgmthen{} \pgmwrite{r_1}{1}
+          \pgmelse{} \pgmwrite{r_2}{2}
+        }
+      }
+    \end{subfigure}
+  }
+  \caption{Two methods always forming disjoint state updates}
+  \label{ex-two-methods-disjoint}
+\end{figure}
 
-We describe two well-formedness conditions. All the conditions are
-used to describe certain properties of a correct module
-definition. The conditions are directly related to semantics
-implications, which is one of main topics of the thesis (See
-\refsect{TODO} for details). The two conditions are as follows:
+\reffig{ex-two-methods-disjoint} shows the case where two methods $f$
+and $g$ yield disjoint state updates when $q = \neg p$, so they can be
+concurrently executed. When a condition expression $p$ is \btrue{},
+then $f$ writes $r_1$ and $g$ writes $r_2$. Otherwise, if $p$ is
+\bfalse{}, then $q$ is \btrue{} so $f$ writes $r_2$ and $g$ writes
+$r_1$. However, it is challenging to provide whether two predicates
+($p$ and $q$ in the example) are disjoint or not. How can we collect
+possible pairs of $(p, q)$ if $m$ is too complicated to figure out
+callers of $f$ and $g$?
+
+Now we define two well-formedness conditions of modules. All the
+conditions are used to describe necessary conditions for a correct
+module. By the correctness of a module, it means the module can be
+synthesized into a hardware component which operates without errors,
+and behaves like the module definition. The conditions are also
+related to implications among semantics, which is one of main topics
+of the thesis (See \refsect{TODO} for details). The two conditions are
+as follows:
 \begin{itemize}
   \item $(\wfdouble{m})$ ensures that there are no double writes or
-    double calls for all actions in a module $m$.
+    double calls \emph{for each action} in a module $m$.
   \item $(\wfcycle{m})$ ensures that there are no call cycles in a
     module $m$.
 \end{itemize}
 
 \paragraph{Well-formedness for avoiding double writes and calls}
 
-Ipsum
+Even if detecting double writes or calls is hard within a module, we
+can provide a \emph{sound} static checker for an action. A sound
+checker implies that if it says ``no double writes or calls'', then it
+is correct. However, it might say ``there exist double writes or
+calls'' even if such double writes or calls cannot happen.
 
-\paragraph{Well-formedness for avoiding cycles}
+\begin{figure}[h]
+  \centering{
+    \begin{subfigure}[b]{0.5\textwidth}
+      \bsvmodnoreg{m}{
+        \bsvnone{\pgmmeth}{f}{(p)}{
+          \pgmif{} p\ \pgmthen{} \pgmwrite{r_1}{1}
+          \pgmwrite{r_1}{1}
+        }
+      }
+    \end{subfigure}
+  }
+  \caption{A method where double writes happen in some cases}
+  \label{ex-maybe-double-writes}
+\end{figure}
 
-Ipsum
+\reffig{ex-maybe-double-writes} shows the case where double writes
+happen in some cases, but not in the other cases. If $p$ is \btrue{},
+then double writes happen. Otherwise, double writes do not
+happen. However, as explained with the case in
+\reffig{ex-two-methods-disjoint}, analyzing predicates is difficult in
+most cases. Thus, we should define a checker in a sound manner, by
+assuming that $p$ is always \btrue{}.
+
+Now we define a static checker for ensuring that there are no double
+writes or calls in an action. (\wfdoubleap{a}) is inductively defined
+as follows:
+
+\begin{definition}
+  \label{def-wfdoublea}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \wfdoublea{a} & = & \wfdoubleap{a}{\emptyset}{\emptyset} \textrm{, where} \\
+        \wfdoubleap{(\actwrite{r}{e}{a})}{rs}{cs} & = & \wordif{} r \in rs \\
+        & & \wordthen{} \bfalse{} \\
+        & & \wordelse{} \wfdoubleap{a}{(r:rs)}{cs} \\
+        \wfdoubleap{(\actcall{x}{f}{e}{a})}{rs}{cs} & = & \wordif{} f \in cs \\
+        & & \wordthen{} \bfalse{} \\
+        & & \wordelse{} \wfdoubleap{a}{rs}{(f:cs)} \\
+        \wfdoubleap{(\actlet{e}{x}{a})}{rs}{cs} & = & \wfdoubleap{a}{rs}{cs} \\
+        \wfdoubleap{(\actifelse{e}{a_t}{a_f}{x}{a})} & =
+        & (\wfdoubleap{\concataction{a_t}{a}}{rs}{cs})\ \band{} \\
+        & & (\wfdoubleap{\concataction{a_f}{a}}{rs}{cs}) \\
+        \wfdoubleap{(\actassert{e}{a})}{rs}{cs} & = & \wfdoubleap{a}{rs}{cs} \\
+        \wfdoubleap{(\actret{e})}{rs}{cs} & = & \btrue{} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+(\wfdoublea{a}) is defined using (\wfdoubleap{a}{rs}{cs}), where $rs$
+and $cs$ are registers and method calls collected while iterating an
+action, respectively. TODO: more explanation.
+
+The definition of (\wfdoublea{a}) is naturally extended to
+(\wfdouble{m}), by applying it for each action in $m$.
+
+\begin{definition}
+  \label{def-wfdouble}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \wfdouble{(\modbasic{\regpair{r}{c}}{\rulepair{s}{a_s}}{\methodpair{f}{\lambda x.a_f}})} & =
+        & (\wordforeach{} a_s.\; \wfdoublea{a_s} = \btrue)\ \band{} \\
+        & & (\wordforeach{} a_f.\; \wfdouble{a_f} = \btrue) \\
+        \wfdouble{(\modcomp{m_1}{m_2})} & = & (\wfdouble{m_1})\ \band{}\ (\wfdouble{m_2}) \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+\paragraph{Well-formedness for avoiding cycles} Ipsum.
 
 \section{Inlining Semantics}
 
@@ -892,9 +1002,12 @@ internal call.
 
 \paragraph{BigSubstep}
 
-The big-step semantics also have a notion of \Substep{}, called
-\Bigsubstep{}. The concept is similar to \Substep{}; it simply lifts
-the semantics for Actions to one for a single rule or a method.
+The big-step semantics also have a notion similar to \Substep{} in the
+modular semantics, called \Bigsubstep{}. The concept is similar to
+\Substep{}; it simply lifts the semantics for Actions to one for a
+single rule or a method. However, \Bigsubstep{} continues to execute
+internal calls by looking at method bodies. Thus, resulting labels
+from \Bigsubstep{} does not contain internal calls.
 
 The \Bigsubstep{} semantics have a form of a judgment relation
 \sembigss{m}{o}{u}{\alpha}{ds}{cs}, where arguments are similarly
@@ -930,7 +1043,12 @@ label formed by the execution.
 
 \paragraph{BigStep}
 
-TODO: introduction.
+Unlike the modular semantics, the big-step semantics does not need to
+apply the \hidesym{} operator at the end of the semantics. This is
+because labels from \Bigsubstep{} does not contain any internal
+calls. Hence, we directly define the final \Bigstep{} semantics using
+\Bigsubstep{}, skipping the notion of \Substeps{} in the modular
+semantics.
 
 The \Bigstep{} semantics are defined as a judgment relation
 (\sembigstep{m}{o}{u}{l}), arguments have the same meaning as in
@@ -953,7 +1071,4 @@ The \Bigstep{} semantics are defined as a judgment relation
     \end{math}
   \end{center}
 \end{definition}
-
-Note that the \Bigstep{} semantics does not need to hide label
-elements by internal calls.
 

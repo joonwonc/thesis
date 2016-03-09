@@ -32,6 +32,8 @@
 
 %% BSV boxes by Murali
 
+\newcommand{\bsvcodesize}{\footnotesize}
+
 %BSV block
 \newcommand{\bsvblock}[1]{
 \ensuremath{
@@ -43,7 +45,7 @@
 %BSV normal rule
 \newcommand{\bsv}[6]{
 \begin{tabular}{@{}p{7cm}@{}}
-\ensuremath{#1}\;\textit{#2}\ensuremath{#3}:\\
+\ensuremath{#1} {\it #2} #3:\\
 \hline
 \ensuremath{
 \begin{array}{@{}l}
@@ -61,7 +63,7 @@
 %BSV rule without guard or let
 \newcommand{\bsvnone}[4]{
 \begin{tabular}{@{}p{7cm}@{}}
-\ensuremath{#1 \; \textit{#2} #3}:\\
+\ensuremath{#1} {\it #2} #3:\\
 \hline
 \ensuremath{
 \begin{array}{@{}l@{}}
@@ -74,7 +76,7 @@
 %BSV rule without guard or let
 \newcommand{\bsvnonesmall}[5]{
 \begin{tabular}{@{}p{#5}@{}}
-\ensuremath{#1 \; \textit{#2} #3}:\\
+\ensuremath{#1} {\it #2} #3:\\
 \hline
 \ensuremath{
 \begin{array}{@{}l@{}}
@@ -87,7 +89,7 @@
 %BSV module
 
 \newcommand{\bsvmod}[3]{
-\scriptsize
+\bsvcodesize
 \centering
 \begin{tabular}{|l|}
 \hline\\
@@ -100,7 +102,7 @@
 }
 
 \newcommand{\bsvmodnoreg}[2]{
-\scriptsize
+\bsvcodesize
 \centering
 \begin{tabular}{|l|}
 \hline\\
@@ -112,7 +114,7 @@
 }
 
 \newcommand{\bsvmodtbig}[3]{
-\scriptsize
+\bsvcodesize
 \centering
 \begin{tabular}{|p{\textwidth}|}
 \hline\\
@@ -132,7 +134,7 @@
 }
 
 \newcommand{\bsvmodtsmall}[3]{
-\scriptsize
+\bsvcodesize
 \centering
 \begin{tabular}{|p{\textwidth}|}
 \hline\\[-.8em]
@@ -180,6 +182,7 @@
 \newcommand{\wordif}{\ensuremath{\textsf{if}\ }}
 \newcommand{\wordthen}{\ensuremath{\textsf{then}\ }}
 \newcommand{\wordelse}{\ensuremath{\textsf{else}\ }}
+\newcommand{\wordforeach}{\ensuremath{\textsf{foreach}\ }}
 
 \newcommand{\tab}{\ensuremath{\quad}}
 
@@ -204,6 +207,7 @@
 
 \newcommand{\btrue}{\ensuremath{\textsf{true}}}
 \newcommand{\bfalse}{\ensuremath{\textsf{false}}}
+\newcommand{\band}{\ensuremath{\&\&}}
 
 \renewcommand{\emptyset}{\ensuremath{\varnothing}}
 \newcommand{\emptymap}{\ensuremath{[]}}
@@ -257,11 +261,15 @@
 \newcommand{\mplus}[2]{\ensuremath{#1 \uplus #2}}
 
 \newcommand{\wellhidden}[2]{\ensuremath{\textsf{wellHidden}\ #1\ #2}}
-\newcommand{\hide}[1]{\ensuremath{\textsf{hide}\ #1}}
+\newcommand{\hidesym}{\ensuremath{\textsf{hide}}}
+\newcommand{\hide}[1]{\ensuremath{\hidesym{}\ #1}}
 
 %% well-formedness
 
 \newcommand{\wfdouble}[1]{\ensuremath{\textsf{WfDouble}\ #1}}
+\newcommand{\wfdoubleap}[3]{\ensuremath{\textsf{WfDoubleA'}\ #1\ #2\ #3}}
+\newcommand{\wfdoublea}[1]{\ensuremath{\textsf{WfDoubleA}\ #1}}
+
 \newcommand{\wfcycle}[1]{\ensuremath{\textsf{WfCycle}\ #1}}
 
 %% inlining
