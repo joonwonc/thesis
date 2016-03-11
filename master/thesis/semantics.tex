@@ -1,8 +1,25 @@
 \chapter{Various Semantics for Hardware Systems}
 
-\section{Syntax}
+\paragraph{Notations}
 
-\paragraph{Notations} TODO.
+Before defining syntax and semantics, we define notations to represent
+general data structures.
+\begin{itemize}
+\item Lists: we use the symbol $\vec{t}\ $ to represent a list where
+  elements have the type of $t$. \listnil{} represents the nil list,
+  and $(\listcons{hd}{tl})$ represents a list with a head $hd$ and a
+  tail $tl$.
+\item Sets: \emptyset{} represents an empty set, $(s \cup t)$
+  represents a union.
+\item Finite maps: we use the symbol $K \finmapsymb V$ to represent a
+  finite map with the key type $K$ and the value type $V$. \emptymap{}
+  represents an empty map, and $\stupd{m}{k}{v}$ represents a map
+  update with a new key $k$ and a value $v$. We use the notation $\in$
+  also for finite maps to represent that a map has a certain key; $k
+  \in m$ says a map $m$ is defined with a key $k$.
+\end{itemize}
+
+\section{Syntax}
 
 \paragraph{Expressions}
 We begin by defining syntax for expressions. Expressions
@@ -35,8 +52,7 @@ $r$, where \setregs{} is the set of register names. $x$ denotes a
 variable bound by a continuation. We define syntax as a
 continuation-passing style (CPS), hence the variable is used to get
 the value of a continuation argument. Lastly, \eop{e} abstracts all
-inductive operations among expressions. Notation $\vec{\cdot}\ $ is
-used to denote the list of objects.
+inductive operations among expressions.
 
 \paragraph{Actions}
 As explained in \refsect{TODO}, an action is a unit for describing
@@ -360,7 +376,7 @@ are disjoint, which can be defined naturally:
 
 \begin{center}
   \begin{math}
-    \sdisj{u_1}{u_2} \triangleq \forall r. r \notin \domof{u_1} \vee r \notin \domof{u_2}
+    \sdisj{u_1}{u_2} \triangleq \forall r. r \notin u_1 \vee r \notin u_2
   \end{math}
 \end{center}
 
@@ -601,10 +617,10 @@ as follows:
         \wfdoublea{a} & = & \wfdoubleap{a}{\emptyset}{\emptyset} \textrm{, where} \\
         \wfdoubleap{(\actwrite{r}{e}{a})}{rs}{cs} & = & \wordif{} r \in rs \\
         & & \wordthen{} \bfalse{} \\
-        & & \wordelse{} \wfdoubleap{a}{(r:rs)}{cs} \\
+        & & \wordelse{} \wfdoubleap{a}{(\setadd{rs}{r})}{cs} \\
         \wfdoubleap{(\actcall{x}{f}{e}{a})}{rs}{cs} & = & \wordif{} f \in cs \\
         & & \wordthen{} \bfalse{} \\
-        & & \wordelse{} \wfdoubleap{a}{rs}{(f:cs)} \\
+        & & \wordelse{} \wfdoubleap{a}{rs}{(\setadd{fs}{f})} \\
         \wfdoubleap{(\actlet{e}{x}{a})}{rs}{cs} & = & \wfdoubleap{a}{rs}{cs} \\
         \wfdoubleap{(\actifelse{e}{a_t}{a_f}{x}{a})} & =
         & (\wfdoubleap{\concataction{a_t}{a}}{rs}{cs})\ \band{} \\
@@ -803,8 +819,8 @@ methods-inlining operator $(\inlinedmssymb)$.
   \begin{center}
     \begin{math}
       \begin{array}{rcl}
-        \inlinedms{m}{\emptymap} & \triangleq & m \\
-        \inlinedms{m}{f : fs} & \triangleq & \inlinedms{(\inlinedmm{m}{f})}{fs} \\
+        \inlinedms{m}{\listnil} & \triangleq & m \\
+        \inlinedms{m}{\listcons{f}{fs}} & \triangleq & \inlinedms{(\inlinedmm{m}{f})}{fs} \\
       \end{array}
     \end{math}
   \end{center}
