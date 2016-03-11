@@ -1,6 +1,119 @@
-\chapter{Proving Semantics Implications}
+\chapter{Proving Implications Between Semantics}
 
-\section{Generality vs. Modularity} %$ which semantics are more powerful?
-\section{From Modular to Operational Semantics}
+\section{Semantic Implications} %$ which semantics are more powerful?
+
+The semantics defined so far does not have equal capabilities. The
+inlining semantics can deal with more design cases than the modular
+semantics. The big-step semantics also cover more cases than the
+modular semantics. In other words, we can prove implications from the
+modular semantics to the inlining or the big-step ones, but cannot
+prove inverses.
+
+\begin{figure}[t]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{m}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmcall{x}{h}{}
+        \pgmwrite{r_3}{x}
+      }\\
+      \bsvnone{\pgmmeth}{g}{}{
+        \pgmwrite{r_2}{2}
+        \pgmcall{x}{h}{}
+        \pgmwrite{r_4}{x}
+      }\\
+      \bsvnone{\pgmmeth}{h}{}{
+        \pgmrets{} 0
+      }
+    }
+    \subcaption{A module before inlining}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{\inlineF{m}}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmletin{x}{0}
+        \pgmwrite{r_3}{x}
+      }\\
+      \bsvnone{\pgmmeth}{g}{}{
+        \pgmwrite{r_2}{2}
+        \pgmletin{x}{0}
+        \pgmwrite{r_4}{x}
+      }
+    }
+    \subcaption{A module after inlining}
+  \end{subfigure}
+  \caption{Inlining semantics allow an execution of $f$ and $g$, while
+    the modular one does not allow.}
+  \label{ex-inlining-covers-more}
+\end{figure}
+
+\reffig{ex-inlining-covers-more} shows the case where the inlining
+semantics allow a specific execution, while the modular one does not
+allow. In a module $m$, methods $f$ and $g$ cannot be executed
+concurrently, since both methods call a method $h$. More specifically,
+\Substeps{} containing the substeps for $f$ and $g$ cannot be
+constructed due to the disjointness condition of called
+methods. However, in the inlined module $\inlineF{m}$, $f$ and $g$ can
+be executed concurrently, since $h$ simply returns a constant zero.
+
+Does this case hurt the capacity of the modular semantics? According
+to the example, when $h$ does not write registers or call methods, any
+two methods both calling $h$ should be able to be executed
+concurrently. This case is quite practical in hardware design; for
+example, if $m$ has a register $r_{\textrm{cnt}}$ which acts as a
+counter, and $h$ calculates the next value of the counter by returning
+$(r_{\textrm{cnt}} + 1)$, any rules and methods should be able to call
+$h$, even though they are executed concurrently.
+
+We can resolve this issue by converting programs to the ones without
+such methods by inlining. Bluespec has two notations for methods,
+called $\textbf{ActionMethod}$ and
+$\textbf{Method}$. $\textbf{ActionMethod}$ can write registers or call
+methods, while $\textbf{Method}$ cannot contain such actions. Hence,
+if we inline all $\textbf{Method}$s while converting from Bluespec to
+Kami, the issue will not happen (though the inlining in conversion
+will remain as a part of trusted base).
+
+The big-step semantics deal with more design cases than the modular
+one, by the same reason. According to the big-step semantics, when we
+encounter $h$, it is not added to the called methods, since it is an
+internal call (see \refdef{def-sembigact} for details). Hence, a
+double call does not occur when we execute $f$ and $g$ in a big-step
+manner.
+
+From the analysis so far, we give two main theorem for semantic
+implications. \refthm{thm-modtoinl} claims that the set of possible
+behaviors of the modular semantics is a subset of the one in the
+inlining semantics. \refthm{thm-modtobig} claims the similar one with
+respect to the big-step semantics.
+
+\begin{theorem}[Modular semantics imply inlining semantics]
+  \label{thm-modtoinl}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \forall m.\forall o.\forall u.\forall l.\ 
+      (\semstep{m}{o}{u}{l}) \Longrightarrow (\semstepin{m}{o}{u}{l})
+    \end{math}
+  \end{center}
+\end{theorem}
+
+\begin{theorem}[Modular semantics imply big-step semantics]
+  \label{thm-modtobig}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \forall m.\forall o.\forall u.\forall l.\ 
+      (\semstep{m}{o}{u}{l}) \Longrightarrow (\sembigstep{m}{o}{u}{l})
+    \end{math}
+  \end{center}
+\end{theorem}
+
 \section{From Modular to Inlining Semantics}
+
+
+\section{From Modular to Big-step Semantics}
+
+
 

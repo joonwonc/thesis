@@ -2,6 +2,8 @@
 
 \section{Syntax}
 
+\paragraph{Notations} TODO.
+
 \paragraph{Expressions}
 We begin by defining syntax for expressions. Expressions
 consist of constant, register read, variable, and an inductive
@@ -945,13 +947,14 @@ return value.
   \begin{center}
     \begin{math}
       \begin{array}{c}
-        \inference[ActionWriteRegBig:]{\sembigact{m}{o}{a}{u}{cs}{v} & \semexpr{e}{o} = v_r}
+        \inference[ActionWriteRegBig:]{\sembigact{m}{o}{a}{u}{cs}{v}
+          & \semexpr{e}{o} = v_r} %% & r \notin u}
                   {\sembigact{m}{o}{\actwrite{r}{e}{a}}{\stupd{u}{r}{v_r}}{cs}{v}} \\
         \mbox{} \\
         \inference[ActionCallExtBig:]{\sembigact{m}{o}{(\lambda x.a)\ v_r}{u}{cs}{v}
           & \semexpr{e}{o} = v_a \\
-          f \notin (\namesof{(\methsofm{m})})
-        }
+          f \notin (\namesof{(\methsofm{m})})}
+          %% & f \notin cs}
                   {\sembigact{m}{o}{\actcall{x}{f}{e}{a}}{u}{\lblupd{cs}{f}{(v_a, v_r)}}{v}} \\
         \mbox{} \\
         \inference[ActionCallIntBig:]{\sembigact{m}{o}{(\lambda x.a)\ v_r}{u}{cs}{v}
@@ -999,6 +1002,11 @@ x.a_f)\ v_a)$, where $v_a$ is the evaluated argument, we can describe
 the final semantics for the internal call. The semantics are defined
 in a big-step manner, since it requires the execution result by an
 internal call.
+
+%% Note that double writes ($r \notin u$ in ActionWriteRegBig) and calls
+%% ($f \notin cs$ in ActionCallExtBig) are checked in the semantics,
+%% which was a part of well-formedness conditions in the modular
+%% semantics. These conditions are added to prove that 
 
 \paragraph{BigSubstep}
 
