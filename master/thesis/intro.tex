@@ -7,25 +7,50 @@ optimization. For example, instruction pipelining is one of a
 representative optimizations, which employes an instruction-level
 parallelism to handle multiple executions at the same time.
 
-Complex hardware systems are usually design first with Hardware
-Description Languages (HDLs).
+Modularity has been considered as an effective way to design and
+understand such complex hardware components. Modularity indicates that
+a complex hardware component can be constructed by composing simple
+modules. Several Hardware Description Languages (HDLs) such as Verilog
+employes the notion of modules, each of which acts as a simple unit
+component.
 
-Efficiency of verifying such hardware designs is deeply related to
-formal language definitions.
+Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} also allows to
+design hardware based not only on modularity, but also the prevalent
+paradigm called Guarded Atomic Actions (GAAs). Even though a certain
+language allows to design hardware in a modular manner, hardware
+design itself inherently has a timing problem... TODO: rephrase.
 
-Bluespec~\cite{bsdef, bsref} allows to design hardware based on
-modularity, by using the prevalent paradigm called ``guarded atomic
-actions.'' ... Modularity has been considered as an effective way to
-design complex hardware.
+Following the concepts of modularity and GAA, we have been defining a
+framework called \Kami{}, which is for specifying, verifying,
+synthesizing \Bluespec{}-style hardware components. \Kami{} presents a
+domain specific language similar to Bluespec, and aims to prove the
+correctness of hardware automatically. In order for correctness proof,
+we also have defined formal semantics of the \Kami{} language, which
+is based on modularity concept. The framework has been built on the
+Coq proof assistant.
 
-Modularity also fits for scalable verification, especially with
-theorem provers.
+Modularity fits for scalable verification, especially with theorem
+provers. In terms of verification, modularity implies that complex
+hardware components can be verified if each simple element is
+verified. And in many cases, we reuse such simple components for
+different uses. From the perspective of theorem proving, reusing a
+hardware component indicates that we can also reuse its correctness
+proof. Thanks to the modular semantics in \Kami{}, it is indeed
+possible to use the proof of a component whenever it is used for the
+part of a design.
 
-Following such concepts, we have defined a framework Kami, which is
-for specifying, verifying, synthesizing Bluespec-stype hardware
-components.
+An important aspect of the modular semantics is that modules
+communicate by labels. It is originated from the concept called
+Labeled Transition System (LTS). Each module changes its internal
+state and the corresponding label is generated during the state
+transition. On the modular semantics, labels are method calls. In
+other words, modules communicate by calling methods of target modules.
+The modular semantics also take advantage of the LTS concept to define
+behaviors of \emph{open systems}. Open systems have external
+interactions, which cannot be figured out unless it is composed with
+some other modules which can respond to them.
 
-However, modular verification has an inherent drawback that it is hard
+However, the modular semantics has an inherent drawback that it is hard
 to infer internal state changes by internal communications.
 
 (TODO: an intuitive example, some following paragraphs)
@@ -49,7 +74,17 @@ The main contributions of this thesis are:
   operational semantics.
 \end{itemize}
 
-\paragraph{Overview} The thesis is organized as follows:
+\paragraph{Overview}
+
+The thesis is organized as follows: \refchap{chap-backgrounds}
+explains a number of prerequisites to understand the hardware design
+concept of \Bluespec{}. Related works are also provided to compare
+previous approaches to define hardware
+semantics. \refchap{chap-semantics} presents the three semantics used
+in the \Kami{} framework: modular, inlining, and big-step
+semantics. \refchap{chap-implications} compares capability of each
+semantics and presents implication proofs among semantics. Lastly, we
+draw conclusions and give future works in \refchap{chap-conclusions}.
 
 
 

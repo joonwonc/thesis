@@ -1,4 +1,5 @@
 \chapter{Proving Implications Between Semantics}
+\label{chap-implications}
 
 \section{Semantic Implications} %$ which semantics are more powerful?
 
@@ -71,9 +72,9 @@ such methods by inlining. Bluespec has two notations for methods,
 called $\textbf{ActionMethod}$ and
 $\textbf{Method}$. $\textbf{ActionMethod}$ can write registers or call
 methods, while $\textbf{Method}$ cannot contain such actions. Hence,
-if we inline all $\textbf{Method}$s while converting from Bluespec to
-Kami, the issue will not happen (though the inlining in conversion
-will remain as a part of trusted base).
+if we inline all $\textbf{Method}$s while converting from \Bluespec{}
+to \Kami{}, the issue will not happen (though the inlining in
+conversion will remain as a part of trusted base).
 
 The big-step semantics deal with more design cases than the modular
 one, by the same reason. According to the big-step semantics, when we
@@ -111,6 +112,14 @@ respect to the big-step semantics.
 \end{theorem}
 
 \section{From Modular to Inlining Semantics}
+
+On this section, we present the proof of \refthm{thm-modtoinl}. The
+proof exactly follows the definition of $\inlineF{\cdot}$. In other
+words, we present the correctness lemma from $(\concatsymb)$ to
+$\inlineF{\cdot}$ gradually.
+
+\paragraph{Correctness of the concatenation operator}
+
 
 
 \section{From Modular to Big-step Semantics}
