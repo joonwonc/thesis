@@ -120,7 +120,293 @@ $\inlineF{\cdot}$ gradually.
 
 \paragraph{Correctness of the concatenation operator}
 
+Since the concatenation operator $(\concatsymb)$ merely appends two
+actions, the correctness lemma also states semantic merge.
 
+\begin{lemma}
+  \label{lem-concatsymb}
+  For every $o, a_1, u_1, cs_1, v_1, a_2, u_2, cs_2,$ and $v_2,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semact{o}{a_1}{u_1}{cs_1}{v_1} \to \\
+        \semact{o}{(\lambda x.a_2)\ v_1}{u_2}{cs_2}{v_2} \to \\
+        \semact{o}{\concataction{a_1}{a_2}}{\splus{u_1}{u_2}}
+               {\lplus{cs_1}{cs_2}}{v_2}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+  Straightforward by the inductive definition of $(\concatsymb)$.
+\end{proof}
+
+Note that two updates $u_1$ and $u_2$ and two called methods $cs_1$
+and $cs_2$ do not need to be disjoint each other. This is because the
+semantics does not prohibit double writes or calls. The conditions are
+defined as one of the well-formedness conditions, which is independent
+to the semantics.
+
+TODO: Wf condition on proper sites.
+
+\begin{lemma}[Correctness of the method-inlining operation w.r.t. actions -- intact case]
+  \label{lem-inlinedm-action-intact}
+  \mbox{}\\
+  For every $o, a_f, a, u, cs, v_r,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semact{o}{a}{u}{cs}{v_r} \to \\
+        f \notin cs \to \\
+        \semact{o}{\inlinedm{a}{(f, a_f)}}{u}{cs}{v_r}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation w.r.t. actions -- call case]
+  \label{lem-inlinedm-action-call}
+  \mbox{}\\
+  For every $o, a_f, a, u_f, u, cs_f, cs, v_r, f, v_a, v_r,$ and $v_f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semact{o}{a}{u}{cs}{v_r} \to \\
+        \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
+        cs[f] = (v_a, v_f) \to \\
+        \semact{o}{(\lambda x.a_f)\ v_a}{u_f}{cs_f}{v_f} \to \\
+        \semact{o}{\inlinedm{a}{(f, a_f)}}{\splus{u_f}{u}}{\mplus{cs_f}{cs}}{v_r}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation w.r.t. \Substep{} -- intact case]
+  \label{lem-inlinedmm-substep-intact}
+  \mbox{}\\
+  For every $m, o, u, ds, cs,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsstep{m}{o}{u}{\alpha}{ds}{cs} \to \\
+        f \notin ds \to \\
+        \semsstep{\inlinedmm{m}{f}}{o}{u}{\alpha}{ds}{cs}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation w.r.t. \Substep{} -- call case]
+  \label{lem-inlinedmm-substep-call}
+  \mbox{}\\
+  For every $m, o, u_f, u, ds, cs_f, cs, f, a_f, v_a,$ and $v_r,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsstep{m}{o}{u}{\alpha}{ds}{cs} \to \\
+        \semact{o}{(\lambda x.a_f)\ v_a}{u_f}{cs_f}{v_r} \to \\
+        \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
+        cs[f] = (v_a, v_r) \to \\
+        \semsstep{\inlinedmm{m}{f}}{o}{\splus{u_s}{u}}
+                 {\alpha}{ds}{\mapfilt{\mplus{cs_s}{cs}}{f}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation -- intact case]
+  \label{lem-inlinedmm-intact}
+  \mbox{}\\
+  For every $m, o, u, l,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsss{m}{o}{u}{l} \to \\
+        f \notin (\callsof{l}) \to \\
+        \semsss{\inlinedmm{m}{f}}{o}{u}{l}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation -- rule case]
+  \label{lem-inlinedmm-rule}
+  \mbox{}\\
+  For every $m, o, u_s, u, ds, cs_s, cs, s,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsstep{m}{o}{u_s}{\alpharule{s}}{\emptymap}{cs_s} \to \\
+        \semsss{m}{o}{u}{\semlbl{\alphameth}{ds}{cs}} \to \\
+        f \in cs_s \to f \in ds \to \sdisj{u_s}{u} \to \mdisj{cs_s}{cs} \to \\
+        \semsss{\inlinedmm{m}{f}}{o}{\splus{u_s}{u}}{\semlbl{\alpharule{s}}
+          {\mapfilt{ds}{f}}{\mapfilt{\mplus{cs_s}{cs}}{f}}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation -- method case 1]
+  \label{lem-inlinedmm-meth1}
+  \mbox{}\\
+  For every $m, o, u_f, u, \alpha, ds, cs_f, cs, g, v_a, v_r,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsstep{m}{o}{u_f}{\alphameth}{\stupd{}{g}{(v_a, v_r)}}{cs_f} \to \\
+        \semsss{m}{o}{u}{\semlbl{\alpha}{ds}{cs}} \to \\
+        f \in cs_f \to f \in ds \to g \notin ds \to \\
+        \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
+        \semsss{\inlinedmm{m}{f}}{o}{\splus{u_f}{u}}{\semlbl{\alpha}
+          {\mapfilt{\mplus{\stupd{}{g}{(v_a, v_r)}}{ds}}{f}}
+          {\mapfilt{\mplus{cs_f}{cs}}{f}}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation -- method case 2]
+  \label{lem-inlinedmm-meth2}
+  \mbox{}\\
+  For every $m, o, u_f, u, \alpha, ds, cs_f, cs, v_a, v_r,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsstep{m}{o}{u_f}{\alphameth}{\stupd{}{f}{(v_a, v_r)}}{cs_f} \to \\
+        \semsss{m}{o}{u}{\semlbl{\alpha}{ds}{cs}} \to \\
+        f \in cs_f \to f \notin ds \to \\
+        \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
+        \semsss{\inlinedmm{m}{f}}{o}{\splus{u_f}{u}}{\semlbl{\alpha}{ds}
+          {\mapfilt{\mplus{cs_f}{cs}}{f}}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the method-inlining operation]
+  \label{lem-inlinedmm}
+  \mbox{}\\
+  For every $m, o, u, l,$ and $f,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsss{m}{o}{u}{l} \to \\
+        f \notin (\callsof{l}) \vee (\defsof{l})[f] = (\callsof{l})[f] \to \\
+        \semsss{\inlinedmm{m}{f}}{o}{u}{\hidemeth{l}{f}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the methods-inlining operation w.r.t. \hidemethssym{}]
+  \label{lem-inlinedmssubo}
+  \mbox{}\\
+  For every $m, o, u, l,$ and $fs,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsss{m}{o}{u}{l} \to \\
+        \wellhidden{m}{(\hide{l})} \to \\
+        \semsss{\inlinedms{m}{fs}}{o}{u}{\hidemeths{l}{fs}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Relation between \hidemethssym{} and \hidesym{}]
+  \label{lem-hidemeths}
+  \mbox{}\\
+  For every $l$ and $fs$,
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \defsof{l} \subseteq fs \to \hidemeths{l}{fs} = \hide{l}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the methods-inlning operation w.r.t. \Substeps{}]
+  \label{lem-inlinedmssub}
+  \mbox{}\\
+  For every $m, o, u, l,$ and $fs,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \semsss{m}{o}{u}{l} \to \\
+        \wellhidden{m}{(\hide{l})} \to \\
+        \semsss{\inlinedms{m}{fs}}{o}{u}{\hide{l}}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of the methods-inlining operation]
+  \label{lem-inlinedms}
+  \mbox{}\\
+  For every $m, o, u, l,$ and $fs,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{m}{o}{u}{l}) \to (\semstep{(\inlinedms{m}{fs})}{o}{u}{l})
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of $\inline{\cdot}$]
+  \label{lem-inline}
+  For every $m, o, u,$ and $l,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{m}{o}{u}{l}) \to (\semstep{\inline{m}}{o}{u}{l})
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
+
+\begin{lemma}[Correctness of $\inlineF{\cdot}$]
+  \label{lem-inlinef}
+  For every $m, o, u,$ and $l,$
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{m}{o}{u}{l}) \to (\semstep{\inlineF{m}}{o}{u}{l})
+      \end{array}
+    \end{math}
+  \end{center}
+\end{lemma}
+\begin{proof}
+\end{proof}
 
 \section{From Modular to Big-step Semantics}
 

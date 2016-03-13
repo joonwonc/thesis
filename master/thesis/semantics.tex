@@ -15,7 +15,10 @@ general data structures.
 \item Finite maps: we use the symbol $K \finmapsymb V$ to represent a
   finite map with the key type $K$ and the value type $V$. \emptymap{}
   represents an empty map, and $\stupd{m}{k}{v}$ represents a map
-  update with a new key $k$ and a value $v$. We use the notation $\in$
+  update with a new key $k$ and a value $v$. Singletons are
+  represented by omitting \emptymap{}, like $\stupd{}{k}{v}$.
+  $\mapfilt{m}{ks}$ represents a map where all elements whose keys are
+  in the list $ks$ are removed from $m$. We use the notation $\in$
   also for finite maps to represent that a map has a certain key; $k
   \in m$ says a map $m$ is defined with a key $k$.
 \end{itemize}
