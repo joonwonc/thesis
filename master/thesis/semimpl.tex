@@ -114,9 +114,26 @@ respect to the big-step semantics.
 \section{From Modular to Inlining Semantics}
 
 On this section, we present the proof of \refthm{thm-modtoinl}. The
-proof exactly follows the definition of $\inlineF{\cdot}$. In other
-words, we present the correctness lemma from $(\concatsymb)$ to
-$\inlineF{\cdot}$ gradually.
+proof exactly follows the definition of the complete inlining operator
+$\inlineF{\cdot}$. In other words, we present the correctness lemma
+from the concatenation operator $(\concatsymb)$ to the complete
+inlining operator gradually.
+
+The correctness lemmas have a similar form, which describes that if we
+have a judgement for a certain object which calls a target method and
+one for the target method, then two judgements are merged by a proper
+inlining operator. More formally, correctness lemmas has a following
+form:
+\begin{center}
+  \begin{math}
+    \begin{array}{l}
+      (\textrm{a judgement calling an inlining method}) \to \\
+      (\textrm{conditions}) \to \\
+      (\textrm{a judgement of an inlining method}) \to \\
+      (\textrm{a merged judgement where the method is inlined by a certain operator})
+    \end{array}
+  \end{math}
+\end{center}
 
 \paragraph{Correctness of the concatenation operator}
 
@@ -147,7 +164,7 @@ semantics does not prohibit double writes or calls. The conditions are
 defined as one of the well-formedness conditions, which is independent
 to the semantics.
 
-TODO: Wf condition on proper sites.
+\todo{Wf condition on proper sites}.
 
 \begin{lemma}[Correctness of the method-inlining operation w.r.t. actions -- intact case]
   \label{lem-inlinedm-action-intact}

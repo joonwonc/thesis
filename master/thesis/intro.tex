@@ -18,7 +18,7 @@ Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} also allows to
 design hardware based not only on modularity, but also the prevalent
 paradigm called Guarded Atomic Actions (GAAs). Even though a certain
 language allows to design hardware in a modular manner, hardware
-design itself inherently has a timing problem... TODO: rephrase.
+design itself inherently has a timing problem... \todo{rephrase}.
 
 Following the concepts of modularity and GAA, we have been defining a
 framework called \Kami{}, which is for specifying, verifying,
@@ -53,24 +53,35 @@ some other modules which can respond to them.
 However, the modular semantics has an inherent drawback that it is hard
 to infer internal state changes by internal communications.
 
-(TODO: an intuitive example, some following paragraphs)
+\todo{an intuitive example, some following paragraphs.}
 
 A number of semantics, which do not have such a drawback, have been
-defined but all of them lack modularity. ... In other words, such
-semantics could not define communication with external modules.
+defined but none of them was defined for open systems. In other words,
+there have been no semantics which is able to define communication
+with external modules. \todo{related works; references}
 
 Hence, in this thesis, I present two additional semantics for open
-systems (inlining and operational semantics), none of which has the
-drawback.
+systems, none of which have the drawback. The first semantics use
+static inlining to substitute internal calls to their method
+bodies. This operator erases all internal calls in a module, so that
+we do not need to care about internal communications. The second
+semantics are like typical big-step semantics for C-like
+languages. Semantics of internal calls are defined to substitute the
+method bodies, and continue judements for the bodies. The big-step
+semantics can be regarded as \emph{a dynamic version} of the inlining
+semantics.
 
 Implications among semantics are also formally proven, thus
-verification developers can use all semantics by converting them.
+verification developers can use all semantics by converting
+them. Semantics does not have equal capabilities. We give two main
+implication proofs: 1) the modular semantics imply the inlining
+semantics, and 2) the modular semantics imply the big-step semantics.
 
-The main contributions of this thesis are:
+To sum up, the main contributions of this thesis are:
 \begin{itemize}
 \item To define two consistent formal semantics for open hardware
   systems.
-\item To prove consistency among the modular, inlining, and
+\item To prove implications among the modular, inlining, and
   operational semantics.
 \end{itemize}
 
