@@ -3,31 +3,35 @@
 Hardware components have been known to be extremely complex due to
 concurrency. A system having concurrency implies that independent
 works can be done simultaneously, and it usually occurs as a name of
-optimization. For example, instruction pipelining is one of a
+optimization. For example, instruction pipelining is one of
 representative optimizations, which employes an instruction-level
 parallelism to handle multiple executions at the same time.
 
 Modularity has been considered as an effective way to design and
 understand such complex hardware components. Modularity indicates that
-a complex hardware component can be constructed by composing simple
+a complex hardware can be constructed by composing simple
 modules. Several Hardware Description Languages (HDLs) such as Verilog
-employes the notion of modules, each of which acts as a simple unit
+employ the notion of modules, each of which acts as a simple unit
 component.
 
-Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} also allows to
-design hardware based not only on modularity, but also the prevalent
-paradigm called Guarded Atomic Actions (GAAs). Even though a certain
-language allows to design hardware in a modular manner, hardware
-design itself inherently has a timing problem... \todo{rephrase}.
+Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} allows to design
+hardware based not only on modularity, but also the prevalent paradigm
+called Guarded Atomic Actions (GAAs). Even though a certain language
+allows to design hardware in a modular manner, modules cannot be
+independently designed if they are entangled with clock-timing
+issues. For instance, when two modules are connected with wires and
+one module becomes to need shorter clock cycles by optimization, the
+other module should follow that cycle, or the optimized module should
+maintain the original clock even if it is optimized.
 
 Following the concepts of modularity and GAA, we have been defining a
-framework called \Kami{}, which is for specifying, verifying,
+framework called \Kami{}, which is for specifying, verifying, and
 synthesizing \Bluespec{}-style hardware components. \Kami{} presents a
 domain specific language similar to Bluespec, and aims to prove the
 correctness of hardware automatically. In order for correctness proof,
 we also have defined formal semantics of the \Kami{} language, which
-is based on modularity concept. The framework has been built on the
-Coq proof assistant.
+is based on the modularity concept. The framework has been built on
+the Coq proof assistant.
 
 Modularity fits for scalable verification, especially with theorem
 provers. In terms of verification, modularity implies that complex
@@ -47,18 +51,49 @@ transition. On the modular semantics, labels are method calls. In
 other words, modules communicate by calling methods of target modules.
 The modular semantics also take advantage of the LTS concept to define
 behaviors of \emph{open systems}. Open systems have external
-interactions, which cannot be figured out unless it is composed with
+interactions, which cannot be figured out unless it is connected with
 some other modules which can respond to them.
 
 However, the modular semantics has an inherent drawback that it is hard
-to infer internal state changes by internal communications.
-
-\todo{an intuitive example, some following paragraphs.}
+to track internal state changes by internal communications.
+\begin{figure}[t]
+  \centering{
+    \begin{subfigure}[b]{0.5\textwidth}
+      \bsvmodnoreg{m}{
+        \bsvnone{\pgmrule}{s}{}{
+          \pgmwrite{r_1}{1}
+          \pgmcalln{f}{}
+        }\\
+        \bsvnone{\pgmmeth}{f}{()}{
+          \pgmwrite{r_2}{2}
+          \pgmcalln{g}{}
+        }\\
+        \bsvnone{\pgmmeth}{g}{()}{
+          \pgmwrite{r_3}{3}
+          \pgmcalln{h}{}
+        }
+      }
+    \end{subfigure}
+  }
+  \caption{Tracking internal state changes by internal calls}
+  \label{ex-modular-semantics-disadvantage}
+\end{figure}
+\reffig{ex-modular-semantics-disadvantage} describes the case where we
+have a difficulty to infer internal state changes. Suppose a rule $s$
+is executed in a module $m$. In the modular semantics, $m$ is
+abstracted so that we cannot see the actual bodies of rules or
+methods. In this sense, when having information that $s$ is executed
+and $h$ is externally called, how do we draw the state changes in the
+module $m$? Because the modular semantics are abstracted so that it is
+hard to traverse the action bodies, it is also hard to draw the
+internal information.
 
 A number of semantics, which do not have such a drawback, have been
 defined but none of them was defined for open systems. In other words,
 there have been no semantics which is able to define communication
-with external modules. \todo{related works; references}
+with external modules. A big-step semantics along with the action
+structures in \Bluespec{} have been defined~\cite{nirav-memocode}, but
+it does not have a notion for external communications.
 
 Hence, in this thesis, I present two additional semantics for open
 systems, none of which have the drawback. The first semantics use
@@ -67,7 +102,7 @@ bodies. This operator erases all internal calls in a module, so that
 we do not need to care about internal communications. The second
 semantics are like typical big-step semantics for C-like
 languages. Semantics of internal calls are defined to substitute the
-method bodies, and continue judements for the bodies. The big-step
+method bodies, and continue judgements for the bodies. The big-step
 semantics can be regarded as \emph{a dynamic version} of the inlining
 semantics.
 
