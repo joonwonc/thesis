@@ -115,15 +115,16 @@ respect to the big-step semantics.
 
 On this section, we present the proof of \refthm{thm-modtoinl}. The
 proof exactly follows the definition of the complete inlining operator
-$\inlineF{\cdot}$. In other words, we present the correctness lemma
-from the concatenation operator $(\concatsymb)$ to the complete
-inlining operator gradually.
+$\inlineF{\cdot}$. In other words, we gradually present the
+correctness lemma from the concatenation operator $(\concatsymb)$,
+which is the most basic operator for inlining, to the complete
+inlining operator.
 
-The correctness lemmas have a similar form, which describes that if we
-have a judgement for a certain object which calls a target method and
-one for the target method, then two judgements are merged by a proper
-inlining operator. More formally, correctness lemmas has a following
-form:
+All correctness lemmas have a similar form, which describes that if we
+have a judgement for a target object which calls a target method and
+have one for the target method, then two judgements can be merged by a
+proper inlining operator. More formally, correctness lemmas has a
+following form:
 \begin{center}
   \begin{math}
     \begin{array}{l}
@@ -140,8 +141,9 @@ form:
 Since the concatenation operator $(\concatsymb)$ merely appends two
 actions, the correctness lemma also states semantic merge.
 
-\begin{lemma}
+\begin{lemma}[Correctness of the action concatenation]
   \label{lem-concatsymb}
+  \mbox{}\\
   For every $o, a_1, u_1, cs_1, v_1, a_2, u_2, cs_2,$ and $v_2,$
   \begin{center}
     \begin{math}
@@ -159,14 +161,26 @@ actions, the correctness lemma also states semantic merge.
 \end{proof}
 
 Note that two updates $u_1$ and $u_2$ and two called methods $cs_1$
-and $cs_2$ do not need to be disjoint each other. This is because the
-semantics does not prohibit double writes or calls. The conditions are
-defined as one of the well-formedness conditions, which is independent
-to the semantics.
+and $cs_2$ \emph{do not need to be disjoint} each other. This is
+because the semantics does not prohibit double writes or calls. The
+conditions are defined as one of the well-formedness conditions, which
+is independent to the semantics.
 
-\todo{Wf condition on proper sites}.
+\paragraph{Correctness of the method-inlining operator}
 
-\begin{lemma}[Correctness of the method-inlining operation w.r.t. actions -- intact case]
+Using the correctness lemma for the concatenation operator, now we
+give one for the method-inlining operator. The correctness lemma is
+described first with action structures, and lifted to \Substep{} and
+\Substeps{}.
+
+There are two variations of the correctness lemma: the \emph{intact
+  case} is designed for objects which are not related to the method
+which will be inlined. For example, if an action does not call the
+method, then a judgement of the action should not be changed. The
+\emph{call case} is designed for objects which call the method. In
+this case, we will get a merged judgement as explained.
+
+\begin{lemma}[Correctness of $(\inlinedmsymb)$ for actions -- intact case]
   \label{lem-inlinedm-action-intact}
   \mbox{}\\
   For every $o, a_f, a, u, cs, v_r,$ and $f,$
@@ -181,9 +195,16 @@ to the semantics.
   \end{center}
 \end{lemma}
 \begin{proof}
+  By induction on the action judgement for $a$. The only nontrivial
+  case is a method call action. If $a = (\actcall{x}{f'}{e}{a'})$,
+  then $f'$ cannot be equal to $f$ since $f' \in cs$ by the inductive
+  definition of the method call, but $f \notin cs$. Therefore,
+  $\langle u, cs, v_r \rangle$ is never changed by the inlining.
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation w.r.t. actions -- call case]
+Below call case is where the well-formedness condition occurs firstly.
+
+\begin{lemma}[Correctness of $(\inlinedmsymb)$ for actions -- call case]
   \label{lem-inlinedm-action-call}
   \mbox{}\\
   For every $o, a_f, a, u_f, u, cs_f, cs, v_r, f, v_a, v_r,$ and $v_f,$
@@ -191,6 +212,7 @@ to the semantics.
     \begin{math}
       \begin{array}{l}
         \semact{o}{a}{u}{cs}{v_r} \to \\
+        \wfdoublea{a} \to \\
         \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
         cs[f] = (v_a, v_f) \to \\
         \semact{o}{(\lambda x.a_f)\ v_a}{u_f}{cs_f}{v_f} \to \\
@@ -200,9 +222,34 @@ to the semantics.
   \end{center}
 \end{lemma}
 \begin{proof}
+  By induction on the action judgement for $a$. The only nontrivial
+  case is a method call action. When $a = (\actcall{x}{f'}{e}{a'})$,
+  we have to consider following two cases:
+  \begin{itemize}
+  \item If $f' = f$, then the method call should have the argument
+    value $v_a$ and the return value $v_r$, since $cs[f] = (v_a,
+    v_f)$. Since $(\inlinedmsymb)$ is defined using $(\concatsymb)$,
+    we can use the judgement for $(\lambda x.a_f)\ v_a$ and
+    \reflem{lem-concatsymb} to prove the goal.
+  \item If $f' \neq f$, then it is same as the intact case.
+  \end{itemize}
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation w.r.t. \Substep{} -- intact case]
+When is the well-formedness condition $(\wfdouble{a})$ used during the
+proof? Suppose there is a double call in $a$. If the argument-return
+pairs of the two calls differ, then one of them is overwritten by the
+other one while evaluating $cs$, according to the action semantics. In
+that case, when encountering the method call where the pair is
+overwritten, we cannot apply \reflem{lem-concatsymb} since the pair
+does not match.
+
+\paragraph{Correctness of the method-inlining operator for modules}
+
+Now we lift \reflem{lem-inlinedm-action-intact} (the intact case) and
+\reflem{lem-inlinedm-action-call} (the call case) to the level of
+\Substep{} and \Substeps{}.
+
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substep{} -- intact case]
   \label{lem-inlinedmm-substep-intact}
   \mbox{}\\
   For every $m, o, u, ds, cs,$ and $f,$
@@ -217,9 +264,13 @@ to the semantics.
   \end{center}
 \end{lemma}
 \begin{proof}
+  Straightforward by the definition of \Substep{}. Destructing
+  \Substep{} gives two cases: one for a rule, and the other for a
+  method. In both cases, we directly apply
+  \reflem{lem-inlinedm-action-intact} to prove the goal.
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation w.r.t. \Substep{} -- call case]
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substep{} -- call case]
   \label{lem-inlinedmm-substep-call}
   \mbox{}\\
   For every $m, o, u_f, u, ds, cs_f, cs, f, a_f, v_a,$ and $v_r,$
@@ -227,6 +278,7 @@ to the semantics.
     \begin{math}
       \begin{array}{l}
         \semsstep{m}{o}{u}{\alpha}{ds}{cs} \to \\
+        \wfdouble{m} \to \\
         \semact{o}{(\lambda x.a_f)\ v_a}{u_f}{cs_f}{v_r} \to \\
         \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
         cs[f] = (v_a, v_r) \to \\
@@ -237,9 +289,43 @@ to the semantics.
   \end{center}
 \end{lemma}
 \begin{proof}
+  Straightforward by the definition of \Substep{}. Destructing
+  \Substep{} gives two cases: one for a rule, and the other for a
+  method. In both cases, we directly apply
+  \reflem{lem-inlinedm-action-call} to prove the goal.
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation -- intact case]
+Note that $(\wfdouble{m})$ is given as a condition instead of
+$(\wfdoublea{a})$. This is because we cannot directly get the action
+body from \Substep{}. Since $(\wfdouble{m})$ implies that each action
+$a$ in $m$ satisfies $(\wfdoublea{a})$, we eventually get what is
+needed.
+
+Now we lift two theorems \reflem{lem-inlinedmm-substep-intact} and
+\reflem{lem-inlinedmm-substep-call} to the level of \Substeps{}. Since
+\Substeps{} is composed of a series of \Substep{}, we have more
+fine-grained cases in order to describe the usage of each \Substep{}:
+\begin{itemize}
+\item The \emph{intact case} (\reflem{lem-inlinedmm-intact}) describes
+  the case where the inlined method is not called anywhere in the
+  substeps. As shown in above similar lemmas, the judgement will not
+  be changed.
+\item The \emph{rule case} (\reflem{lem-inlinedmm-rule}) describes the
+  case where a substep in the substeps is defined by a rule, and the
+  rule calls the inlined method. Also, the inlined method is defined
+  as a substep in the substeps.
+\item The \emph{method case 1} (\reflem{lem-inlinedmm-meth1})
+  describes the case where a substep in the substeps is defined by a
+  method $g$, but it is not the inlined method. Also, the substeps
+  call $g$ somewhere.
+\item The \emph{method case 2} (\reflem{lem-inlinedmm-meth2})
+  describes the case where a substep in the substeps is defined by a
+  method $f$, which is the inlined method.
+\end{itemize}
+
+\todo{FROM HERE}
+
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- intact case]
   \label{lem-inlinedmm-intact}
   \mbox{}\\
   For every $m, o, u, l,$ and $f,$
@@ -254,9 +340,10 @@ to the semantics.
   \end{center}
 \end{lemma}
 \begin{proof}
+  By induction on \Substeps{}.
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation -- rule case]
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- rule case]
   \label{lem-inlinedmm-rule}
   \mbox{}\\
   For every $m, o, u_s, u, ds, cs_s, cs, s,$ and $f,$
@@ -264,6 +351,7 @@ to the semantics.
     \begin{math}
       \begin{array}{l}
         \semsstep{m}{o}{u_s}{\alpharule{s}}{\emptymap}{cs_s} \to \\
+        \wfdouble{m} \to \\
         \semsss{m}{o}{u}{\semlbl{\alphameth}{ds}{cs}} \to \\
         f \in cs_s \to f \in ds \to \sdisj{u_s}{u} \to \mdisj{cs_s}{cs} \to \\
         \semsss{\inlinedmm{m}{f}}{o}{\splus{u_s}{u}}{\semlbl{\alpharule{s}}
@@ -275,7 +363,7 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation -- method case 1]
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- method case 1]
   \label{lem-inlinedmm-meth1}
   \mbox{}\\
   For every $m, o, u_f, u, \alpha, ds, cs_f, cs, g, v_a, v_r,$ and $f,$
@@ -283,6 +371,7 @@ to the semantics.
     \begin{math}
       \begin{array}{l}
         \semsstep{m}{o}{u_f}{\alphameth}{\stupd{}{g}{(v_a, v_r)}}{cs_f} \to \\
+        \wfdouble{m} \to \\
         \semsss{m}{o}{u}{\semlbl{\alpha}{ds}{cs}} \to \\
         f \in cs_f \to f \in ds \to g \notin ds \to \\
         \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
@@ -296,7 +385,7 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation -- method case 2]
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- method case 2]
   \label{lem-inlinedmm-meth2}
   \mbox{}\\
   For every $m, o, u_f, u, \alpha, ds, cs_f, cs, v_a, v_r,$ and $f,$
@@ -304,6 +393,7 @@ to the semantics.
     \begin{math}
       \begin{array}{l}
         \semsstep{m}{o}{u_f}{\alphameth}{\stupd{}{f}{(v_a, v_r)}}{cs_f} \to \\
+        \wfdouble{m} \to \\
         \semsss{m}{o}{u}{\semlbl{\alpha}{ds}{cs}} \to \\
         f \in cs_f \to f \notin ds \to \\
         \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
@@ -316,7 +406,7 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the method-inlining operation]
+\begin{lemma}[Correctness of $(\inlinedmmsymb)$]
   \label{lem-inlinedmm}
   \mbox{}\\
   For every $m, o, u, l,$ and $f,$
@@ -333,7 +423,9 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the methods-inlining operation w.r.t. \hidemethssym{}]
+\paragraph{Correctness of the methods-inlining operator}
+
+\begin{lemma}[Correctness of $(\inlinedmssymb)$ w.r.t. \hidemethssym{}]
   \label{lem-inlinedmssubo}
   \mbox{}\\
   For every $m, o, u, l,$ and $fs,$
@@ -365,7 +457,7 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the methods-inlning operation w.r.t. \Substeps{}]
+\begin{lemma}[Correctness of $(\inlinedmssymb)$ w.r.t. \Substeps{}]
   \label{lem-inlinedmssub}
   \mbox{}\\
   For every $m, o, u, l,$ and $fs,$
@@ -382,7 +474,7 @@ to the semantics.
 \begin{proof}
 \end{proof}
 
-\begin{lemma}[Correctness of the methods-inlining operation]
+\begin{lemma}[Correctness of $(\inlinedmssymb)$]
   \label{lem-inlinedms}
   \mbox{}\\
   For every $m, o, u, l,$ and $fs,$
@@ -396,6 +488,8 @@ to the semantics.
 \end{lemma}
 \begin{proof}
 \end{proof}
+
+\paragraph{Correctness of the inlining operator}
 
 \begin{lemma}[Correctness of $\inline{\cdot}$]
   \label{lem-inline}
