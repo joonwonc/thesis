@@ -323,8 +323,6 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   method $f$, which is the inlined method.
 \end{itemize}
 
-\todo{FROM HERE}
-
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- intact case]
   \label{lem-inlinedmm-intact}
   \mbox{}\\
@@ -340,7 +338,13 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   \end{center}
 \end{lemma}
 \begin{proof}
-  By induction on \Substeps{}.
+  By induction on \Substeps{}. Each substep in the substeps does not
+  call $f$, since $f \notin (\callsof{l})$ and $l$ is the merged label
+  of all substeps, according to the definition. Thus, by
+  \reflem{lem-inlinedmm-substep-intact}, for each substep
+  \semsstepr{m}{o}{u_i}{l_i}, we get
+  \semsstepr{\inlinedmm{m}{f}}{o}{u_i}{l_i}. Since $l = \uplus_i\ l_i$,
+  we get the goal by the definition of \Substeps{}.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- rule case]
@@ -361,6 +365,12 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   \end{center}
 \end{lemma}
 \begin{proof}
+  By induction on substeps containing $f \in ds$. By the definition of
+  \Substeps{}, a substep for $f$ exists in the substeps. Using the
+  substep for $f$ and the substep for the rule $s$ calling $f$, we get
+  the merged substep by \reflem{lem-inlinedmm-substep-call}. The other
+  substeps except for $f$ are treated as an intact case, since we get
+  $f \notin cs$ by $f \in cs_s$ and $\mdisj{cs_s}{cs}$.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- method case 1]
@@ -383,6 +393,13 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   \end{center}
 \end{lemma}
 \begin{proof}
+  The proof is similar to \reflem{lem-inlinedmm-rule}, done by
+  induction on substeps containing $f \in ds$. A substep for $f$
+  exists in the substeps, and with the substep for $g$, we get the
+  merged substep by \reflem{lem-inlinedmm-substep-call}. The other
+  substeps except for $f$ are treated as an intact case. Additionally,
+  we do not have a conflict on defined methods while merging, since $g
+  \notin ds$.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- method case 2]
@@ -395,7 +412,7 @@ fine-grained cases in order to describe the usage of each \Substep{}:
         \semsstep{m}{o}{u_f}{\alphameth}{\stupd{}{f}{(v_a, v_r)}}{cs_f} \to \\
         \wfdouble{m} \to \\
         \semsss{m}{o}{u}{\semlbl{\alpha}{ds}{cs}} \to \\
-        f \in cs_f \to f \notin ds \to \\
+        f \in cs \to f \notin ds \to \\
         \sdisj{u_f}{u} \to \mdisj{cs_f}{cs} \to \\
         \semsss{\inlinedmm{m}{f}}{o}{\splus{u_f}{u}}{\semlbl{\alpha}{ds}
           {\mapfilt{\mplus{cs_f}{cs}}{f}}}
@@ -404,7 +421,104 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   \end{center}
 \end{lemma}
 \begin{proof}
+  The proof is similar to \reflem{lem-inlinedmm-meth1}, done by
+  induction on substeps calling $f \in cs_f$. A substep calling $f$
+  exists in the substeps, and with the substep for $f$, we get the
+  merged substep by \reflem{lem-inlinedmm-substep-call}. The other
+  substeps cannot call $f$ by the definition of \Substeps{}, thus they
+  are treated as an intact case.
 \end{proof}
+
+\paragraph{Giving the relation between a label and inlining}
+
+Before proving the correctness of $(\inlinedmmsymb)$, which can be
+proved by applying the four lemmas (\reflem{lem-inlinedmm-intact},
+\reflem{lem-inlinedmm-rule}, \reflem{lem-inlinedmm-meth1}, and
+\reflem{lem-inlinedmm-meth2}) for each proper case, we explain an
+intuition between a label and inlining. The intuition starts from a
+basic question: what is the meaning of inlining in terms of semantics?
+
+\begin{figure}[t]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{m}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmcalln{g}{}
+      }\\
+      \bsvnone{\pgmmeth}{g}{}{
+        \pgmwrite{r_2}{2}
+        \pgmcalln{h}{}
+      }\\
+      \bsvnone{\pgmmeth}{h}{}{
+        \pgmwrite{r_3}{3}
+      }
+    }
+    \subcaption{Before inlining $g$}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \bsvmodnoreg{\inlinedmm{m}{g}}{
+      \bsvnone{\pgmmeth}{f}{}{
+        \pgmwrite{r_1}{1}
+        \pgmwrite{r_2}{2}
+        \pgmcalln{h}{}
+      }\\
+      \bsvnone{\pgmmeth}{h}{}{
+        \pgmwrite{r_3}{3}
+      }
+    }
+    \subcaption{After inlining $g$}
+  \end{subfigure}
+  \caption{Inlining a method hides label elements of the method}
+  \label{ex-inlining-hide}
+\end{figure}
+
+When inlining a method, label elements related to the method are
+hidden. \reffig{ex-inlining-hide} presents an example where a method
+$g$ is inlined. Considering a step judgements of $f$, before inlining,
+corresponding substeps should contain $f, g,$ and $h$ since $f$ calls
+$g$ and $g$ calls $h$. Thus, the label of the substeps should contain
+$f, g,$ and $h$. Whereas, after inlining, corresponding substeps now
+contain $f$ and $h$, thus the label contains only $f$ and
+$h$. Therefore, inlining a method is interpreted as \emph{hiding the
+  method from a label}, in terms of semantics.
+
+Following the intuition, \hidemethsym{} and \hidemethssym{} are
+defined to form labels in which specific methods are
+hidden. $(\hidemeth{l}{f})$ hides a method $f$ from a given label $l$,
+which is defined as follows:
+\begin{definition}
+  \label{def-hidemeth}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \hidemeth{l}{f} & = & \wordif{} (\defsof{l})[f] = (\callsof{l})[f] \\
+        & & \wordthen{} \semlbl{\annotof{l}}{\mapfilt{\defsof{l}}{f}}{\mapfilt{\callsof{l}}{f}} \\
+        & & \wordelse{} l
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+$(\hidemeths{l}{fs})$ is a simple extension of \hidemethsym{}, hiding
+list of methods $fs$ from a given label $l$:
+\begin{definition}
+  \label{def-hidemeths}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \hidemeths{l}{\emptymap} & = & l \\
+        \hidemeths{l}{(f : fs)} & = & \hidemeths{(\hidemeth{l}{f})}{fs}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+Finally, we are ready to state the lemma for the correctness of
+$(\inlinedmmsymb)$. For given substeps, they either call the inlining
+target method or not. If they call the method, they are required to
+have a substep for the method in order to use the substep to form the
+merged substep.
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$]
   \label{lem-inlinedmm}
@@ -421,9 +535,43 @@ fine-grained cases in order to describe the usage of each \Substep{}:
   \end{center}
 \end{lemma}
 \begin{proof}
+  The proof is divided into two cases: $f \notin (\callsof{l})$ or
+  $(\defsof{l})[f] = (\callsof{l})[f]$.
+  \begin{itemize}
+  \item When $f \notin (\callsof{l})$, it is exactly an intact case so
+    we apply \reflem{lem-inlinedmm-intact} to get the goal. Note that
+    we get $(\hidemeth{l}{f}) = l$, because $f \notin (\callsof{l})$.
+  \item When $(\defsof{l})[f] = (\callsof{l})[f]$, the proof is done
+    by induction on the given substeps. Picking a head substep from
+    the substeps forms several cases:
+    \begin{itemize}
+    \item If the head substep is defined for $f$, then
+      \reflem{lem-inlinedmm-meth2} is applied to get the goal. $cs_f$
+      in the lemma cannot contain $f$, since the substep is defined
+      for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not recursive),
+      which is brought from the definition of $(\inlinedmmsymb)$.
+      Thus, we get $f \in cs$ so \reflem{lem-inlinedmm-meth2} can be
+      applied properly.
+    \item If the head substep is defined for a method $g$ where $g
+      \neq f$, but calls $f$, then \reflem{lem-inlinedmm-meth1} is
+      applied to get the goal. All conditions of the lemma are
+      introduced by the definition of \Substeps{}.
+    \item If the head substep is defined for a rule $s$, but calls
+      $f$, then \reflem{lem-inlinedmm-rule} is applied to get the
+      goal. Similarly, all conditions are introduced by the definition
+      of \Substeps{}.
+    \item If the head substep is defined not for $f$ and does not call
+      $f$, then \reflem{lem-inlinedmm-substep-intact} is applied to
+      get the substep after inlining. The induction hypothesis gives
+      the substeps after inlining. Thus we simply merge the substep
+      and the substeps to get the goal.
+    \end{itemize}
+  \end{itemize}
 \end{proof}
 
 \paragraph{Correctness of the methods-inlining operator}
+
+\todo{from here}
 
 \begin{lemma}[Correctness of $(\inlinedmssymb)$ w.r.t. \hidemethssym{}]
   \label{lem-inlinedmssubo}
