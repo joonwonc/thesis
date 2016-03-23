@@ -1,14 +1,12 @@
-\chapter{Proving Implications Between Semantics}
-\label{chap-implications}
+\chapter{Proving the Implication from Modular to Inlining Semantics}
+\label{chap-implication}
 
-\section{Semantic Implications} %$ which semantics are more powerful?
+\section{Meaning of the Semantic Implication} %$ which semantics are more powerful?
 
 The semantics defined so far does not have equal capabilities. The
-inlining semantics can deal with more design cases than the modular
-semantics. The big-step semantics also cover more cases than the
-modular semantics. In other words, we can prove implications from the
-modular semantics to the inlining or the big-step ones, but cannot
-prove inverses.
+inlining semantics can simulate more design cases than the modular
+semantics. In other words, we can prove implications from the modular
+semantics to the inlining ones, but cannot prove inverses.
 
 \begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}
@@ -76,18 +74,19 @@ if we inline all $\textbf{Method}$s while converting from \Bluespec{}
 to \Kami{}, the issue will not happen (though the inlining in
 conversion will remain as a part of trusted base).
 
-The big-step semantics deal with more design cases than the modular
-one, by the same reason. According to the big-step semantics, when we
-encounter $h$, it is not added to the called methods, since it is an
-internal call (see \refdef{def-sembigact} for details). Hence, a
-double call does not occur when we execute $f$ and $g$ in a big-step
-manner.
+%% The big-step semantics deal with more design cases than the modular
+%% one, by the same reason. According to the big-step semantics, when we
+%% encounter $h$, it is not added to the called methods, since it is an
+%% internal call (see \refdef{def-sembigact} for details). Hence, a
+%% double call does not occur when we execute $f$ and $g$ in a big-step
+%% manner.
 
-From the analysis so far, we give two main theorem for semantic
-implications. \refthm{thm-modtoinl} claims that the set of possible
+Based on the analysis so far, we give the main theorem for semantic
+implication. \refthm{thm-modtoinl} claims that the set of possible
 behaviors of the modular semantics is a subset of the one in the
-inlining semantics. \refthm{thm-modtobig} claims the similar one with
-respect to the big-step semantics.
+inlining semantics.
+%% \refthm{thm-modtobig} claims the similar one with respect to the
+%% big-step semantics.
 
 \begin{theorem}[Modular semantics imply inlining semantics]
   \label{thm-modtoinl}
@@ -100,18 +99,18 @@ respect to the big-step semantics.
   \end{center}
 \end{theorem}
 
-\begin{theorem}[Modular semantics imply big-step semantics]
-  \label{thm-modtobig}
-  \mbox{}
-  \begin{center}
-    \begin{math}
-      \forall m.\forall o.\forall u.\forall l.\ 
-      (\semstep{m}{o}{u}{l}) \Longrightarrow (\sembigstep{m}{o}{u}{l})
-    \end{math}
-  \end{center}
-\end{theorem}
+%% \begin{theorem}[Modular semantics imply big-step semantics]
+%%   \label{thm-modtobig}
+%%   \mbox{}
+%%   \begin{center}
+%%     \begin{math}
+%%       \forall m.\forall o.\forall u.\forall l.\ 
+%%       (\semstep{m}{o}{u}{l}) \Longrightarrow (\sembigstep{m}{o}{u}{l})
+%%     \end{math}
+%%   \end{center}
+%% \end{theorem}
 
-\section{From Modular to Inlining Semantics}
+\section{The Implication Proof: From Modular to Inlining Semantics}
 
 On this section, we present the proof of \refthm{thm-modtoinl}. The
 proof exactly follows the definition of the complete inlining operator
@@ -571,7 +570,8 @@ merged substep.
 
 \paragraph{Correctness of the methods-inlining operator}
 
-\todo{from here}
+\reflem{lem-inlinedmssubo} is simply an extension of the correctness
+of the method-inlining operator, described in \reflem{lem-inlinedmm}.
 
 \begin{lemma}[Correctness of $(\inlinedmssymb)$ w.r.t. \hidemethssym{}]
   \label{lem-inlinedmssubo}
@@ -588,7 +588,17 @@ merged substep.
   \end{center}
 \end{lemma}
 \begin{proof}
+  Straightforward by induction on $fs$. For every element $f$ of $fs$,
+  we can apply \reflem{lem-inlinedmm} to get the goal. Note that the
+  necessary condition $(f \notin (\callsof{l}) \vee (\defsof{l})[f] =
+  (\callsof{l})[f])$ always holds by the condition
+  $(\wellhidden{m}{(\hide{l})})$.
 \end{proof}
+
+\reflem{lem-hidemeths} fills the gap between \hidemethssym{} and
+\hidesym{}, which implies that when inlining is done for all defined
+methods in a module, then its effect to the label is as same as the
+\hidesym{} operation.
 
 \begin{lemma}[Relation between \hidemethssym{} and \hidesym{}]
   \label{lem-hidemeths}
@@ -603,7 +613,13 @@ merged substep.
   \end{center}
 \end{lemma}
 \begin{proof}
+  Straightforward by the definitions of \hidemethssym{} and
+  \hidesym{}.
 \end{proof}
+
+Finally, by using \reflem{lem-inlinedmssubo} and
+\reflem{lem-hidemeths}, we can prove the correctness of
+$(\inlinedmssymb)$.
 
 \begin{lemma}[Correctness of $(\inlinedmssymb)$ w.r.t. \Substeps{}]
   \label{lem-inlinedmssub}
@@ -614,12 +630,16 @@ merged substep.
       \begin{array}{l}
         \semsss{m}{o}{u}{l} \to \\
         \wellhidden{m}{(\hide{l})} \to \\
-        \semsss{\inlinedms{m}{fs}}{o}{u}{\hide{l}}
+        \semsss{\inlinedms{m}{(\namesof{(\methsofm{m})})}}{o}{u}{\hide{l}}
       \end{array}
     \end{math}
   \end{center}
 \end{lemma}
 \begin{proof}
+  Straightforward by applying \reflem{lem-inlinedmssubo} and
+  \reflem{lem-hidemeths}. A statement $\defsof{l} \subseteq
+  (\namesof{(\methsofm{m})})$ is trivial, since the label is always
+  formed by merging substeps constructed by a rule or defined methods.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmssymb)$]
@@ -629,15 +649,25 @@ merged substep.
   \begin{center}
     \begin{math}
       \begin{array}{l}
-        (\semstep{m}{o}{u}{l}) \to (\semstep{(\inlinedms{m}{fs})}{o}{u}{l})
+        (\semstep{m}{o}{u}{l}) \to \\
+        fs = \namesof{(\methsofm{m})} \to \\
+        (\semstep{(\inlinedms{m}{fs})}{o}{u}{l})
       \end{array}
     \end{math}
   \end{center}
 \end{lemma}
 \begin{proof}
+  This lemma is almost as same as \reflem{lem-inlinedmssub}. The only
+  gap is filled by showing $\hide{(\hide{l})} = \hide{l}$, which can
+  be proved easily by destructing the definition of \hidesym{}.
 \end{proof}
 
 \paragraph{Correctness of the inlining operator}
+
+At last, we show the correctness of the overall inlining
+operation. Since \reflem{lem-inlinedms} directly gives the correctness
+of $\inline{\cdot}$, it suffices to consider the internal method
+filtering defined in $\inlineF{\cdot}$.
 
 \begin{lemma}[Correctness of $\inline{\cdot}$]
   \label{lem-inline}
@@ -651,6 +681,8 @@ merged substep.
   \end{center}
 \end{lemma}
 \begin{proof}
+  By the definition of $\inline{\cdot}$, it is simply another
+  representation of \reflem{lem-inlinedms}.
 \end{proof}
 
 \begin{lemma}[Correctness of $\inlineF{\cdot}$]
@@ -665,9 +697,27 @@ merged substep.
   \end{center}
 \end{lemma}
 \begin{proof}
+  Applying \reflem{lem-inline}, if suffices to show:
+  \begin{math}
+    (\semstep{\inline{m}}{o}{u}{l}) \to
+    (\semstep{\inlineF{m}}{o}{u}{l}).
+  \end{math}
+  According to the definition $\inlineF{m} \triangleq
+  (\regsofm{\inline{m}}, \rulesofm{\inline{m}},
+  \mapfilt{(\methsofm{\inline{m}})}{(\callsofm{m})})$, the rules are
+  preserved and the methods are filtered whether they are called
+  internally or not. Now for every substep in the step:
+  \begin{itemize}
+  \item If it is defined by a rule, the substep is trivially
+    preserved.
+  \item If if is defined by a method, it suffices to show that the
+    label $l$ does not contain anything about internal
+    calls. $(\defsof{l})$ cannot contain internal calls, since
+    $\wellhidden{m}{l}$ by the definition of \Step{}. $(\callsof{l})$
+    cannot contain internal calls, since $\inline{m}$ does not have
+    internal calls any longer by the definition. Thus, $l$ is
+    independent to the internal calls, which implies that the substep
+    is also preserved.
+  \end{itemize}
 \end{proof}
-
-\section{From Modular to Big-step Semantics}
-
-
 

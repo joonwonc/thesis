@@ -95,29 +95,31 @@ with external modules. A big-step semantics along with the action
 structures in \Bluespec{} have been defined~\cite{nirav-memocode}, but
 it does not have a notion for external communications.
 
-Hence, in this thesis, I present two additional semantics for open
-systems, none of which have the drawback. The first semantics use
+Hence, in this thesis, I present an additional semantics definition
+for open systems, which does not have the drawback. The semantics uses
 static inlining to substitute internal calls to their method
 bodies. This operator erases all internal calls in a module, so that
-we do not need to care about internal communications. The second
-semantics are like typical big-step semantics for C-like
-languages. Semantics of internal calls are defined to substitute the
-method bodies, and continue judgements for the bodies. The big-step
-semantics can be regarded as \emph{a dynamic version} of the inlining
-semantics.
+we do not need to care about internal communications.
+%% The second semantics are like typical big-step semantics for C-like
+%% languages. Semantics of internal calls are defined to substitute the
+%% method bodies, and continue judgements for the bodies. The big-step
+%% semantics can be regarded as \emph{a dynamic version} of the inlining
+%% semantics.
 
-Implications among semantics are also formally proven, thus
-verification developers can use all semantics by converting
-them. Semantics does not have equal capabilities. We give two main
-implication proofs: 1) the modular semantics imply the inlining
-semantics, and 2) the modular semantics imply the big-step semantics.
+An implication between semantics is also formally proven, thus
+verification developers can use both semantics by converting
+them. Semantics does not have equal capabilities. We give the
+implication proof saying that the modular semantics imply the inlining
+semantics.
+%% implication proofs: 1) the modular semantics imply the inlining
+%% semantics, and 2) the modular semantics imply the big-step semantics.
 
 To sum up, the main contributions of this thesis are:
 \begin{itemize}
-\item To define two consistent formal semantics for open hardware
+\item To define an additional formal semantics for open hardware
   systems.
-\item To prove implications among the modular, inlining, and
-  operational semantics.
+\item To prove the implication from the modular semantics to the
+  inlining semantics.
 \end{itemize}
 
 \paragraph{Overview}
@@ -126,11 +128,12 @@ The thesis is organized as follows: \refchap{chap-backgrounds}
 explains a number of prerequisites to understand the hardware design
 concept of \Bluespec{}. Related works are also provided to compare
 previous approaches to define hardware
-semantics. \refchap{chap-semantics} presents the three semantics used
-in the \Kami{} framework: modular, inlining, and big-step
-semantics. \refchap{chap-implications} compares capability of each
-semantics and presents implication proofs among semantics. Lastly, we
-draw conclusions and give future works in \refchap{chap-conclusions}.
+semantics. \refchap{chap-semantics} presents the two semantics used in
+the \Kami{} framework: modular and inlining
+semantics. \refchap{chap-implication} compares capability of each
+semantics and presents the implication proof between
+semantics. Lastly, we draw conclusions and give future works in
+\refchap{chap-conclusions}.
 
 
 
