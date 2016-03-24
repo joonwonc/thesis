@@ -22,8 +22,10 @@ which is to verify \Bluespec{}-style hardware components. Modularity
 also fits for verifying hardware components, thanks to the Labeled
 Transition System (LTS) concept. However, modular verification has an
 inherent drawback that it is hard to infer internal state changes by
-internal communications. Hence, in this thesis, I present additional
-formal semantics for open hardware systems to make up the drawback. An
-implication between semantics is also formally proven, thus
-verification developers can use the semantics freely by converting one
-to the other.
+internal communications. Hence, in this thesis, I present an
+additional semantics definition, which is based on inlining. The
+inlining semantics is defined for open hardware systems and resolve
+the drawback by construction. An implication from the modular
+semantics to the inlining semantics is also formally proven, thus it
+can be used to handle the semantics efficiently.
+

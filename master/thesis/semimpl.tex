@@ -74,19 +74,10 @@ if we inline all $\textbf{Method}$s while converting from \Bluespec{}
 to \Kami{}, the issue will not happen (though the inlining in
 conversion will remain as a part of trusted base).
 
-%% The big-step semantics deal with more design cases than the modular
-%% one, by the same reason. According to the big-step semantics, when we
-%% encounter $h$, it is not added to the called methods, since it is an
-%% internal call (see \refdef{def-sembigact} for details). Hence, a
-%% double call does not occur when we execute $f$ and $g$ in a big-step
-%% manner.
-
 Based on the analysis so far, we give the main theorem for semantic
 implication. \refthm{thm-modtoinl} claims that the set of possible
 behaviors of the modular semantics is a subset of the one in the
 inlining semantics.
-%% \refthm{thm-modtobig} claims the similar one with respect to the
-%% big-step semantics.
 
 \begin{theorem}[Modular semantics imply inlining semantics]
   \label{thm-modtoinl}
@@ -98,17 +89,6 @@ inlining semantics.
     \end{math}
   \end{center}
 \end{theorem}
-
-%% \begin{theorem}[Modular semantics imply big-step semantics]
-%%   \label{thm-modtobig}
-%%   \mbox{}
-%%   \begin{center}
-%%     \begin{math}
-%%       \forall m.\forall o.\forall u.\forall l.\ 
-%%       (\semstep{m}{o}{u}{l}) \Longrightarrow (\sembigstep{m}{o}{u}{l})
-%%     \end{math}
-%%   \end{center}
-%% \end{theorem}
 
 \section{The Implication Proof: From Modular to Inlining Semantics}
 
@@ -720,4 +700,8 @@ filtering defined in $\inlineF{\cdot}$.
     is also preserved.
   \end{itemize}
 \end{proof}
+
+Note that now \refthm{thm-modtoinl} is no more than another
+representation of \reflem{lem-inlinef}, according to the definition of
+the inlining semantics.
 

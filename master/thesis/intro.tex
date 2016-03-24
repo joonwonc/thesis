@@ -95,29 +95,23 @@ with external modules. A big-step semantics along with the action
 structures in \Bluespec{} have been defined~\cite{nirav-memocode}, but
 it does not have a notion for external communications.
 
-Hence, in this thesis, I present an additional semantics definition
-for open systems, which does not have the drawback. The semantics uses
-static inlining to substitute internal calls to their method
-bodies. This operator erases all internal calls in a module, so that
-we do not need to care about internal communications.
-%% The second semantics are like typical big-step semantics for C-like
-%% languages. Semantics of internal calls are defined to substitute the
-%% method bodies, and continue judgements for the bodies. The big-step
-%% semantics can be regarded as \emph{a dynamic version} of the inlining
-%% semantics.
+Hence, in this thesis, I present an additional semantics definition,
+which is based on inlining.  The inlining semantics is defined for
+open hardware systems and resolve the drawback by construction.  The
+semantics use a static inlining operation to substitute internal calls
+to their method bodies. This operator erases all internal calls in a
+module, so that we do not need to care about internal communications.
 
-An implication between semantics is also formally proven, thus
-verification developers can use both semantics by converting
-them. Semantics does not have equal capabilities. We give the
-implication proof saying that the modular semantics imply the inlining
-semantics.
-%% implication proofs: 1) the modular semantics imply the inlining
-%% semantics, and 2) the modular semantics imply the big-step semantics.
+An implication from the modular semantics to the inlining semantics is
+also formally proven, thus it can be used to handle the semantics
+efficiently. Since the two semantics does not have equal capabilities,
+we give the implication proof saying that the modular semantics imply
+the inlining semantics.
 
 To sum up, the main contributions of this thesis are:
 \begin{itemize}
-\item To define an additional formal semantics for open hardware
-  systems.
+\item To define an effective semantics definition based on inlining
+  for open hardware systems.
 \item To prove the implication from the modular semantics to the
   inlining semantics.
 \end{itemize}
