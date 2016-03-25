@@ -56,37 +56,22 @@ some other modules which can respond to them.
 
 However, the modular semantics has an inherent drawback that it is hard
 to track internal state changes by internal communications.
-\begin{figure}[t]
-  \centering{
-    \begin{subfigure}[b]{0.5\textwidth}
-      \bsvmodnoreg{m}{
-        \bsvnone{\pgmrule}{s}{}{
-          \pgmwrite{r_1}{1}
-          \pgmcalln{f}{}
-        }\\
-        \bsvnone{\pgmmeth}{f}{()}{
-          \pgmwrite{r_2}{2}
-          \pgmcalln{g}{}
-        }\\
-        \bsvnone{\pgmmeth}{g}{()}{
-          \pgmwrite{r_3}{3}
-          \pgmcalln{h}{}
-        }
-      }
-    \end{subfigure}
-  }
-  \caption{Tracking internal state changes by internal calls}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/pipeline-internal.pdf}
+  \caption{Internal states hidden by the module}
   \label{ex-modular-semantics-disadvantage}
 \end{figure}
 \reffig{ex-modular-semantics-disadvantage} describes the case where we
-have a difficulty to infer internal state changes. Suppose a rule $s$
-is executed in a module $m$. In the modular semantics, $m$ is
-abstracted so that we cannot see the actual bodies of rules or
-methods. In this sense, when having information that $s$ is executed
-and $h$ is externally called, how do we draw the state changes in the
-module $m$? Because the modular semantics are abstracted so that it is
-hard to traverse the action bodies, it is also hard to draw the
-internal information.
+have a difficulty to infer internal state changes. \todo{explain}
+%% Suppose a rule $s$
+%% is executed in a module $m$. In the modular semantics, $m$ is
+%% abstracted so that we cannot see the actual bodies of rules or
+%% methods. In this sense, when having information that $s$ is executed
+%% and $h$ is externally called, how do we draw the state changes in the
+%% module $m$? Because the modular semantics are abstracted so that it is
+%% hard to traverse the action bodies, it is also hard to draw the
+%% internal information.
 
 A number of semantics, which do not have such a drawback, have been
 defined but none of them was defined for open systems. In other words,
