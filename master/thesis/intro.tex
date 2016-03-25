@@ -54,24 +54,31 @@ behaviors of \emph{open systems}. Open systems have external
 interactions, which cannot be figured out unless it is connected with
 some other modules which can respond to them.
 
-However, the modular semantics has an inherent drawback that it is hard
-to track internal state changes by internal communications.
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \includegraphics[width=0.6\textwidth]{figures/pipeline-internal.pdf}
   \caption{Internal states hidden by the module}
   \label{ex-modular-semantics-disadvantage}
 \end{figure}
-\reffig{ex-modular-semantics-disadvantage} describes the case where we
-have a difficulty to infer internal state changes. \todo{explain}
-%% Suppose a rule $s$
-%% is executed in a module $m$. In the modular semantics, $m$ is
-%% abstracted so that we cannot see the actual bodies of rules or
-%% methods. In this sense, when having information that $s$ is executed
-%% and $h$ is externally called, how do we draw the state changes in the
-%% module $m$? Because the modular semantics are abstracted so that it is
-%% hard to traverse the action bodies, it is also hard to draw the
-%% internal information.
+
+However, the modular semantics has an inherent drawback that it is
+hard to track internal state changes by internal communications.
+Suppose we designed a pipelined system, as shown in the upper part of
+\reffig{ex-modular-semantics-disadvantage}. $\texttt{f}_1$,
+$\texttt{f}_2$, and $\texttt{f}_3$ are modules which get an input from
+the corresponding fifos $\texttt{inQ}$, $\texttt{fifo}_1$, and
+$\texttt{fifo}_2$, respectively. When the system is built, modular
+semantics abstract the system as a big module, in which only two
+interfaces are revealed: one for input to $\texttt{inQ}$, and the
+other for output from $\texttt{outQ}$ (as shown in the lower part of
+the figure where internal modules are drawn vaguely). In this case,
+when having information for an input and the output by the entire
+system, how can we describe the \emph{internal state changes} in the
+system? For instance, is $\texttt{fifo}_1$ storing an element for
+given input and output? In modular semantics, we even cannot draw the
+fact that the system is implemented by pipelines, since the semantics
+are not defined by following execution paths, but by a series of local
+communication among small modules.
 
 A number of semantics, which do not have such a drawback, have been
 defined but none of them was defined for open systems. In other words,
@@ -95,8 +102,8 @@ the inlining semantics.
 
 To sum up, the main contributions of this thesis are:
 \begin{itemize}
-\item To define an effective semantics definition based on inlining
-  for open hardware systems.
+\item To define a new semantics definition based on inlining, for open
+  hardware systems.
 \item To prove the implication from the modular semantics to the
   inlining semantics.
 \end{itemize}

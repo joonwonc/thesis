@@ -21,6 +21,7 @@
 
 \newcommand{\pgmmodule}[1]{\ensuremath{\textbf{Module}\ #1}}
 \newcommand{\pgmregs}[1]{\ensuremath{\textbf{Regs}\ #1}}
+\newcommand{\pgminsts}[1]{\ensuremath{\textbf{Instances}\ #1}}
 \newcommand{\pgmrule}[1]{\ensuremath{\textbf{Rule}\ #1}}
 \newcommand{\pgmmeth}[1]{\ensuremath{\textbf{Method}\ #1}}
 \newcommand{\pgmameth}[1]{\ensuremath{\textbf{ActionMethod}\ #1}}
@@ -91,6 +92,19 @@
 }
 
 %BSV module
+
+\newcommand{\bsvmodinst}[3]{
+\bsvcodesize
+\centering
+\begin{tabular}{|l|}
+\hline\\
+\pgmmodule{} #1:\\
+\pgminsts \ensuremath{#2};\\[.5em]
+\hline\\[-.5em]
+#3\\
+\hline
+\end{tabular}
+}
 
 \newcommand{\bsvmod}[3]{
 \bsvcodesize
