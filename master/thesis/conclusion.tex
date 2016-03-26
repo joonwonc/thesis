@@ -1,0 +1,33 @@
+\chapter{Conclusions and Future Work}
+\label{chap:conclusions}
+
+\paragraph{Discussion on the Performance of Inlining}
+
+The inlining operator manipulates module definitions in a static way,
+thus it requires computation.
+
+In Coq proof system in which \Kami{} is built, variables make the
+computation stuck.
+
+In order to solve the issue, a rewriting lemma was defined and has
+been used to rewrite variable terms.
+
+However, because of the rewriting, the inlining operator lost its original
+performance. \todo{80/20 percentage comparison}
+
+This problem has been mentioned, but no proper solutions were
+suggested yet.
+
+\paragraph{Discussion on the Inlining and Synthesis}
+
+Inlining should be used only for proofs, not for synthesis.
+
+\paragraph{Future works}
+
+Optimization
+
+Applying inlining to other real examples
+
+\paragraph{Conclusions}
+
+Ipsum.
