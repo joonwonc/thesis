@@ -149,17 +149,48 @@ operation. See the section for more details.
 \paragraph{Concurrent rule executions}
 
 A guard of a rule includes which registers are written and which
-methods are called. Double-writes and double-calls are caught by
-forcing the well-formedness condition within a rule or a
-method. \todo{explain}.
+methods are called. Since the guard contains conditions to execute the
+rule, it is natural for the guard to have conditions for register
+writes and method calls. If there are no explicit guard conditions on
+the definition of the rule, then the guard only consists of register
+and method conditions. The reason why guards contain such conditions
+is to ensure there are no double-writes or double-calls during
+multiple rule executions. Even if they are caught by forcing the
+well-formedness condition, it is restricted within a rule or a
+method. We cannot statically ensure if multiple rules can be executed
+concurrently, without violating double-writes and double-calls.
 
-For instance, all the rules of PipelinedSystem can be executed
-concurrently. In other words, the rule scheduler can verify that the
-guards of the three rules in PipelinedSystem do not conflict. As
-mentioned earlier, this is because the rules do not write the same
-register and do not call the same method. \todo{more}.
+Based on guards of rules, a rule scheduler tries to find a maximal set
+of guards to be executed concurrently. The guards of concurrently
+executed rules do not conflict each other. For instance, all the rules
+of PipelinedSystem can be executed concurrently. In other words, the
+rule scheduler can verify that the guards of the three rules in
+PipelinedSystem do not conflict. This is because the rules do not
+write the same register and do not call the same method.
 
 \paragraph{One-rule-at-a-time semantics}
+
+Multiple rule executions require an additional condition other than
+non-conflicting guards, which is called the one-rule-at-a-time
+semantics. The condition says that, multiple rules can be executed if
+there \emph{exists a permutation of the rules} which yields the same
+state change if they are executed sequentially. In other words, when
+we define $(r_1; r_2; \cdots; r_n)$ be the concurrent execution of the
+rules, then there exists $\{r_{p_1}, r_{p_2}, \cdots, r_{p_n}\}$, a
+permutation of the rules, such that
+\begin{center}
+  \begin{math}
+    (r_1; r_2; \cdots; r_n)(s) = r_{p_n}(\cdots(r_{p_2}(r_{p_1}(s)))\cdots).
+  \end{math}
+\end{center}
+
+One-rule-at-a-time semantics makes verification easier. As the name
+indicates, now it is fine to consider semantics where at most one rule
+is executed at a time. Once we verify some properties under the
+one-rule-at-a-time semantics, the whole system, in which a rule
+scheduler is attached, also can be verified simply by proving that the
+scheduler always selects rules based on the one-rule-at-a-time
+semantics.
 
 \section{Related Works: Previous Semantics Design}
 \label{sec:related-works}
