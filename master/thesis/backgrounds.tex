@@ -192,13 +192,98 @@ scheduler is attached, also can be verified simply by proving that the
 scheduler always selects rules based on the one-rule-at-a-time
 semantics.
 
-\section{Related Works: Previous Semantics Design}
+\section{Previous Semantic Designs}
 \label{sec:related-works}
 
-%% Nirav big-step semantics
+\paragraph{Operational semantics}
 
-%% Murali modular semantics
+An operational big-step semantics for a Bluespec-like language has
+been defined, but not for verification~\cite{nirav-memocode}. The
+semantics was defined for explaining how multiple rules are executed
+by a rule scheduler, using the notion of rule composition. The target
+language is BTRS, a Bluespec program after type checking and module
+instantiations. BTRS is defined in order to make the language and the
+rule scheduling algorithm deterministic. However, no formal proofs are
+presented for the correctness of the rule scheduling algorithm using
+the semantics. Furthermore, the semantics is only defined for closed
+systems, not for open systems. A closed system implies that all
+methods which are called are explicitly defined somewhere. Conversely,
+an open system allows method calls where the methods are not defined
+yet. When a semantics is defined only for closed systems, it is not
+suitable for scalable verification since it lacks modularity.
 
-%% Any papers about inlining? Dan's thesis!! inlining used for merging
-%% modules.
+The formal semantics for open hardware system has been subsequently
+defined based on modularity~\cite{murali-thesis}. The core concept for
+the semantics is modularity. It defines behaviors of small basic
+modules, and combines them in order to define behaviors of a big
+module composed of the small ones. For such modular verification, the
+semantics is able to describe behaviors of open systems, since small
+modules may call methods outside of the modules. The modular semantics
+has been formally defined and used in the \Kami{} framework, described
+by the Coq theorem prover.
+
+However, the modular semantics has an inherent drawback that it is
+hard to infer the internal state changes only by looking at external
+communications.
+\begin{figure}[t]
+  \centering{
+    \begin{subfigure}[b]{0.5\textwidth}
+      \bsvmodnoreg{m}{
+        \bsvnone{\pgmrule}{s}{}{
+          \pgmwrite{r_1}{1}
+          \pgmcalln{f}{}
+        }\\
+        \bsvnone{\pgmmeth}{f}{()}{
+          \pgmwrite{r_2}{2}
+          \pgmcalln{g}{}
+        }\\
+        \bsvnone{\pgmmeth}{g}{()}{
+          \pgmwrite{r_3}{3}
+          \pgmcalln{h}{}
+        }
+      }
+    \end{subfigure}
+  }
+  \caption{Tracking internal state changes by internal calls}
+  \label{ex-modular-semantics-disadvantage}
+\end{figure}
+\reffig{ex-modular-semantics-disadvantage} describes the case where we
+have a difficulty to infer internal state changes. Suppose a rule $s$
+is executed in a module $m$. In the modular semantics, $m$ is
+abstracted so that we cannot see the actual bodies of rules or
+methods. In this sense, when having information that $s$ is executed
+and $h$ is externally called, how do we draw the state changes in the
+module $m$? Because the modular semantics are abstracted so that it is
+hard to traverse the action bodies, it is also hard to draw the
+internal information.
+
+The two semantics have trade-offs. The big-step
+semantics~\cite{nirav-memocode} does not have such a drawback, since
+it simply traverses action bodies in a big-step manner. However, as
+mentiond, it is not defined for open systems. On the other hand, the
+modular semantics can describe open system behaviors, but it has a
+drawback mentioned above. The main contribution of this thesis is to
+develop a new semantic definition which maintains modularity concept
+but resolves the drawback.
+
+\paragraph{Inlining}
+
+The basic idea of the new semantic definition is to take advantage of
+a static inlining operation. We maintain the modular semantics, and
+use the inlining to convert all internal communications simply to a
+sequence of actions. The detailed inlining operation will be defined
+on \refsect{sec:inlining-semantics}, and an application will be shown
+on \refsect{chap:example}.
+
+Static inlining is not a new idea in Bluespec. It has been defined for
+merging rules and methods~\cite{daniel-thesis}. It was used to convert
+between two Bluespec-like languages, where one has a module hierarchy,
+while the other does not have the hierarchy. The purpose of the use of
+the inlining is similar in that it \emph{flattens} modules to analyze
+them efficiently. However, the inlining operation defined in this
+thesis is more complicated in that it is defined for open systems. In
+other words, the inlining does not affect communications with external
+modules. Detailed proofs (called the correctness of the inlining
+operation) will be described in \refchap{chap:implication}.
+
 

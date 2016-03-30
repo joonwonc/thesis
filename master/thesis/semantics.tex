@@ -59,9 +59,10 @@ the value of a continuation argument. Lastly, \eop{e} abstracts all
 inductive operations among expressions.
 
 \paragraph{Actions}
-As explained in \todo{} \refsect{}, an action is a unit for describing
-hardware behaviors, which should ensure atomicity. Actions consist of
-a write to a register, a method call, an assert, and a return.
+As explained in \refsect{sec:design-paradigm}, an action is a unit for
+describing hardware behaviors, which should ensure atomicity. Actions
+consist of a write to a register, a method call, an assert, and a
+return.
 
 \begin{definition}
   \label{def-action}
@@ -135,9 +136,9 @@ which the current \Kami{} framework uses. The motivation is kept
 unchanged: semantics are defined with respect to the module
 definition, which includes the one for combining modules. The
 semantics defined in this section will be used throughout the thesis,
-including the consistency proofs in \todo{} \refsect{}. Specifically, the
-semantics for expressions and actions are completely borrowed from
-\cite{murali-thesis}. Other higher semantics differ.
+including the implication proof in \refchap{chap:implication}.
+Specifically, the semantics for expressions and actions are completely
+borrowed from \cite{murali-thesis}. Other higher semantics differ.
 
 \paragraph{Expressions}
 
@@ -252,7 +253,7 @@ value.
 \paragraph{Substep}
 Once the semantics for actions are defined, it should be applied to
 describe the semantics of rule or method executions. As explained in
-\todo{} \refsect{}, \Bluespec{} and \Kami{} follow the
+\refsect{sec:bluespec-semantics}, \Bluespec{} and \Kami{} follow the
 one-rule-at-a-time semantics; only one rule is executed in a cycle,
 while multiple method calls are executed. The \Substep{} semantics
 defines a single execution by a rule or a method. It is simply a lift
@@ -306,8 +307,7 @@ cycle. These cases are similar to $\epsilon$-steps for describing
 program behaviors, like the one in \todo{} CompCert~\cite{}. However,
 an empty step by a rule and one by a method should be separately
 defined in the \Substep{} semantics, in order to give explicit
-information when defining the refinement relation. See \todo{}
-\refsect{} for details.
+information when defining the refinement relation.
 
 SingleRule and SingleMeth describe the case where a rule or a method
 is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
@@ -570,8 +570,8 @@ module. By the correctness of a module, it means the module can be
 synthesized into a hardware component which operates without errors,
 and behaves like the module definition. The conditions are also
 related to implications among semantics, which is one of main topics
-of the thesis (See \todo{} \refsect{} for details). The two conditions are
-as follows:
+of the thesis (See \refchap{chap:implication} for details). The two
+conditions are as follows:
 \begin{itemize}
   \item $(\wfdouble{m})$ ensures that there are no double writes or
     double calls \emph{for each action} in a module $m$.
@@ -663,6 +663,7 @@ The definition of (\wfdoublea{a}) is naturally extended to
 \paragraph{Well-formedness for avoiding cycles} Ipsum.
 
 \section{Inlining Semantics}
+\label{sec:inlining-semantics}
 
 \subsection{Motivation}
 
@@ -717,8 +718,8 @@ target module, we search for all method calls to the target function,
 and inline all of them. This process is applied for every defined
 method in the module. The reason we chose this way is that inlining a
 single method is closely related to semantic labels. See
-\todo{} \refsect{} for the detailed reason why this inlining is easier to
-prove properties.
+\refchap{chap:implication} for the detailed reason why this inlining
+is easier to prove properties.
 
 For a target action $a$ and an inlining method $dm$, we define a
 method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
