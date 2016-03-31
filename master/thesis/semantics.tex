@@ -303,11 +303,11 @@ $o$ is the old state, $u$ is the updated state, and
 \end{definition}
 
 EmptyRule and EmptyMeth describe cases where no progress is made in a
-cycle. These cases are similar to $\epsilon$-steps for describing
-program behaviors, like the one in \todo{} CompCert~\cite{}. However,
-an empty step by a rule and one by a method should be separately
-defined in the \Substep{} semantics, in order to give explicit
-information when defining the refinement relation.
+cycle. These cases are similar to $\epsilon$-steps in
+CompCert~\cite{leroy-compcert-cacm}. However, an empty step by a rule
+and one by a method should be separately defined in the \Substep{}
+semantics, in order to give explicit information when defining the
+refinement relation.
 
 SingleRule and SingleMeth describe the case where a rule or a method
 is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
@@ -516,7 +516,7 @@ which are called in $m$.
 \section{Well-formedness of Modules}
 \label{sec-wf}
 
-In this section, we present a number of well-formedness conditions of
+In this section, we present one of well-formedness conditions of
 modules. Well-formedness for a programming language usually means a
 set of conditions which can be \emph{statically checked} with a given
 program. Since the conditions are static, they are usually defined
@@ -526,10 +526,22 @@ allowed within an action to write the same register twice, or to call
 the same method twice. These conditions can be statically determined
 by iterating the action.
 
-Whereas, a number of conditions cannot be statically checked, thus
-should be defined in part of semantics. For instance, when combining
-two substeps, two corresponding updated states and labels are required
-to be disjoint, defined in the \Substeps{} semantics. However, in some
+Well-formedness conditions should be checked not only for correct
+synthesis, but also for verification. Two representative
+well-formedness conditions are: 1) there are no double writes or
+double calls in each action, and 2) there are no call cycles in a
+module. If a hardware design does not satisfy the former, then the
+synthesized circuit would make structural hazards. If not satisfying
+the latter, then the call cycles will form a combinational cycle, in
+which the behavior of it is nonpredictable. The common reason for
+checking well-formedness conditions is that behaviors (semantics)
+cannot be defined without them. Thus, these conditions are also
+employed to verify properties of hardware designs.
+
+Whereas, some conditions cannot be statically checked, thus should be
+defined in part of semantics. For instance, when combining two
+substeps, two corresponding updated states and labels are required to
+be disjoint, defined in the \Substeps{} semantics. However, in some
 cases, it is too challenging to statically ensure the updated states
 and the labels are disjoint.
 
@@ -564,20 +576,11 @@ $r_1$. However, it is challenging to provide whether two predicates
 possible pairs of $(p, q)$ if $m$ is too complicated to figure out
 callers of $f$ and $g$?
 
-Now we define two well-formedness conditions of modules. All the
-conditions are used to describe necessary conditions for a correct
-module. By the correctness of a module, it means the module can be
-synthesized into a hardware component which operates without errors,
-and behaves like the module definition. The conditions are also
-related to implications among semantics, which is one of main topics
-of the thesis (See \refchap{chap:implication} for details). The two
-conditions are as follows:
-\begin{itemize}
-  \item $(\wfdouble{m})$ ensures that there are no double writes or
-    double calls \emph{for each action} in a module $m$.
-  \item $(\wfcycle{m})$ ensures that there are no call cycles in a
-    module $m$.
-\end{itemize}
+In this thesis, we define a well-formedness condition ensuring that
+there are no double writes or double calls. For a given module $m$,
+$(\wfdouble{m})$ ensure such a property. The condition is used to
+prove the implication between semantics, which is one of main topics
+of the thesis (See \refchap{chap:implication} for details).
 
 \paragraph{Well-formedness for avoiding double writes and calls}
 
@@ -660,16 +663,10 @@ The definition of (\wfdoublea{a}) is naturally extended to
   \end{center}
 \end{definition}
 
-\paragraph{Well-formedness for avoiding cycles} Ipsum.
-
 \section{Inlining Semantics}
 \label{sec:inlining-semantics}
 
-\subsection{Motivation}
-
-\todo{}
-
-\subsection{Defining Inlining Function}
+\subsection{Inlining Operation}
 
 \paragraph{Concatenating two actions}
 In order to implement an inlining function, we first have to implement
