@@ -61,7 +61,7 @@ some other modules which can respond to them.
   \label{ex-modular-semantics-disadvantage}
 \end{figure}
 
-However, the modular semantics has an inherent drawback that it is
+However, the modular semantics has an inherent weakness that it is
 hard to track internal state changes by internal communications.
 Suppose we designed a pipelined system, as shown in the upper part of
 \reffig{ex-modular-semantics-disadvantage}. $\texttt{f}_1$,
@@ -80,7 +80,7 @@ fact that the system is implemented by pipelines, since the semantics
 are not defined by following execution paths, but by a series of local
 communication among small modules.
 
-A number of semantics, which do not have such a drawback, have been
+A number of semantics, which do not have such a weakness, have been
 defined but none of them was defined for open systems. In other words,
 there have been no semantics which is able to define communication
 with external modules. A big-step semantics along with the action
@@ -89,7 +89,7 @@ it does not have a notion for external communications.
 
 Hence, in this thesis, I present an additional semantics definition,
 which is based on inlining.  The inlining semantics is defined for
-open hardware systems and resolve the drawback by construction.  The
+open hardware systems and resolve the weakness by construction.  The
 semantics use a static inlining operation to substitute internal calls
 to their method bodies. This operator erases all internal calls in a
 module, so that we do not need to care about internal communications.

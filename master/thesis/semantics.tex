@@ -641,9 +641,12 @@ as follows:
   \end{center}
 \end{definition}
 
-(\wfdoublea{a}) is defined using (\wfdoubleap{a}{rs}{cs}), where $rs$
-and $cs$ are registers and method calls collected while iterating an
-action, respectively. \todo{more explanation}
+$(\wfdoublea{a})$ is defined using $(\wfdoubleap{a}{rs}{cs})$, where
+$rs$ and $cs$ are registers and method calls collected while iterating
+an action, respectively. When an action is a register write or a
+method call, then $(\wfdoubleap{a})$ checks if the register or the
+method is already written or called, respectively. If not, it collects
+the register and the method, and continues to check for next actions.
 
 The definition of (\wfdoublea{a}) is naturally extended to
 (\wfdouble{m}), by applying it for each action in $m$.
@@ -941,8 +944,4 @@ inlined), while the right one is inlined. We can clearly see that the
 inlined module is simpler than the original one. Specifically, the
 inlined module is easily handled, since 1) it has fewer defined
 methods, and 2) the module has no internal calls.
-
-\subsection{Discussion: Inlining and Call Cycles}
-
-\todo{}
 
