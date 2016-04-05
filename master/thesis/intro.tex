@@ -1,58 +1,62 @@
 \chapter{Introduction}
 
 Hardware components have been known to be extremely complex due to
-concurrency. A system having concurrency implies that independent
+concurrency. A system having concurrency indicates that independent
 works can be done simultaneously, and it usually occurs as a name of
 optimization. For example, instruction pipelining is one of
 representative optimizations, which employes an instruction-level
-parallelism to handle multiple executions at the same time.
+parallelism to handle multiple executions at the same time. Concurrent
+executions usually involve nondeterminism, since there is no fixed
+sequence of execution for them. Nondeterminism is generally hard to
+deal with, since all possible execution cases should be considered.
 
 Modularity has been considered as an effective way to design and
 understand such complex hardware components. Modularity indicates that
-a complex hardware can be constructed by composing simple
+a complex hardware component can be constructed by composing simple
 modules. Several Hardware Description Languages (HDLs) such as Verilog
-employ the notion of modules, each of which acts as a simple unit
-component.
+or VHDL~\cite{verilog, vhdl} employ the notion of modules, each of
+which acts as a small unit component.
 
-Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} allows to design
-hardware based not only on modularity, but also the prevalent paradigm
-called Guarded Atomic Actions (GAAs). Even though a certain language
-allows to design hardware in a modular manner, modules cannot be
-independently designed if they are entangled with clock-timing
-issues. For instance, when two modules are connected with wires and
-one module becomes to need shorter clock cycles by optimization, the
-other module should follow that cycle, or the optimized module should
-maintain the original clock even if it is optimized.
+Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} allows designers
+to develop hardware based not only on modularity, but also on the
+prevalent paradigm called Guarded Atomic Actions
+(GAAs)~\cite{daniel-gaa}. Even though a HDL allows to design hardware
+in a modular manner, modules cannot be independently designed if they
+are entangled with clock-timing issues. For instance, when two modules
+are connected with wires and one module is optimized to need shorter
+clock cycles, then the other module should follow that cycle, or the
+optimized module should maintain the original clock even if it is
+optimized.
 
 Following the concepts of modularity and GAA, we have been defining a
-framework called \Kami{}, which is for specifying, verifying, and
-synthesizing \Bluespec{}-style hardware components. \Kami{} presents a
-domain specific language similar to Bluespec, and aims to prove the
-correctness of hardware automatically. In order for correctness proof,
-we also have defined formal semantics of the \Kami{} language, which
-is based on the modularity concept. The framework has been built on
-the Coq proof assistant.
+framework called \Kami{}~\cite{kami-web}, which is for specifying,
+verifying, and synthesizing \Bluespec{}-style hardware
+components. \Kami{} presents a domain specific language similar to
+Bluespec, and aims to prove properties of hardware automatically. In
+order for such proofs, we also have defined formal semantics of the
+\Kami{} language, based on modularity. The framework has been built on
+the Coq proof assistant, hence verification can be performed by
+mechanized proofs.
 
-Modularity fits for scalable verification, especially with theorem
-provers. In terms of verification, modularity implies that complex
+Modularity fits for scalable verification, especially with mechanized
+proofs. In terms of verification, modularity indicates that complex
 hardware components can be verified if each simple element is
-verified. And in many cases, we reuse such simple components for
-different uses. From the perspective of theorem proving, reusing a
-hardware component indicates that we can also reuse its correctness
-proof. Thanks to the modular semantics in \Kami{}, it is indeed
-possible to use the proof of a component whenever it is used for the
-part of a design.
+verified. In many cases, we reuse such simple components for different
+uses. From the perspective of proof, reusing a hardware component
+implies that we can also reuse its related proofs. Thanks to the
+modular semantics in \Kami{}, it is indeed possible to use the proof
+of a component whenever it is used for the part of a design.
 
 An important aspect of the modular semantics is that modules
 communicate by labels. It is originated from the concept called
 Labeled Transition System (LTS). Each module changes its internal
 state and the corresponding label is generated during the state
 transition. On the modular semantics, labels are method calls. In
-other words, modules communicate by calling methods of target modules.
+other words, modules communicate by calling methods of other modules.
 The modular semantics also take advantage of the LTS concept to define
 behaviors of \emph{open systems}. Open systems have external
 interactions, which cannot be figured out unless it is connected with
-some other modules which can respond to them.
+other modules which can respond to them.
 
 \begin{figure}[t]
   \centering
@@ -63,7 +67,7 @@ some other modules which can respond to them.
 
 However, the modular semantics has an inherent weakness that it is
 hard to track internal state changes by internal communications.
-Suppose we designed a pipelined system, as shown in the upper part of
+Consider a pipelined system, as shown in the upper part of
 \reffig{ex-modular-semantics-disadvantage}. $\texttt{f}_1$,
 $\texttt{f}_2$, and $\texttt{f}_3$ are modules which get an input from
 the corresponding fifos $\texttt{inQ}$, $\texttt{fifo}_1$, and
@@ -87,22 +91,22 @@ with external modules. A big-step semantics along with the action
 structures in \Bluespec{} have been defined~\cite{nirav-memocode}, but
 it does not have a notion for external communications.
 
-Hence, in this thesis, I present an additional semantics definition,
-which is based on inlining.  The inlining semantics is defined for
-open hardware systems and resolve the weakness by construction.  The
-semantics use a static inlining operation to substitute internal calls
-to their method bodies. This operator erases all internal calls in a
-module, so that we do not need to care about internal communications.
+Hence, in this thesis, I present a new semantic approach, which is
+based on inlining. Inlining semantics is defined for open hardware
+systems and resolve the weakness by construction. The semantics uses a
+static inlining operation to substitute internal calls to their method
+bodies. This operator erases all internal calls in a module, so that
+we do not need to care about internal communications.
 
 An implication from the modular semantics to the inlining semantics is
-also formally proven, thus it can be used to handle the semantics
-efficiently. Since the two semantics does not have equal capabilities,
-we give the implication proof saying that the modular semantics imply
-the inlining semantics.
+also formally proven, thus it can be used in order to efficiently
+prove properties of hardware. Since the two semantics does not have
+equal capabilities, we give the implication proof saying that the
+modular semantics imply the inlining semantics.
 
 To sum up, the main contributions of this thesis are:
 \begin{itemize}
-\item To define a new semantics definition based on inlining, for open
+\item To define a new semantic approach based on inlining, for open
   hardware systems.
 \item To prove the implication from the modular semantics to the
   inlining semantics.
@@ -111,17 +115,12 @@ To sum up, the main contributions of this thesis are:
 \paragraph{Overview}
 
 The thesis is organized as follows: \refchap{chap:backgrounds}
-explains a number of prerequisites to understand the hardware design
+introduces a number of prerequisites to understand the hardware design
 concept of \Bluespec{}. Related works are also provided to compare
-previous approaches to define hardware
-semantics. \refchap{chap:semantics} presents the two semantics used in
-the \Kami{} framework: modular and inlining
+previous approaches to define hardware semantics.
+\refchap{chap:semantics} presents the two semantics used in the
+\Kami{} framework: modular and inlining
 semantics. \refchap{chap:implication} compares capability of each
-semantics and presents the implication proof between
-semantics. Lastly, we draw conclusions and give future works in
-\refchap{chap:conclusions}.
-
-
-
-
+semantics and presents the implication proof between them. Lastly, we
+draw conclusions and give future works in \refchap{chap:conclusions}.
 

@@ -14,18 +14,18 @@
 Hardware components have been known to be extremely complex due to
 concurrency. Modularity has been considered as an effective way to
 design and understand such complex hardware components. Among various
-Hardware Description Languages (HDLs), \Bluespec{} allows to design
-hardware based not only on modularity, but also on the prevalent
-paradigm called Guarded Atomic Actions (GAAs). Following the concepts
-of \Bluespec{}, we have been defining a framework called \Kami{},
-which is to verify \Bluespec{}-style hardware components. Modularity
-also fits for verifying hardware components, thanks to the Labeled
-Transition System (LTS) concept. However, modular verification has an
-inherent weakness that it is hard to infer internal state changes by
-internal communications. Hence, in this thesis, I present an
-additional semantics definition, which is based on inlining. The
-inlining semantics is defined for open hardware systems and resolve
-the weakness by construction. An implication from the modular
+Hardware Description Languages, \Bluespec{} allows designers to
+develop hardware based not only on modularity, but also on the
+prevalent paradigm called Guarded Atomic Actions (GAAs). Following the
+concept of \Bluespec{}, we have been defining a framework
+called \Kami{}, which is for verifying \Bluespec{}-style hardware
+designs. Modularity also fits for verifying hardware components,
+thanks to the Labeled Transition System (LTS) concept. However,
+modular verification has an inherent weakness that it is difficult to
+infer internal state changes by internal communications. In this
+thesis, I present a new semantic approach, which is based on
+inlining. Inlining semantics is defined for open hardware systems, and
+resolve the weakness by construction. An implication from the modular
 semantics to the inlining semantics is also formally proven, thus it
-can be used to handle the semantics efficiently.
+can be used in order to efficiently prove hardware properties.
 
