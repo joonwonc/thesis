@@ -1,34 +1,41 @@
-\chapter{Formal Semantics for Hardware Systems}
+\chapter{An Inlining Approach to Hardware Semantics}
 \label{chap:semantics}
+
+In this chapter, we present a formal definition of inlining. The
+inlining operation is defined on the Kami language and the modular
+semantics~\cite{murali-thesis}. Finally, we present a new semantic
+approach to make up for the weakness of the modular semantics.
 
 \paragraph{Notations}
 
 Before defining syntax and semantics, we define notations to represent
 general data structures.
 \begin{itemize}
-\item Lists: we use the symbol $\vec{t}\ $ to represent a list where
-  elements have the type of $t$. \listnil{} represents the nil list,
-  and $(\listcons{hd}{tl})$ represents a list with a head $hd$ and a
-  tail $tl$.
+\item Lists: we use a symbol $\vec{t}\;$ to represent a type of list
+  whose elements are represented as a value $t$. \listnil{} represents
+  the nil list, and $(\listcons{hd}{tl})$ represents a list with a
+  head $hd$ and a tail $tl$.
 \item Sets: \emptyset{} represents an empty set, $(s \cup t)$
-  represents a union.
-\item Finite maps: we use the symbol $K \finmapsymb V$ to represent a
-  finite map with the key type $K$ and the value type $V$. \emptymap{}
-  represents an empty map, and $\stupd{m}{k}{v}$ represents a map
-  update with a new key $k$ and a value $v$. Singletons are
-  represented by omitting \emptymap{}, like $\stupd{}{k}{v}$.
-  $\mapfilt{m}{ks}$ represents a map where all elements whose keys are
-  in the list $ks$ are removed from $m$. We use the notation $\in$
-  also for finite maps to represent that a map has a certain key; $k
-  \in m$ says a map $m$ is defined with a key $k$.
+  represents a union. $(a \in S)$ denotes an element $a$ which is in a
+  set $S$.
+\item Finite maps: we use a symbol $(K \finmapsymb V)$ to represent a
+  finite map with a set of keys $K$ and a set of values
+  $V$. \emptymap{} represents an empty map, and $\stupd{m}{k}{v}$
+  represents a map update with a new key $k$ and a value
+  $v$. Singletons are represented by omitting \emptymap{}, like
+  $\stupd{}{k}{v}$.  $(\mapfilt{m}{ks})$ represents a map where all
+  elements whose keys are in the list $ks$ are removed from $m$. We
+  use the notation $\in$ also for finite maps to represent that a map
+  has a certain key; $(k \in m)$ means that a map $m$ has a value for
+  a key $k$.
 \end{itemize}
 
 \section{Syntax}
 
 \paragraph{Expressions}
-We begin by defining syntax for expressions. Expressions
-consist of constant, register read, variable, and an inductive
-operation among expressions.
+We begin by defining syntax for expressions. Expressions consist of
+constant, register read, variable, and an inductive operation among
+expressions.
 
 \begin{definition}
   \label{def-expression}
@@ -45,24 +52,25 @@ operation among expressions.
   \end{center}
 \end{definition}
 
-Constants denotes all concrete values in hardware design. A number of
-constants with different bit-widths may exist in real hardware design,
-but they are abstracted into a single type. Let \setconst{} be the set
-of such constants. $c \in \setconst{}$ will be used as a typical
-charater representing a constant throughout the thesis.
+Constants denote all concrete values used in hardware design. A number
+of constants with different bit-widths may exist in real hardware
+design, but they are abstracted into a single type for
+convenience. Let \setconst{} be the set of such constants. $c \in
+\setconst{}$ will be used as a typical character representing a
+constant throughout the chapter.
 
-$r \in \setregs{}$ in expression represents the value of a register
+$r \in \setregs{}$ in expressions represents the value of a register
 $r$, where \setregs{} is the set of register names. $x$ denotes a
 variable bound by a continuation. We define syntax as a
-continuation-passing style (CPS), hence the variable is used to get
-the value of a continuation argument. Lastly, \eop{e} abstracts all
+continuation-passing style (CPS), hence variables are used to get the
+value of a continuation argument. Lastly, \eop{e} abstracts all
 inductive operations among expressions.
 
 \paragraph{Actions}
 As explained in \refsect{sec:design-paradigm}, an action is a unit for
 describing hardware behaviors, which should ensure atomicity. Actions
-consist of a write to a register, a method call, an assert, and a
-return.
+consist of register write, method call, let bind, conditional branch,
+assert, and return.
 
 \begin{definition}
   \label{def-action}
@@ -82,20 +90,19 @@ return.
 \end{definition}
 
 A register write action takes a register name $r$ and an expression
-$e$ to assign the evaluation of $e$ to $r$. A method call action takes
-a method name $f \in \setmeths{}$ to call, an expression $e$ as an
-argument. A return value for the call is bound to a variable $x$ in a
-lambda continuation. \setmeths{} denotes the set of method names. An
-assert action takes an expression $e$ to be checked to progress the
-continuation. Lastly, A return action takes $e$ as a return
-value. Note that all action components except a return action also
-takes an action $a$ as a continuation.
+$e$ to assign the evaluated value of $e$ to $r$. A method call action
+takes a method name $f \in \setmeths{}$ to call, and an expression $e$
+as an argument. A return value for the call is bound to a variable $x$
+in a lambda continuation. \setmeths{} denotes the set of method
+names. An assert action takes an expression $e$ to be checked to
+progress the continuation. Lastly, a return action takes $e$ as a
+return value. Note that all action components except a return action
+also takes an action $a$ as a continuation.
 
 \paragraph{Modules}
-A module is a unit of hardware component which has its own state (a
-set of registers), introduces internal state change fired by actions,
-and creates method calls to communicate with other modules. A module
-syntactically consists of registers, rules, and methods.
+A module is a unit of hardware components which has its own state (a
+set of registers), rules for inducing internal state changes, and
+methods to communicate with other modules.
 
 \begin{definition}
   \label{def-module}
@@ -112,7 +119,7 @@ syntactically consists of registers, rules, and methods.
   \end{center}
 \end{definition}
 
-Modules is either a \emph{basic module} or a \emph{composed module}
+A module is either a \emph{basic module} or a \emph{composed module}
 where two modules are composed inductively. In a basic module,
 registers has a form of $\listof{\regpair{r}{c}}$, where $c$ is the
 default value for a corresponding register $r$. Rules are defined as
@@ -122,27 +129,28 @@ the body of it. Methods are defined as $\listof{\methodpair{f}{\lambda
 body of it. $x$ in the lambda form serves to take an argument of the
 method.
 
-Note that all names for registers, rules, and methods are assumed to
-be globally unique in the module. A simple static checker can be
-implemented to confirm there are no name conflicts inside a module.
+All names for registers, rules, and methods are assumed to be globally
+unique in the module. A simple static checker can be implemented to
+confirm there are no name conflicts for all modules.
 
 \section{Modular Semantics}
 \label{sec-semmod}
 
-In this section, we present modular semantics for hardware design. A
-version of modular semantics has been defined in \cite{murali-thesis}.
-However, this section defines a slightly different version of it, in
-which the current \Kami{} framework uses. The motivation is kept
-unchanged: semantics are defined with respect to the module
-definition, which includes the one for combining modules. The
-semantics defined in this section will be used throughout the thesis,
-including the implication proof in \refchap{chap:implication}.
-Specifically, the semantics for expressions and actions are completely
-borrowed from \cite{murali-thesis}. Other higher semantics differ.
+In this section, we present a modular semantics for hardware
+systems. A version of modular semantics has been defined in
+\cite{murali-thesis}.  However, this section defines a slightly
+different version of it, in which the current \Kami{} framework
+uses. The motivation is kept unchanged: semantic rules are defined
+with respect to module definitions, which include the one for
+combining modules. The semantics defined in this section will be used
+throughout the thesis, including the implication proof in
+\refchap{chap:implication}. Specifically, semantic definitions for
+expressions and actions are completely borrowed from
+\cite{murali-thesis}. Other higher semantics differ.
 
 \paragraph{Expressions}
 
-We start defining semantics from the one for expressions.
+We start by defining semantics from the one for expressions.
 \refdef{def-semexpr} describes denotational semantics \ssemexpr{\cdot}
 for expressions.
 
@@ -162,34 +170,34 @@ for expressions.
   \end{center}
 \end{definition}
 
-The semantics for constant and register read are straightforward. The
+Semantics for constant and register read are straightforward. The
 constant itself is returned for a constant. Register read is performed
 by reading its value from the \emph{old state} $o: \sttype$.
 
-The semantics for variable is not defined, since it should be
-substituted to the value by $\beta$-reduction in higher
-semantics. Technically, in the \Kami{} framework, syntax is defined by
-PHOAS~\cite{adam-icfp}, thus the variable term is abstracted into a
-syntax constructor $\textsf{Var}$. In this case, we rather can define
+Semantics for variable is not defined, since it should be substituted
+to the value by $\beta$-reduction on higher semantics. Technically, in
+the \Kami{} framework, syntax is defined by PHOAS~\cite{adam-icfp},
+thus the variable term is abstracted into a syntax constructor
+$\textsf{Var}$. In this case, we rather can define
 $\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is already substituted
 to a value but still contained in the constructor.
 
-Lastly, the semantics for operation is defined by using the semantic
+Lastly, semantics for operation is defined by using the semantic
 definition for \seop{}, denoted as $\denot{\seop{}}$. Arguments are
-inductively evaluated by the same semantics function.
+inductively evaluated by the same semantic function.
 
 \paragraph{Actions}
 
-Action is the basic unit where the communication among modules are
+Actions are the basic unit where the communication among modules are
 triggered by method calls. As defined in \refdef{def-action}, actions
 contain a method call. A method call can be either internal (calling a
 method in the module), or external (calling a method not in the
 module).
 
-In the modular semantics, all method calls are treated
-nondeterministically. In other words, the semantics for method calls,
-on the level of action, are defined as if we know the return value of
-the method for every argument. The validity of such assumptions are
+In the modular semantics, all method calls are first treated as they
+are external calls. In other words, the semantics for method calls, on
+the level of action, are defined as if we know the return value of the
+method for every argument. The validity of such assumptions are
 checked on higher-level semantics.
 
 The semantics for actions have a form of a judgment relation
@@ -240,9 +248,9 @@ double-calls of method calls. For instance, in the rule
 ActionWriteReg, an evaluated value is simply updated to the updated
 state $u$ by the register name $r$, without confirming $u$ does not
 have the value for $r$. Similarly, ActionCall does not check $cs$
-already has the value for $f$. The reason is that these conditions can
-be checked \emph{statically}; we call such conditions
-\emph{well-formedness} of actions. Detailed static checks and
+already has the value for $f$. As explained in
+\refsect{sec:bluespec-semantics}, we separately define semantics and
+well-formedness conditions. Detailed static well-formedness checks and
 properties will be discussed in \refsect{sec-wf}.
 
 An assert and a return action have straightforward semantics. Assert
@@ -251,27 +259,26 @@ execution. Return simply evaluates the expression $e$ to return the
 value.
 
 \paragraph{Substep}
-Once the semantics for actions are defined, it should be applied to
+Once the semantics for actions are defined, it should be employed to
 describe the semantics of rule or method executions. As explained in
 \refsect{sec:bluespec-semantics}, \Bluespec{} and \Kami{} follow the
 one-rule-at-a-time semantics; only one rule is executed in a cycle,
 while multiple method calls are executed. The \Substep{} semantics
-defines a single execution by a rule or a method. It is simply a lift
-from the semantics for actions, since a rule or a method is defined by
-an action.
+defines a single execution by a rule or a method. Definitions are
+simply lifted from the semantics for actions, since a rule or a method
+is defined by actions.
 
-A label is firstly employed on this semantics, representing
+A label is firstly used on this semantics, in order to represent
 communications with other external modules. A label has a form of
 \semlbl{\alpha}{ds}{cs}. $\alpha$ contains the information whether the
 label is formed by a rule or not. If the label is formed by a rule $s
-\in \setrules$, it takes \alpharule{s}. Otherwise, it takes
+\in \setrules$, it takes $(\alpharule{s})$. Otherwise, it takes
 \alphameth{}. $\alpha$ is used to ensure that the label follows the
 one-rule-at-a-time semantics. $ds$ denotes \emph{defined methods},
-indicating multiple methods executed in a cycle. Similarly, $cs$
-denotes \emph{called methods}, indicating methods which are called in
-a cycle.
+indicating methods executed in a cycle. Similarly, $cs$ denotes
+\emph{called methods}, indicating methods which are called in a cycle.
 
-The \Substep{} semantics have a form of a judgment relation
+The \Substep{} semantics has a form of a judgment relation
 \semsstep{m}{o}{u}{\alpha}{ds}{cs}, where $m$ is the target module,
 $o$ is the old state, $u$ is the updated state, and
 \semlbl{\alpha}{ds}{cs} is the label formed by the execution.
@@ -302,12 +309,13 @@ $o$ is the old state, $u$ is the updated state, and
   \end{center}
 \end{definition}
 
-EmptyRule and EmptyMeth describe cases where no progress is made in a
-cycle. These cases are similar to $\epsilon$-steps in
-CompCert~\cite{leroy-compcert-cacm}. However, an empty step by a rule
-and one by a method should be separately defined in the \Substep{}
-semantics, in order to give explicit information when defining the
-refinement relation.
+EmptyRule and EmptyMeth describe the cases where no progress is made
+in a cycle. These cases are similar to $\epsilon$-steps in the C
+language behaviors defined in CompCert~\cite{leroy-compcert-cacm}.
+However, an empty step by a rule and one by a method should be
+separately defined in the \Substep{} semantics, in order to give
+explicit information when defining the refinement
+relation~\cite{murali-thesis}.
 
 SingleRule and SingleMeth describe the case where a rule or a method
 is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
@@ -339,22 +347,23 @@ SingleMeth case. \methsofm{m} is also similarly defined as follow:
     \end{math}
   \end{center}
 \end{definition}
-Once a rule or a method is found, proper labels are formed simply by
-using information from the semantics of actions.
+Once a rule or a method is found, proper labels are formed by using
+information from the action semantics.
 
 \paragraph{Substeps}
-The \Substeps{} semantics collect multiple substeps which are
-simultaneously executed in a cycle. There are a few conditions whether
-substeps can be merged or not. Basically the updated states and labels
-from \Substep{} are used. Firstly, two substeps with \alpharule{\cdot}
-labels cannot be merge, since it breaks the one-rule-at-a-time
-semantics. Two updated states should be disjoint unless it breaks the
-double-write policy. Similarly, two defined methods and two called
-methods should be disjoint not to break double-call.
+The ``Substeps'' semantics collects multiple substeps which are
+concurrently executed in a cycle. There are a few conditions whether
+substeps can be merged or not. Conditions are about the updated states
+and labels from \Substep{}. Firstly, two substeps with
+$(\alpharule{\cdot})$ labels cannot be merged, since it breaks the
+one-rule-at-a-time semantics. Two updated states should be disjoint
+unless it breaks the double-write policy. Similarly, two defined
+methods and two called methods should be disjoint not to break
+double-call.
 
-The \Substeps{} semantics have a form of a judgment relation
-\semsss{m}{o}{u}{l}, arguments mostly have the same meaning as in
-\Substep{}. $l$ denotes the label formed in a cycle.
+The \Substeps{} semantics has a form of a judgment relation
+\semsss{m}{o}{u}{l}, where arguments mostly have the same meaning as
+in \Substep{}. $l$ denotes the label formed in a cycle.
 
 \begin{definition}
   \label{def-semsss}
@@ -377,16 +386,20 @@ The \Substeps{} semantics have a form of a judgment relation
 In SubstepsCons, disjointnesses of states and labels are both denoted
 by the operation \sdisj{}{}, while definitions differ. For states
 $u_1$ and $u_2$, \sdisj{u_1}{u_2} defines the two finite state maps
-are disjoint, which can be defined naturally:
+are disjoint, which can be defined naturally.
 
-\begin{center}
-  \begin{math}
-    \sdisj{u_1}{u_2} \triangleq \forall r. r \notin u_1 \vee r \notin u_2
-  \end{math}
-\end{center}
+\begin{definition}
+  \label{def-sdisj}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \sdisj{u_1}{u_2} \triangleq \forall r. r \notin u_1 \vee r \notin u_2
+    \end{math}
+  \end{center}
+\end{definition}
 
 For labels $l_1$ and $l_2$, \ldisj{l_1}{l_2} defines the two labels
-are combinable:
+are combinable.
 
 \begin{definition}
   \label{def-ldisj}
@@ -405,9 +418,9 @@ are combinable:
   \end{center}
 \end{definition}
 
-Once the disjointnesses are defined, we can use the disjoint union for
-updated states \splus{u_1}{u_2} and the merged label \lplus{l_1}{l_2},
-where the label merging is defined as follows:
+Using the disjointness conditions, we define a \emph{disjoint union}
+for updated states $(\splus{u_1}{u_2})$ and the merged label
+$(\lplus{l_1}{l_2})$, where the label merging is defined as follows:
 
 \begin{definition}
   \label{def-lplus}
@@ -427,23 +440,23 @@ where the label merging is defined as follows:
   \end{center}
 \end{definition}
 
-The only nontrivial definition is \annplus{\alpha_1}{\alpha_2}, which
-is to take the rule annotation from two annotations, \alphameth{} if
-both of them are not a rule annotation. Note that the two annotations
-cannot both be the rule annotation by the condition
-\anndisj{\alpha_1}{\alpha_2}.
+The only nontrivial definition is $(\annplus{\alpha_1}{\alpha_2})$,
+which takes rule annotations from two annotations. It returns
+\alphameth{} if both of them are not a rule annotation. Note that the
+two annotations cannot both be the rule annotation by the condition
+$(\anndisj{\alpha_1}{\alpha_2})$.
 
 \paragraph{Step}
-The \Step{} semantics describe behaviors of a module where all
+The \Step{} semantics describes behaviors of a module where all
 internal communications are hidden. It employes the \Substep{}
 semantics, and hides all internal calls of the label from the
 substeps. Hiding internal calls includes to check whether the calls
-are correctly defined, \ie{}, if a label of substeps contains a called
+are correctly defined, \ie{} if a label of substeps contains a called
 method $f$ with an argument and a return value $(v_a, v_r)$, then the
 label also should contain a defined method with the same name and the
 value.
 
-The \Step{} semantics have a form of a judgment relation
+The \Step{} semantics has a form of a judgment relation
 (\semstep{m}{o}{u}{l}), arguments have the same meaning as in
 \Substeps{}.
 
@@ -462,23 +475,24 @@ The \Step{} semantics have a form of a judgment relation
 \end{definition}
 
 (\hide{l}) computes the label where all internal (corresponding) calls
-are removed, defined as follow:
+are removed.
 
 \begin{definition}
   \label{def-hide}
   \mbox{}
   \begin{center}
     \begin{math}
-      \hide{\semlbl{\alpha}{ds}{cs}} = \semlbl{\alpha}{ds - cs}{cs - ds},
+      \hide{\semlbl{\alpha}{ds}{cs}} = \semlbl{\alpha}{ds - cs}{cs - ds}.
     \end{math}
   \end{center}
 \end{definition}
-where a finite map subtraction operation $(-)$ is naturally defined; it
+
+A finite map subtraction operation $(-)$ is naturally defined; it
 removes all pairs $(k, v)$ on the left-hand side map if the right-hand
 side map contains $(k, v)$.
 
 (\wellhidden{m}{l}) ensures $l$ does not contain internal calls with
-respect to $m$, defined as follow:
+respect to $m$.
 
 \begin{definition}
   \label{def-wellhidden}
@@ -486,12 +500,13 @@ respect to $m$, defined as follow:
   \begin{center}
     \begin{math}
       \wellhidden{m}{\semlbl{\alpha}{ds}{cs}} \triangleq
-      (\keysdisj{ds}{\callsofm{m}}) \wedge (\keysdisj{cs}{\methsofm{m}}),
+      (\keysdisj{ds}{\callsofm{m}}) \wedge (\keysdisj{cs}{\methsofm{m}}).
     \end{math}
   \end{center}
 \end{definition}
-where a \callsofm{m} operator statically collects all method names
-which are called in $m$.
+
+$(\callsofm{m})$ statically collects all method names which are called
+in $m$.
 
 \begin{definition}
   \label{def-callsof}
