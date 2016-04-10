@@ -531,30 +531,32 @@ in $m$.
 \section{Well-formedness of Modules}
 \label{sec-wf}
 
-In this section, we present one of well-formedness conditions of
-modules. Well-formedness for a programming language usually means a
+In this section, we formally define one of well-formedness conditions
+of modules. Well-formedness for a programming language usually means a
 set of conditions which can be \emph{statically checked} with a given
 program. Since the conditions are static, they are usually defined
-independent to the semantics definition, which has a dynamic aspect.
-For instance, as briefly discussed in \refsect{sec-semmod}, it is not
-allowed within an action to write the same register twice, or to call
-the same method twice. These conditions can be statically determined
-by iterating the action.
+independent to semantic definitions, which has a dynamic aspect.  For
+instance, as briefly discussed in \refsect{sec:bluespec-semantics}, it
+is not allowed for a rule or a method to write the same register
+twice, or to call the same method twice. These conditions can be
+statically determined by iterating actions.
 
 Well-formedness conditions should be checked not only for correct
 synthesis, but also for verification. Two representative
 well-formedness conditions are: 1) there are no double writes or
 double calls in each action, and 2) there are no call cycles in a
 module. If a hardware design does not satisfy the former, then the
-synthesized circuit would make structural hazards. If not satisfying
-the latter, then the call cycles will form a combinational cycle, in
-which the behavior of it is nonpredictable. The common reason for
-checking well-formedness conditions is that behaviors (semantics)
-cannot be defined without them. Thus, these conditions are also
-employed to verify properties of hardware designs.
+synthesized circuit makes structural hazards. If not satisfying the
+latter, then the call cycles form a combinational cycle, whose
+behavior is nonpredictable. Meanwhile, in terms of verification, a
+main reason for checking well-formedness conditions is that some
+semantic properties cannot be proven without them. For instance, a
+correctness proof of an inlining operation requires a well-formedness
+condition as a hypothesis (see \refchap{chap:implication} for
+details).
 
 Whereas, some conditions cannot be statically checked, thus should be
-defined in part of semantics. For instance, when combining two
+defined in part of semantics. For example, when combining two
 substeps, two corresponding updated states and labels are required to
 be disjoint, defined in the \Substeps{} semantics. However, in some
 cases, it is too challenging to statically ensure the updated states
@@ -577,30 +579,29 @@ and the labels are disjoint.
       }
     \end{subfigure}
   }
-  \caption{Two methods always forming disjoint state updates}
+  \caption{Two methods forming disjoint state updates}
   \label{ex-two-methods-disjoint}
 \end{figure}
 
 \reffig{ex-two-methods-disjoint} shows the case where two methods $f$
-and $g$ yield disjoint state updates when $q = \neg p$, so they can be
-concurrently executed. When a condition expression $p$ is \btrue{},
+and $g$ yield disjoint state updates when $q = \neg p$, thus they can
+be concurrently executed. When a condition expression $p$ is \btrue{},
 then $f$ writes $r_1$ and $g$ writes $r_2$. Otherwise, if $p$ is
 \bfalse{}, then $q$ is \btrue{} so $f$ writes $r_2$ and $g$ writes
-$r_1$. However, it is challenging to provide whether two predicates
-($p$ and $q$ in the example) are disjoint or not. How can we collect
-possible pairs of $(p, q)$ if $m$ is too complicated to figure out
-callers of $f$ and $g$?
+$r_1$. However, it is generally challenging to provide whether two
+predicates ($p$ and $q$ in the example) are disjoint or not. How can
+we collect possible pairs of $(p, q)$ if the module $m$ is too
+complicated to figure out callers of $f$ and $g$?
 
-In this thesis, we define a well-formedness condition ensuring that
-there are no double writes or double calls. For a given module $m$,
-$(\wfdouble{m})$ ensure such a property. The condition is used to
-prove the implication between semantics, which is one of main topics
-of the thesis (See \refchap{chap:implication} for details).
+In this thesis, we define one of well-formedness conditions, which
+ensures that there are no double writes or double calls for given
+actions. For a given module $m$, $(\wfdouble{m})$ ensures such a
+property.
 
 \paragraph{Well-formedness for avoiding double writes and calls}
 
-Even if detecting double writes or calls is hard within a module, we
-can provide a \emph{sound} static checker for an action. A sound
+Even if detecting double writes or calls is difficult within a module,
+we can provide a \emph{sound} static checker for actions. A sound
 checker implies that if it says ``no double writes or calls'', then it
 is correct. However, it might say ``there exist double writes or
 calls'' even if such double writes or calls cannot happen.
@@ -684,17 +685,25 @@ The definition of (\wfdoublea{a}) is naturally extended to
 \section{Inlining Semantics}
 \label{sec:inlining-semantics}
 
+In this section, we formally define an inlining operation and its
+corresponding semantics. The main purpose of inlining is to handle
+possible behaviors of modules easily. As explained in
+\refsect{sec:related-works}, internal calls are the main hurdle
+analyzing module behaviors. However, in consequence of inlining, a
+module will no longer have internal calls, which indicates that the
+inlined module is easy to analyze.
+
 \subsection{Inlining Operation}
 
 \paragraph{Concatenating two actions}
-In order to implement an inlining function, we first have to implement
-a function which simply connects two actions. An operator
-$(\concatsymb)$ concatenates two actions, inductively defined as
-follows:
+In order to design an inlining function, we first have to implement a
+function which simply concatenates two actions.
 
 \begin{definition}
   \label{def-concataction}
-  \mbox{}
+  $(\concatsymb) : \textrm{Action} \to \textrm{Action} \to
+  \textrm{Action}$ is an infix operator, defined inductively with
+  respect to the left-hand side action:
   \begin{center}
     \begin{math}
       \begin{array}{rcl}
@@ -711,37 +720,39 @@ follows:
 \end{definition}
 
 The only nontrivial definition comes from the return statement
-\actret{e}. Concatenating two actions involves to pass the return
-value of the left action as an argument of the right action. However,
-dynamic evaluation of an expression cannot be involved with the static
-concatenation. The problem can be solved by using \wordlet{} syntax
-structure, saying that we declare a name in which $e$ is bound, and
-the value is used in the body ($\lambda x.a_c$). Considering the
-semantics for \wordlet{}, it is natural to define concatenation in
-such a way.
+$(\actret{e})$. Concatenating two actions involves to pass the return
+value of the left action to the right action as an argument. However,
+a dynamic evaluation of an expression cannot be involved with the
+static concatenation operation. The problem can be solved by using
+$\textsf{let}$ syntax structure, saying that we declare a name in
+which $e$ is bound, and the value is used in the body ($\lambda
+x.a_c$). Considering the semantic rule for $\textsf{let}$, it is
+natural to define concatenation in such a way.
 
 \paragraph{Inlining a method}
-There are several ways to implement an inlining. One way is to define
-it like a breadth-first search; during the iteration of a target
-action, called methods are inlined for each method call. This inlining
-process is applied repeatedly until there are no internal method
-calls.
+There are several ways to implement an inlining function. One way is
+to define it like a breadth-first search; during the iteration of a
+target action, called methods are inlined for each method call. This
+inlining process is applied repeatedly until there are no internal
+method calls.
 
-We define an inlining function in a somewhat different way. First, we
-pick a function which will be inlined. Then for every action in a
-target module, we search for all method calls to the target function,
-and inline all of them. This process is applied for every defined
-method in the module. The reason we chose this way is that inlining a
-single method is closely related to semantic labels. See
-\refchap{chap:implication} for the detailed reason why this inlining
-is easier to prove properties.
+We define an inlining function in a somewhat different way for proof
+efficiency. First, we pick a function which will be inlined. Then for
+every action in a target module, we search for all method calls to the
+target method, and inline all of them. This process is applied for
+every defined method in the module. The reason we chose this way is
+that inlining a single method is closely related to semantic label
+manipulation. See \refchap{chap:implication} for the detailed reason
+why this inlining is easier to prove properties.
 
 For a target action $a$ and an inlining method $dm$, we define a
 method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
 
 \begin{definition}
   \label{def-inlinedm}
-  \mbox{}
+  $(\inlinedmsymb) : \textrm{Action} \to \textrm{Method} \to
+  \textrm{Action}$ is an infix operator, defined inductively with
+  respect to the left-hand side action:
   \begin{center}
     \begin{math}
       \begin{array}{rcl}
@@ -765,12 +776,13 @@ method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
 
 A method-inlining operator for a module is naturally defined by
 extending the operator for an action. For a target module $m$ and an
-inlining \emph{method name} $f$, a method-inlining operator for a
-module, denoted as $(\inlinedmmsymb)$, is defined as follows:
+inlining \emph{method name} $f$, we define a method-inlining operator
+for a module, denoted as $(\inlinedmmsymb)$.
 
 \begin{definition}
   \label{def-inlinedmm}
-  \mbox{}
+  $(\inlinedmmsymb) : \textrm{Module} \to \setmeths{} \to
+  \textrm{Module}$ is an infix operator, defined as follows:
   \begin{center}
     \begin{math}
       \begin{array}{rcl}
@@ -790,15 +802,15 @@ module, denoted as $(\inlinedmmsymb)$, is defined as follows:
 
 \paragraph{Inlining all defined methods}
 
-Using the method-inlining operator $(\inlinedmsymb)$, now it is
+Using the method-inlining operator $(\inlinedmmsymb)$, now it is
 straightforward to define an inlining function for a module. We simply
-apply $(\inlinedmsymb)$ for all defined methods in the module.
+apply $(\inlinedmmsymb)$ for all defined methods in the module.
 
 However, inlining gets complicated when there is \emph{a call cycle}
 in the module. \reffig{ex-inlining-callcycle} shows the case where
-inlining for such module is problematic. A module $m$ has two methods
-$f$ and $g$. It has a call cycle since $f$ calls $g$ and $g$ calls
-$f$. When inlining $g$ first, $f$ eventually has a
+inlining for such a module is problematic. A module $m$ has two
+methods $f$ and $g$. It has a call cycle since $f$ calls $g$ and $g$
+calls $f$. When inlining $g$ first, $f$ becomes to have a
 \emph{self-recursive} call (a right figure). In this case, inlining
 for $f$ cannot be progressed, since inlining itself will cause
 register double-writes by $r_1$ and $r_2$. In order to avoid such
@@ -837,9 +849,11 @@ self-recursive.
 
 Now we naturally extend the method-inlining operator to a
 methods-inlining operator $(\inlinedmssymb)$.
+
 \begin{definition}
   \label{def-inlinedms}
-  \mbox{}
+  $(\inlinedmmsymb) : \textrm{Module} \to \textrm{list}\ \setmeths{}
+  \to \textrm{Module}$ is an infix operator, defined as follows:
   \begin{center}
     \begin{math}
       \begin{array}{rcl}
@@ -849,11 +863,14 @@ methods-inlining operator $(\inlinedmssymb)$.
     \end{math}
   \end{center}
 \end{definition}
+
 Using the methods-inlining operator $(\inlinedmssymb)$, we finally define the
 inlining operator $\inline{\cdot}$ for a target module $m$.
+
 \begin{definition}
   \label{def-inline}
-  \mbox{}
+  $\inline{\cdot} : \textrm{Module} \to \textrm{Module}$ is defined as
+  follow:
   \begin{center}
     \begin{math}
       \inline{m} \triangleq \inlinedms{m}{(\namesof{(\methsofm{m})})}
@@ -862,7 +879,7 @@ inlining operator $\inline{\cdot}$ for a target module $m$.
 \end{definition}
 
 Why are method names used for inlining, instead of actual method
-bodies? The reason is when we do inlining once for a particular
+bodies? The reason is that when we do inlining once for a particular
 method, then all related other method bodies are changed. In other
 words, when a method-inlining is done, we should take a new method
 which will be inlined next, by taking it from the \emph{inlined
@@ -873,20 +890,19 @@ which will be inlined next, by taking it from the \emph{inlined
 The last step for inlining is to hide internal methods so that they
 cannot be called from external modules. It is to ensure an original
 module and the inlined one have the same behaviors. According to the
-semantics, all methods which are internally called cannot be called by
-external methods anymore. In terms of inlining, when all internal
-calls are inlined, then the module should not have interfaces for
-these inlined methods.
+modular semantics, all interal methods cannot be called by external
+methods. In terms of inlining, when all internal calls are inlined,
+then the module should not have interfaces for these inlined methods.
 
 How do we know which defined methods should be hidden? The way to hide
-such methods is simple; we just filter defined methods by checking
+such methods is simple; we simply filter defined methods by checking
 whether the target method is internally called by some rules or
-methods. The complete inlining operator $\inlineF{\cdot}$ is defined
-as follow:
+methods.
 
 \begin{definition}
   \label{def-inlineF}
-  \mbox{}
+  $\inlineF{\cdot} : \textrm{Module} \to \textrm{Module}$ is defined
+  as follow:
   \begin{center}
     \begin{math}
       \inlineF{m} \triangleq
@@ -932,7 +948,8 @@ elements of $m$ where the key is not in $l$.
   \label{ex-inlining-efficiency}
 \end{figure}
 
-Inlining semantics borrow the \Step{} semantics from the modular
+Using the complete inlining operator, we finally define the inlining
+semantics. It borrows the \Step{} semantics from the modular
 semantics. The \StepInl{} semantics have a form of a judgment relation
 (\semstepin{m}{o}{u}{l}), arguments have the same meaning as in
 \Step{}.
@@ -953,10 +970,10 @@ semantics. The \StepInl{} semantics have a form of a judgment relation
 
 \Step{} semantics can be efficiently handled by using inlining. In
 other words, dealing with \Step{} with inlined modules is easier than
-with ordinary modules. \reffig{ex-inlining-efficiency} describes two
+ordinary modules. \reffig{ex-inlining-efficiency} describes two
 modules, where the left module is an original module (which is not
 inlined), while the right one is inlined. We can clearly see that the
-inlined module is simpler than the original one. Specifically, the
+inlined module is simpler than the original one. More formally, the
 inlined module is easily handled, since 1) it has fewer defined
 methods, and 2) the module has no internal calls.
 
