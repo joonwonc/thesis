@@ -1,12 +1,12 @@
 \chapter{Proving the Implication from Modular to Inlining Semantics}
 \label{chap:implication}
 
-\section{Meaning of the Semantic Implication} %$ which semantics are more powerful?
+\section{Meaning of the Semantic Implication}
 
 The semantics defined so far does not have equal capabilities. The
 inlining semantics can simulate more design cases than the modular
-semantics. In other words, we can prove implications from the modular
-semantics to the inlining ones, but cannot prove inverses.
+semantics. In other words, it is possible to prove an implication from
+the modular semantics to the inlining one, but not for the inverse.
 
 \begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}
@@ -42,37 +42,37 @@ semantics to the inlining ones, but cannot prove inverses.
     }
     \subcaption{A module after inlining}
   \end{subfigure}
-  \caption{Inlining semantics allow an execution of $f$ and $g$, while
-    the modular one does not allow.}
+  \caption{Inlining semantics allows an execution of $f$ and $g$,
+    while the modular one does not.}
   \label{ex-inlining-covers-more}
 \end{figure}
 
-\reffig{ex-inlining-covers-more} shows the case where the inlining
-semantics allow a specific execution, while the modular one does not
-allow. In a module $m$, methods $f$ and $g$ cannot be executed
+\reffig{ex-inlining-covers-more} shows the case that the inlining
+semantics allows a specific execution, while the modular one does
+not. In a module $m$, methods $f$ and $g$ cannot be executed
 concurrently, since both methods call a method $h$. More specifically,
-\Substeps{} containing the substeps for $f$ and $g$ cannot be
-constructed due to the disjointness condition of called
+the \Substeps{} judgement containing substeps for $f$ and $g$ cannot
+be constructed due to the disjointness condition of called
 methods. However, in the inlined module $\inlineF{m}$, $f$ and $g$ can
 be executed concurrently, since $h$ simply returns a constant zero.
 
 Does this case hurt the capacity of the modular semantics? According
 to the example, when $h$ does not write registers or call methods, any
 two methods both calling $h$ should be able to be executed
-concurrently. This case is quite practical in hardware design; for
-example, if $m$ has a register $r_{\textrm{cnt}}$ which acts as a
-counter, and $h$ calculates the next value of the counter by returning
-$(r_{\textrm{cnt}} + 1)$, any rules and methods should be able to call
-$h$, even though they are executed concurrently.
+concurrently. This case is quite practical in real-world hardware
+design; for example, if $m$ has a register $r_{\textrm{cnt}}$ which
+acts as a counter, and $h$ calculates the next value of the counter by
+returning $(r_{\textrm{cnt}} + 1)$, any rules and methods should be
+able to call $h$, even though they are executed concurrently.
 
-We can resolve this issue by converting programs to the ones without
+We can resolve this issue by converting designs to the ones without
 such methods by inlining. Bluespec has two notations for methods,
 called $\textbf{ActionMethod}$ and
 $\textbf{Method}$. $\textbf{ActionMethod}$ can write registers or call
 methods, while $\textbf{Method}$ cannot contain such actions. Hence,
-if we inline all $\textbf{Method}$s while converting from \Bluespec{}
-to \Kami{}, the issue will not happen (though the inlining in
-conversion will remain as a part of trusted base).
+if we inline all $\textbf{Method}$s while converting designs from
+\Bluespec{} to \Kami{}, the issue will not happen (though the inlining
+in conversion will remain as a part of trusted base).
 
 Based on the analysis so far, we give the main theorem for semantic
 implication. \refthm{thm-modtoinl} claims that the set of possible
@@ -93,24 +93,24 @@ inlining semantics.
 \section{The Implication Proof: From Modular to Inlining Semantics}
 
 On this section, we present the proof of \refthm{thm-modtoinl}. The
-proof exactly follows the definition of the complete inlining operator
-$\inlineF{\cdot}$. In other words, we gradually present the
+proof inductively follows the definition of the complete inlining
+operator $\inlineF{\cdot}$. In other words, we gradually present the
 correctness lemma from the concatenation operator $(\concatsymb)$,
 which is the most basic operator for inlining, to the complete
 inlining operator.
 
 All correctness lemmas have a similar form, which describes that if we
-have a judgement for a target object which calls a target method and
-have one for the target method, then two judgements can be merged by a
-proper inlining operator. More formally, correctness lemmas has a
-following form:
+have a judgement for a target object which calls a target method and a
+judgement for the target method, then two judgements can be
+\emph{merged} by a proper inlining operator. More formally,
+correctness lemmas have a following form:
 \begin{center}
   \begin{math}
     \begin{array}{l}
       (\textrm{a judgement calling an inlining method}) \to \\
       (\textrm{conditions}) \to \\
       (\textrm{a judgement of an inlining method}) \to \\
-      (\textrm{a merged judgement where the method is inlined by a certain operator})
+      (\textrm{a merged judgement where the method is inlined by a certain operator}).
     \end{array}
   \end{math}
 \end{center}
@@ -118,7 +118,8 @@ following form:
 \paragraph{Correctness of the concatenation operator}
 
 Since the concatenation operator $(\concatsymb)$ merely appends two
-actions, the correctness lemma also states semantic merge.
+actions, the correctness lemma also states the corresponding semantic
+merge.
 
 \begin{lemma}[Correctness of the action concatenation]
   \label{lem-concatsymb}
@@ -129,8 +130,8 @@ actions, the correctness lemma also states semantic merge.
       \begin{array}{l}
         \semact{o}{a_1}{u_1}{cs_1}{v_1} \to \\
         \semact{o}{(\lambda x.a_2)\ v_1}{u_2}{cs_2}{v_2} \to \\
-        \semact{o}{\concataction{a_1}{a_2}}{\splus{u_1}{u_2}}
-               {\lplus{cs_1}{cs_2}}{v_2}
+        \semact{o}{\concataction{a_1}{a_2}}{\sunion{u_1}{u_2}}
+               {\lunion{cs_1}{cs_2}}{v_2}
       \end{array}
     \end{math}
   \end{center}
@@ -140,24 +141,25 @@ actions, the correctness lemma also states semantic merge.
 \end{proof}
 
 Note that two updates $u_1$ and $u_2$ and two called methods $cs_1$
-and $cs_2$ \emph{do not need to be disjoint} each other. This is
-because the semantics does not prohibit double writes or calls. The
-conditions are defined as one of the well-formedness conditions, which
-is independent to the semantics.
+and $cs_2$ \emph{do not need to be disjoint} each other -- a normal
+union $\cup$ is used to merge updates and method calls, instead of a
+disjoint union $\uplus$. This is because the action semantics allows
+double writes or calls. The conditions are defined as one of the
+well-formedness conditions, which is independent to the semantics.
 
 \paragraph{Correctness of the method-inlining operator}
 
-Using the correctness lemma for the concatenation operator, now we
-give one for the method-inlining operator. The correctness lemma is
+Using the correctness lemma for the concatenation operator, we give
+one for the method-inlining operator. The correctness lemma is
 described first with action structures, and lifted to \Substep{} and
 \Substeps{}.
 
 There are two variations of the correctness lemma: the \emph{intact
   case} is designed for objects which are not related to the method
-which will be inlined. For example, if an action does not call the
-method, then a judgement of the action should not be changed. The
-\emph{call case} is designed for objects which call the method. In
-this case, we will get a merged judgement as explained.
+which is inlined. For example, if an action does not call the method,
+then a judgement of the action should not be changed. The \emph{call
+  case} is designed for objects which call the method. In this case,
+we will get a merged judgement as explained.
 
 \begin{lemma}[Correctness of $(\inlinedmsymb)$ for actions -- intact case]
   \label{lem-inlinedm-action-intact}
@@ -218,13 +220,13 @@ When is the well-formedness condition $(\wfdouble{a})$ used during the
 proof? Suppose there is a double call in $a$. If the argument-return
 pairs of the two calls differ, then one of them is overwritten by the
 other one while evaluating $cs$, according to the action semantics. In
-that case, when encountering the method call where the pair is
+this case, when encountering the method call where the pair is
 overwritten, we cannot apply \reflem{lem-concatsymb} since the pair
 does not match.
 
 \paragraph{Correctness of the method-inlining operator for modules}
 
-Now we lift \reflem{lem-inlinedm-action-intact} (the intact case) and
+We lift \reflem{lem-inlinedm-action-intact} (the intact case) and
 \reflem{lem-inlinedm-action-call} (the call case) to the level of
 \Substep{} and \Substeps{}.
 
@@ -283,23 +285,24 @@ needed.
 Now we lift two theorems \reflem{lem-inlinedmm-substep-intact} and
 \reflem{lem-inlinedmm-substep-call} to the level of \Substeps{}. Since
 \Substeps{} is composed of a series of \Substep{}, we have more
-fine-grained cases in order to describe the usage of each \Substep{}:
+fine-grained cases in order to describe possible cases of each
+\Substep{}:
 \begin{itemize}
-\item The \emph{intact case} (\reflem{lem-inlinedmm-intact}) describes
+\item An \emph{intact case} (\reflem{lem-inlinedmm-intact}) describes
   the case where the inlined method is not called anywhere in the
   substeps. As shown in above similar lemmas, the judgement will not
   be changed.
-\item The \emph{rule case} (\reflem{lem-inlinedmm-rule}) describes the
+\item A \emph{rule case} (\reflem{lem-inlinedmm-rule}) describes the
   case where a substep in the substeps is defined by a rule, and the
   rule calls the inlined method. Also, the inlined method is defined
   as a substep in the substeps.
-\item The \emph{method case 1} (\reflem{lem-inlinedmm-meth1})
-  describes the case where a substep in the substeps is defined by a
-  method $g$, but it is not the inlined method. Also, the substeps
-  call $g$ somewhere.
-\item The \emph{method case 2} (\reflem{lem-inlinedmm-meth2})
-  describes the case where a substep in the substeps is defined by a
-  method $f$, which is the inlined method.
+\item A \emph{method case 1} (\reflem{lem-inlinedmm-meth1}) describes
+  the case where a substep in the substeps is defined by a method $g$,
+  but it is not the inlined method. Also, the substeps call $g$
+  somewhere.
+\item A \emph{method case 2} (\reflem{lem-inlinedmm-meth2}) describes
+  the case where a substep in the substeps is defined by a method $f$,
+  which is the inlined method.
 \end{itemize}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- intact case]
@@ -410,12 +413,13 @@ fine-grained cases in order to describe the usage of each \Substep{}:
 
 \paragraph{Giving the relation between a label and inlining}
 
-Before proving the correctness of $(\inlinedmmsymb)$, which can be
-proved by applying the four lemmas (\reflem{lem-inlinedmm-intact},
-\reflem{lem-inlinedmm-rule}, \reflem{lem-inlinedmm-meth1}, and
-\reflem{lem-inlinedmm-meth2}) for each proper case, we explain an
-intuition between a label and inlining. The intuition starts from a
-basic question: what is the meaning of inlining in terms of semantics?
+Before proving the correctness of the method-inlining operator
+$(\inlinedmmsymb)$, which can be proved by applying the four lemmas
+(\reflem{lem-inlinedmm-intact}, \reflem{lem-inlinedmm-rule},
+\reflem{lem-inlinedmm-meth1}, and \reflem{lem-inlinedmm-meth2}) for
+each proper case, we explain an intuitive relation between a label and
+inlining. The intuition starts from a basic question: what is the
+meaning of inlining in terms of semantics?
 
 \begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}
@@ -461,8 +465,8 @@ contain $f$ and $h$, thus the label contains only $f$ and
 $h$. Therefore, inlining a method is interpreted as \emph{hiding the
   method from a label}, in terms of semantics.
 
-Following the intuition, \hidemethsym{} and \hidemethssym{} are
-defined to form labels in which specific methods are
+Following the intuition, we define \hidemethsym{} and \hidemethssym{}
+to form labels in which specific methods are
 hidden. $(\hidemeth{l}{f})$ hides a method $f$ from a given label $l$,
 which is defined as follows:
 \begin{definition}
@@ -478,7 +482,7 @@ which is defined as follows:
     \end{math}
   \end{center}
 \end{definition}
-$(\hidemeths{l}{fs})$ is a simple extension of \hidemethsym{}, hiding
+$(\hidemeths{l}{fs})$ is a natural extension of \hidemethsym{}, hiding
 list of methods $fs$ from a given label $l$:
 \begin{definition}
   \label{def-hidemeths}
@@ -514,23 +518,23 @@ merged substep.
   \end{center}
 \end{lemma}
 \begin{proof}
-  The proof is divided into two cases: $f \notin (\callsof{l})$ or
-  $(\defsof{l})[f] = (\callsof{l})[f]$.
+  The proof is largely divided into two cases: $f \notin
+  (\callsof{l})$ or $(\defsof{l})[f] = (\callsof{l})[f]$.
   \begin{itemize}
-  \item When $f \notin (\callsof{l})$, it is exactly an intact case so
+  \item If $f \notin (\callsof{l})$, it is exactly an intact case so
     we apply \reflem{lem-inlinedmm-intact} to get the goal. Note that
     we get $(\hidemeth{l}{f}) = l$, because $f \notin (\callsof{l})$.
-  \item When $(\defsof{l})[f] = (\callsof{l})[f]$, the proof is done
-    by induction on the given substeps. Picking a head substep from
-    the substeps forms several cases:
+  \item If $(\defsof{l})[f] = (\callsof{l})[f]$, the proof is done by
+    induction on the given substeps. Picking a head substep from the
+    substeps forms following four cases:
     \begin{itemize}
     \item If the head substep is defined for $f$, then
       \reflem{lem-inlinedmm-meth2} is applied to get the goal. $cs_f$
       in the lemma cannot contain $f$, since the substep is defined
-      for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not recursive),
-      which is brought from the definition of $(\inlinedmmsymb)$.
-      Thus, we get $f \in cs$ so \reflem{lem-inlinedmm-meth2} can be
-      applied properly.
+      for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not
+      self-recursive), which is brought from the definition of
+      $(\inlinedmmsymb)$.  Thus, we get $f \in cs$ so
+      \reflem{lem-inlinedmm-meth2} can be applied properly.
     \item If the head substep is defined for a method $g$ where $g
       \neq f$, but calls $f$, then \reflem{lem-inlinedmm-meth1} is
       applied to get the goal. All conditions of the lemma are
