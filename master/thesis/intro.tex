@@ -1,95 +1,99 @@
 \chapter{Introduction}
 
-Hardware components have been known to be extremely complex due to
-concurrency. A system having concurrency indicates that independent
-works can be done simultaneously, and it usually occurs as a name of
-optimization. For example, instruction pipelining is one of
-representative optimizations, which employes an instruction-level
-parallelism to handle multiple executions at the same time. Concurrent
-executions usually involve nondeterminism, since there is no fixed
-sequence of execution for them. Nondeterminism is generally hard to
-deal with, since all possible execution cases should be considered.
+Hardware components are extremely complex. The main reasons for the
+complexity is concurrency and the sheer size of components. For
+examples, realistic processors make use of instruction pipelining to
+execute multiple instructions concurrently. Complexity comes with such
+concurrent executions, since one must ensure that they are executed
+correctly. Size of components also grows by complexity. More realistic
+processors require additional hardware components such as a reorder
+buffer. The logic gets complicated again with these components.
 
 Modularity has been considered as an effective way to design and
-understand such complex hardware components. Modularity indicates that
-a complex hardware component can be constructed by composing simple
-modules. Several Hardware Description Languages (HDLs) such as Verilog
-or VHDL~\cite{verilog, vhdl} employ the notion of modules, each of
-which acts as a small unit component.
+understand such complex hardware components. A complex hardware
+component can can be constructed by composing several simple
+modules. The notion of modules is so ingrained in that all commercial
+Hardware Description Languages (HDLs) like Verilog, VHDL, Bluespec,
+and Chisel~\cite{verilog, vhdl, bsdef, chisel} support the notion of
+modules.
 
 Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} allows designers
-to develop hardware based not only on modularity, but also on the
-prevalent paradigm called Guarded Atomic Actions
-(GAAs)~\cite{daniel-gaa}. Even though a HDL allows to design hardware
-in a modular manner, modules cannot be independently designed if they
-are entangled with clock-timing issues. For instance, when two modules
-are connected with wires and one module is optimized to need shorter
-clock cycles, then the other module should follow that cycle, or the
-optimized module should maintain the original clock even if it is
-optimized.
+to develop hardware not only based on modularity, but also based on
+the notion of Guarded Atomic Actions (GAAs)~\cite{daniel-gaa}. Even
+though most HDLs allow to design hardware in a modular manner, modules
+cannot be independently designed if they are entangled with
+clock-timing issues. For instance, when two modules, a producer of a
+value and a consumer of that value, are connected with wires and the
+producer is optimized to use fewer clock cycles to produce the value,
+then the consumer should also be modified to consume the values
+faster; failure to do so will result in an incorrect overall design.
 
 Following the concepts of modularity and GAA, we have been defining a
-framework called \Kami{}~\cite{kami-web}, which is for specifying,
-verifying, and synthesizing \Bluespec{}-style hardware
+framework called \Kami{}~\cite{kami-web, murali-thesis}, which is for
+specifying, verifying, and synthesizing \Bluespec{}-style hardware
 components. \Kami{} presents a domain specific language similar to
-Bluespec, and aims to prove properties of hardware automatically. In
-order for such proofs, we also have defined formal semantics of the
-\Kami{} language, based on modularity. The framework has been built on
-the Coq proof assistant, hence verification can be performed by
-mechanized proofs.
+Bluespec. In addition, we define the formal semantics of the \Kami{}
+language to enable proving properties of hardware. The framework has
+been built on the Coq proof assistant; hence verification can be
+performed by mechanized proofs with a high degree of automation.
 
-Modularity fits for scalable verification, especially with mechanized
-proofs. In terms of verification, modularity indicates that complex
-hardware components can be verified if each simple element is
-verified. In many cases, we reuse such simple components for different
-uses. From the perspective of proof, reusing a hardware component
-implies that we can also reuse its related proofs. Thanks to the
-modular semantics in \Kami{}, it is indeed possible to use the proof
-of a component whenever it is used for the part of a design.
+The notion of modularity used in designing hardware can be extended to
+verification. For modular verification, we want to be able to verify
+the individual modules of a large system and compose their proofs to
+verify the full system. In many cases, we reuse such simple components
+in different larger designs. From the perspective of proof, reusing a
+hardware component implies that we can also reuse its related
+proofs. Thanks to the modular semantics in \Kami{}, it is indeed
+possible to use the proof of a component whenever it is used in a
+larger design.
 
-An important aspect of the modular semantics is that modules
-communicate by labels. It is originated from the concept called
-Labeled Transition System (LTS). Each module changes its internal
-state and the corresponding label is generated during the state
-transition. On the modular semantics, labels are method calls. In
-other words, modules communicate by calling methods of other modules.
-The modular semantics also take advantage of the LTS concept to define
+Modules communicate with other modules by calling each other's
+methods. In our modular semantics, we model these communications using
+\emph{labels}. The semantics of these communicating modules is similar
+to those of Labeled Transition Systems (LTS)~\cite{lts}. Each module
+changes its internal state and potentially calls methods of other
+modules during its state transition. These method calls become labels
+in our semantics.  The modular semantics, therefore, also defines
 behaviors of \emph{open systems}. Open systems have external
-interactions, which cannot be figured out unless it is connected with
-other modules which can respond to them.
+interactions, whose specifics cannot be figured out unless it is
+connected with other modules which can respond to them.
+
+However, modular semantics has an inherent weakness in that it is hard
+to infer internal changes. Even if modular semantics allow us to
+verify individual modules, we eventually should be able to understand
+a part of design, which is still composed of several modules, when the
+part cannot be decomposed anymore. In this case, modular semantics
+defines behaviors of such modules by giving the behaviors of each
+small modules \emph{for all possible combinations}. However, we
+certainly do not want to consider such all cases, since we know only a
+few cases are feasible by the design itself.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.6\textwidth]{figures/pipeline-internal.pdf}
-  \caption{Internal states hidden by the module}
-  \label{ex-modular-semantics-disadvantage}
+  \includegraphics[width=0.5\textwidth]{figures/modsem-weakness.pdf}
+  \caption{A weakness of the modular semantics}
+  \label{ex-modular-semantics-weakness}
 \end{figure}
 
-However, the modular semantics has an inherent weakness that it is
-hard to track internal state changes by internal communications.
-Consider a pipelined system, as shown in the upper part of
-\reffig{ex-modular-semantics-disadvantage}. $\texttt{f}_1$,
-$\texttt{f}_2$, and $\texttt{f}_3$ are modules which get an input from
-the corresponding fifos $\texttt{inQ}$, $\texttt{fifo}_1$, and
-$\texttt{fifo}_2$, respectively. When the system is built, modular
-semantics abstract the system as a big module, in which only two
-interfaces are revealed: one for input to $\texttt{inQ}$, and the
-other for output from $\texttt{outQ}$ (as shown in the lower part of
-the figure where internal modules are drawn vaguely). In this case,
-when having information for an input and the output by the entire
-system, how can we describe the \emph{internal state changes} in the
-system? For instance, is $\texttt{fifo}_1$ storing an element for
-given input and output? In modular semantics, we even cannot draw the
-fact that the system is implemented by pipelines, since the semantics
-are not defined by following execution paths, but by a series of local
-communication among small modules.
-
-A number of semantics, which do not have such a weakness, have been
-defined but none of them was defined for open systems. In other words,
-there have been no semantics which is able to define communication
-with external modules. A big-step semantics along with the action
-structures in \Bluespec{} have been defined~\cite{nirav-memocode}, but
-it does not have a notion for external communications.
+A need for a new semantic approach rises more in terms of
+verification. The semantics of a composition of two modules can be
+understood by simply substituting the bodies of the methods in the two
+modules at their respective places of calls,
+like\ $\beta$-substitution.  The modular semantics, however, does not
+perform such a syntactic substitution operation. Instead, it composes
+the effects of the body of the method at its call site. This
+definition poses a big problem in our verification effort. For
+example, as shown in \reffig{ex-modular-semantics-weakness}, suppose
+we have a module $m_1$ which calls the $\texttt{add}$ method of module
+$m_2$ with two arguments and performs a state transition based on the
+result. The semantics of the composed module $m_1 + m_2$ is defined
+using the semantics of the body of the $\texttt{add}$ method and the
+semantics of the state transition in $m_1$. Any analysis of the
+composed module requires analyzing these two effects separately and
+finally combining the effects. However, it is much simpler to analyze
+the \emph{inlined} version of $m_1 + m_2$, where the body of method
+$\texttt{add}$ is substituted into the body of the state transition of
+$m_1$.
 
 Hence, in this thesis, I present a new semantic approach, which is
 based on inlining. Inlining semantics is defined for open hardware
