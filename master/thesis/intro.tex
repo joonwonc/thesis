@@ -68,33 +68,6 @@ small modules \emph{for all possible combinations}. However, we
 certainly do not want to consider such all cases, since we know only a
 few cases are feasible by the design itself.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.5\textwidth]{figures/modsem-weakness.pdf}
-  \caption{A weakness of the modular semantics}
-  \label{ex-modular-semantics-weakness}
-\end{figure}
-
-A need for a new semantic approach rises more in terms of
-verification. The semantics of a composition of two modules can be
-understood by simply substituting the bodies of the methods in the two
-modules at their respective places of calls,
-like\ $\beta$-substitution.  The modular semantics, however, does not
-perform such a syntactic substitution operation. Instead, it composes
-the effects of the body of the method at its call site. This
-definition poses a big problem in our verification effort. For
-example, as shown in \reffig{ex-modular-semantics-weakness}, suppose
-we have a module $m_1$ which calls the $\texttt{add}$ method of module
-$m_2$ with two arguments and performs a state transition based on the
-result. The semantics of the composed module $m_1 + m_2$ is defined
-using the semantics of the body of the $\texttt{add}$ method and the
-semantics of the state transition in $m_1$. Any analysis of the
-composed module requires analyzing these two effects separately and
-finally combining the effects. However, it is much simpler to analyze
-the \emph{inlined} version of $m_1 + m_2$, where the body of method
-$\texttt{add}$ is substituted into the body of the state transition of
-$m_1$.
-
 Hence, in this thesis, I present a new semantic approach, which is
 based on inlining. Inlining semantics is defined for open hardware
 systems and resolve the weakness by construction. The semantics uses a

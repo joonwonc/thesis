@@ -225,48 +225,45 @@ small modules may call methods outside of them. The modular semantics
 has been formally defined and used in the \Kami{} framework, described
 by the Coq proof assistant.
 
-However, the modular semantics has an inherent weakness that it is
-hard to infer the internal state changes only by looking at external
-communications.
-\begin{figure}[t]
-  \centering{
-    \begin{subfigure}[b]{0.5\textwidth}
-      \bsvmodnoreg{m}{
-        \bsvnone{\pgmrule}{s}{}{
-          \pgmwrite{r_1}{1}
-          \pgmcalln{f}{}
-        }\\
-        \bsvnone{\pgmmeth}{f}{()}{
-          \pgmwrite{r_2}{2}
-          \pgmcalln{g}{}
-        }\\
-        \bsvnone{\pgmmeth}{g}{()}{
-          \pgmwrite{r_3}{3}
-          \pgmcalln{h}{}
-        }
-      }
-    \end{subfigure}
-  }
-  \caption{Tracking internal state changes by internal calls}
-  \label{ex-modular-semantics-disadvantage}
-\end{figure}
-\reffig{ex-modular-semantics-disadvantage} describes the case where we
-have a difficulty to infer internal state changes. Suppose a rule $s$
-is executed in a module $m$. In the modular semantics, $m$ is
-\emph{abstracted} so that we cannot see the actual bodies of rules or
-methods. In this situation, when having information that $s$ is
-executed and $h$ is externally called, how do we draw the state
-changes in the module $m$? Since the modular semantics is abstracted,
-it is hard to draw the internal information.
+However, modular semantics has an inherent weakness in that it is hard
+to infer the internal state changes only by looking at external
+communications. The semantics of a composition of two modules can be
+understood by simply substituting the bodies of the methods in the two
+modules at their respective places of calls, like
+$\beta$-substitution. The modular semantics, however, does not perform
+such a syntactic substitution operation. Instead, it composes the
+effects of the body of the method at its call site.
 
-The two semantics have trade-offs. The big-step
-semantics~\cite{nirav-memocode} does not have such a weakness, since
-it simply traverses action bodies to draw state changes in a big-step
-manner. However, as mentioned, it is not defined for open systems. On
-the other hand, the modular semantics can describe open system
-behaviors, but it has a weakness mentioned above. The main
-contribution of this thesis is to develop a new semantic definition
-which maintains modularity concept but resolves the weakness.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/modsem-weakness.pdf}
+  \caption{A weakness of the modular semantics}
+  \label{ex-modular-semantics-weakness}
+\end{figure}
+
+This definition poses a big problem in our verification effort. For
+example, as shown in \reffig{ex-modular-semantics-weakness}, suppose
+we have a module $m_1$ which calls the $\texttt{add}$ method of module
+$m_2$ with two arguments and performs a state transition based on the
+result. The semantics of the composed module $m_1 + m_2$ is defined
+using the semantics of the body of the $\texttt{add}$ method and the
+semantics of the state transition in $m_1$. Any analysis of the
+composed module requires analyzing these two effects separately and
+finally combining the effects. However, it is much simpler to analyze
+the \emph{inlined} version of $m_1 + m_2$, where the body of method
+$\texttt{add}$ is substituted into the body of the state transition of
+$m_1$.
+
+The two semantic concepts have trade-offs. If we use semantics defined
+as a big-step manner (like the one in~\cite{nirav-memocode}), then the
+semantics does not have such a weakness, since it provides
+deterministic inference rules for drawing state changes. However, it
+is now difficult to introduce modular reasoning with the big-step
+semantics, since it is not defined for open systems. On the other
+hand, modular semantics can describe open system behaviors, but it has
+a weakness mentioned above. The main contribution of this thesis is to
+develop a new semantic definition which maintains modularity concept
+but resolves the weakness.
 
 \paragraph{Inlining}
 
