@@ -123,8 +123,8 @@ module instances, named inQ, fifo1, fifo2, and outQ. It has three
 rules (stage0, stage1, and stage2); each rule pulls an element from a
 fifo, applies an operation, and push the resulting value to the next
 fifo. The module has two interface methods: ``req'' is called when
-there is a request with argument ``x'', and ``res'' is called to get
-the result value.
+there is a request with argument ``x'', and ``res'' is called to
+obtain the result value.
 
 \paragraph{Well-formedness of a module}
 
@@ -218,7 +218,7 @@ always requires a fully defined system.
 The formal semantics for open hardware system has been subsequently
 defined based on modularity~\cite{murali-thesis}. The core concept for
 the semantics is modularity; it defines behaviors of small basic
-modules, and combines them in order to define behaviors of a big
+modules, and composes them in order to define behaviors of a big
 module composed of the small ones. For such modular designs, the
 semantics should be able to describe behaviors of open systems, since
 small modules may call methods outside of them. The modular semantics

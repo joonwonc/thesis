@@ -319,7 +319,7 @@ relation~\cite{murali-thesis}.
 SingleRule and SingleMeth describe the case where a rule or a method
 is executed in a cycle, respectively. In SingleRule, a rule $(s, a)$
 should be defined in the module $m$. \rulesofm{m} is a function which
-collects all rules in the module, inductively defined as follow:
+collects all rules in the module, inductively defined as follows:
 \begin{definition}
   \label{def-rulesofm}
   \mbox{}
@@ -333,7 +333,7 @@ collects all rules in the module, inductively defined as follow:
   \end{center}
 \end{definition}
 Similarly, a method $(f, \lambda x.a)$ should be defined in $m$ in the
-SingleMeth case. \methsofm{m} is also similarly defined as follow:
+SingleMeth case. \methsofm{m} is also similarly defined as follows:
 \begin{definition}
   \label{def-methsof}
   \mbox{}
@@ -526,6 +526,120 @@ in $m$.
     \end{math}
   \end{center}
 \end{definition}
+
+\section{Manipulating Module Structures}
+
+Before introducing an inlining operation and its corresponding
+semantics, we present an interesting property of the modular
+semantics, which is also related to inlining. The property says that
+how modules are composed does not affect the behaviors of the
+modules. In other words, two modules are semantically equivalent if
+they have the same set of registers, rules, and defined methods. It is
+formally described as follows:
+
+\begin{lemma}
+  \label{lem-equiv-modules}
+  \mbox{}\\
+  For two modules $m_1$ and $m_2$,
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        \regsofm{m_1} = \regsofm{m_2} \to \\
+        \rulesofm{m_1} = \rulesofm{m_2} \to \\
+        \methsofm{m_1} = \methsofm{m_2} \to \\
+        (\semstep{m_1}{o}{u}{l}) \to (\semstep{m_2}{o}{u}{l})
+      \end{array}
+    \end{math}
+    \end{center}
+\end{lemma}
+
+Proving \reflem{lem-equiv-modules} is straightforward, simply by
+following inductive definitions of semantics. Since all inference
+rules from \Substep{} to \Step{} do not look at the structure of
+modules (how they are composed), the proof does not need any tricks.
+
+Following two corollaries are trivial but more intuitive statements
+for presenting that module structures are nothing to do with
+semantics.
+
+\begin{corollary}
+  \label{lem-modules-comm}
+  \mbox{}\\
+  For two modules $m_1$ and $m_2$,
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{\modcomp{m_1}{m_2}}{o}{u}{l}) \to (\semstep{\modcomp{m_2}{m_1}}{o}{u}{l})
+      \end{array}
+    \end{math}
+    \end{center}
+\end{corollary}
+\begin{proof}
+  Straightforward by applying \reflem{lem-equiv-modules}.
+\end{proof}
+
+\begin{corollary}
+  \label{lem-modules-assoc}
+  \mbox{}\\
+  For modules $m_1, m_2$ and $m_3$,
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{\modcomp{(\modcomp{m_1}{m_2})}{m_3}}{o}{u}{l}) \to
+        (\semstep{\modcomp{m_1}{(\modcomp{m_2}{m_3})}}{o}{u}{l})
+      \end{array}
+    \end{math}
+    \end{center}
+\end{corollary}
+\begin{proof}
+  Straightforward by applying \reflem{lem-equiv-modules}.
+\end{proof}
+
+The independence between module structures and modular semantics
+allows us to \emph{simplify} the structure without affecting its
+semantics. For instance, we can define and use a \emph{flattening
+  operation} for modules.
+
+\begin{definition}
+  \label{def-flattening}
+  \mbox{}
+  \begin{center}
+    \begin{math}
+      \begin{array}{lcl}
+        \modflatten{m} & \triangleq & \modbasic{(\regsofm{m})}{(\rulesofm{m})}{(\methsofm{m})}
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+It is obvious that $m$ and $\modflatten{m}$ satisfy the conditions for
+applying \reflem{lem-equiv-modules}, thus we finally obtain the
+following property:
+
+\begin{corollary}
+  \label{lem-modules-flatten}
+  \mbox{}\\
+  For a module $m$,
+  \begin{center}
+    \begin{math}
+      \begin{array}{l}
+        (\semstep{m}{o}{u}{l}) \to (\semstep{\modflatten{m}}{o}{u}{l})
+      \end{array}
+    \end{math}
+    \end{center}
+\end{corollary}
+\begin{proof}
+  Straightforward by applying \reflem{lem-equiv-modules}.
+\end{proof}
+
+Once module structures are collapsed by flattening, the only concern
+for manipulating modules is internal calls. In order to solve the
+concern, we use inlining; given a flattened module, the inlining
+operation eliminates all internal calls by substituting their bodies
+to call sites. Hence, after flattening and inlining, we obtain a raw
+module, in which all internal structures are collapsed. See
+\refdef{def-inlinedmm} for details how the flattening operation is
+used during inlining.
 
 \section{Well-formedness of Modules}
 \label{sec-wf}
@@ -781,7 +895,9 @@ method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
 A method-inlining operator for a module is naturally defined by
 extending the operator for an action. For a target module $m$ and an
 inlining \emph{method name} $f$, we define a method-inlining operator
-for a module, denoted as $(\inlinedmmsymb)$.
+for a module, denoted as $(\inlinedmmsymb)$. Note that module is
+flattened (as defined in \refdef{def-flattening}) during the inlining
+process.
 
 \begin{definition}
   \label{def-inlinedmm}
@@ -874,7 +990,7 @@ inlining operator $\inline{\cdot}$ for a target module $m$.
 \begin{definition}
   \label{def-inline}
   $\inline{\cdot} : \textrm{Module} \to \textrm{Module}$ is defined as
-  follow:
+  follows:
   \begin{center}
     \begin{math}
       \inline{m} \triangleq \inlinedms{m}{(\namesof{(\methsofm{m})})}
@@ -906,7 +1022,7 @@ methods.
 \begin{definition}
   \label{def-inlineF}
   $\inlineF{\cdot} : \textrm{Module} \to \textrm{Module}$ is defined
-  as follow:
+  as follows:
   \begin{center}
     \begin{math}
       \inlineF{m} \triangleq

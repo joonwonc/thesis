@@ -159,7 +159,7 @@ There are two variations of the correctness lemma: the \emph{intact
 which is inlined. For example, if an action does not call the method,
 then a judgement of the action should not be changed. The \emph{call
   case} is designed for objects which call the method. In this case,
-we will get a merged judgement as explained.
+we will obtain a merged judgement as explained.
 
 \begin{lemma}[Correctness of $(\inlinedmsymb)$ for actions -- intact case]
   \label{lem-inlinedm-action-intact}
@@ -278,10 +278,10 @@ We lift \reflem{lem-inlinedm-action-intact} (the intact case) and
 \end{proof}
 
 Note that $(\wfdouble{m})$ is given as a condition instead of
-$(\wfdoublea{a})$. This is because we cannot directly get the action
-body from \Substep{}. Since $(\wfdouble{m})$ implies that each action
-$a$ in $m$ satisfies $(\wfdoublea{a})$, we eventually get what is
-needed.
+$(\wfdoublea{a})$. This is because we cannot directly obtain the
+action body from \Substep{}. Since $(\wfdouble{m})$ implies that each
+action $a$ in $m$ satisfies $(\wfdoublea{a})$, we eventually obtain
+what is needed.
 
 Now we lift two theorems \reflem{lem-inlinedmm-substep-intact} and
 \reflem{lem-inlinedmm-substep-call} to the level of \Substeps{}. Since
@@ -325,9 +325,9 @@ fine-grained cases in order to describe possible cases of each
   call $f$, since $f \notin (\callsof{l})$ and $l$ is the merged label
   of all substeps, according to the definition. Thus, by
   \reflem{lem-inlinedmm-substep-intact}, for each substep
-  \semsstepr{m}{o}{u_i}{l_i}, we get
+  \semsstepr{m}{o}{u_i}{l_i}, we obtain
   \semsstepr{\inlinedmm{m}{f}}{o}{u_i}{l_i}. Since $l = \uplus_i\ l_i$,
-  we get the goal by the definition of \Substeps{}.
+  we obtain the goal by the definition of \Substeps{}.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- rule case]
@@ -350,10 +350,11 @@ fine-grained cases in order to describe possible cases of each
 \begin{proof}
   By induction on substeps containing $f \in ds$. By the definition of
   \Substeps{}, a substep for $f$ exists in the substeps. Using the
-  substep for $f$ and the substep for the rule $s$ calling $f$, we get
-  the merged substep by \reflem{lem-inlinedmm-substep-call}. The other
-  substeps except for $f$ are treated as an intact case, since we get
-  $f \notin cs$ by $f \in cs_s$ and $\mdisj{cs_s}{cs}$.
+  substep for $f$ and the substep for the rule $s$ calling $f$, we
+  obtain the merged substep by
+  \reflem{lem-inlinedmm-substep-call}. The other substeps except for
+  $f$ are treated as an intact case, since we obtain $f \notin cs$ by
+  $f \in cs_s$ and $\mdisj{cs_s}{cs}$.
 \end{proof}
 
 \begin{lemma}[Correctness of $(\inlinedmmsymb)$ for \Substeps{} -- method case 1]
@@ -378,7 +379,7 @@ fine-grained cases in order to describe possible cases of each
 \begin{proof}
   The proof is similar to \reflem{lem-inlinedmm-rule}, done by
   induction on substeps containing $f \in ds$. A substep for $f$
-  exists in the substeps, and with the substep for $g$, we get the
+  exists in the substeps, and with the substep for $g$, we obtain the
   merged substep by \reflem{lem-inlinedmm-substep-call}. The other
   substeps except for $f$ are treated as an intact case. Additionally,
   we do not have a conflict on defined methods while merging, since $g
@@ -406,7 +407,7 @@ fine-grained cases in order to describe possible cases of each
 \begin{proof}
   The proof is similar to \reflem{lem-inlinedmm-meth1}, done by
   induction on substeps calling $f \in cs_f$. A substep calling $f$
-  exists in the substeps, and with the substep for $f$, we get the
+  exists in the substeps, and with the substep for $f$, we obtain the
   merged substep by \reflem{lem-inlinedmm-substep-call}. The other
   substeps cannot call $f$ by the definition of \Substeps{}, thus they
   are treated as an intact case.
@@ -523,32 +524,33 @@ merged substep.
   (\callsof{l})$ or $(\defsof{l})[f] = (\callsof{l})[f]$.
   \begin{itemize}
   \item If $f \notin (\callsof{l})$, it is exactly an intact case so
-    we apply \reflem{lem-inlinedmm-intact} to get the goal. Note that
-    we get $(\hidemeth{l}{f}) = l$, because $f \notin (\callsof{l})$.
+    we apply \reflem{lem-inlinedmm-intact} to obatin the goal. Note
+    that we obtain $(\hidemeth{l}{f}) = l$, because $f \notin
+    (\callsof{l})$.
   \item If $(\defsof{l})[f] = (\callsof{l})[f]$, the proof is done by
     induction on the given substeps. Picking a head substep from the
     substeps forms following four cases:
     \begin{itemize}
     \item If the head substep is defined for $f$, then
-      \reflem{lem-inlinedmm-meth2} is applied to get the goal. $cs_f$
-      in the lemma cannot contain $f$, since the substep is defined
-      for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not
+      \reflem{lem-inlinedmm-meth2} is applied to obtain the
+      goal. $cs_f$ in the lemma cannot contain $f$, since the substep
+      is defined for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not
       self-recursive), which is brought from the definition of
-      $(\inlinedmmsymb)$.  Thus, we get $f \in cs$ so
+      $(\inlinedmmsymb)$.  Thus, we obtain $f \in cs$ so
       \reflem{lem-inlinedmm-meth2} can be applied properly.
     \item If the head substep is defined for a method $g$ where $g
       \neq f$, but calls $f$, then \reflem{lem-inlinedmm-meth1} is
-      applied to get the goal. All conditions of the lemma are
+      applied to obtain the goal. All conditions of the lemma are
       introduced by the definition of \Substeps{}.
     \item If the head substep is defined for a rule $s$, but calls
-      $f$, then \reflem{lem-inlinedmm-rule} is applied to get the
+      $f$, then \reflem{lem-inlinedmm-rule} is applied to obtain the
       goal. Similarly, all conditions are introduced by the definition
       of \Substeps{}.
     \item If the head substep is defined not for $f$ and does not call
       $f$, then \reflem{lem-inlinedmm-substep-intact} is applied to
-      get the substep after inlining. The induction hypothesis gives
+      obtain the substep after inlining. The induction hypothesis gives
       the substeps after inlining. Thus we simply merge the substep
-      and the substeps to get the goal.
+      and the substeps to obtain the goal.
     \end{itemize}
   \end{itemize}
 \end{proof}
@@ -574,9 +576,9 @@ of the method-inlining operator, described in \reflem{lem-inlinedmm}.
 \end{lemma}
 \begin{proof}
   Straightforward by induction on $fs$. For every element $f$ of $fs$,
-  we can apply \reflem{lem-inlinedmm} to get the goal. Note that the
-  necessary condition $(f \notin (\callsof{l}) \vee (\defsof{l})[f] =
-  (\callsof{l})[f])$ always holds by the condition
+  we can apply \reflem{lem-inlinedmm} to obtain the goal. Note that
+  the necessary condition $(f \notin (\callsof{l}) \vee
+  (\defsof{l})[f] = (\callsof{l})[f])$ always holds by the condition
   $(\wellhidden{m}{(\hide{l})})$.
 \end{proof}
 
