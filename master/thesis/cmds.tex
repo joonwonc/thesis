@@ -212,8 +212,9 @@
 \newcommand{\eop}[1]{\ensuremath{\seop{}(\listof{#1})}}
 
 \newcommand{\actwrite}[3]{\ensuremath{#1 := #2\,;\ #3}}
-%% \newcommand{\actcall}[4]{\ensuremath{\wordlet{} #1 = #2(#3)\,;\ #4}}
+%% \newcommand{\actcall}[4]{\ensuremath{\wordlet{} #1 = #2(#3)\ \wordin{} #4}}
 \newcommand{\actcall}[4]{\ensuremath{#2(#3)\,;\ \lambda #1.#4}}
+%% \newcommand{\actlet}[3]{\ensuremath{\wordlet{} #2 = #1\ \wordin{} #3}}
 \newcommand{\actlet}[3]{\ensuremath{\wordlet{} #1\ \wordin{} \lambda #2.#3}}
 \newcommand{\actifelse}[5]{\ensuremath{\wordif{} #1\ \wordthen{} #2\ \wordelse{} #3\,;\ \lambda #4.#5}}
 \newcommand{\actassert}[2]{\ensuremath{\wordassert{} #1\,;\ #2}}

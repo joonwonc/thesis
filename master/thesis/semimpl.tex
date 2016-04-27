@@ -141,11 +141,11 @@ merge.
 \end{proof}
 
 Note that two updates $u_1$ and $u_2$ and two called methods $cs_1$
-and $cs_2$ \emph{do not need to be disjoint} each other -- a normal
-union $\cup$ is used to merge updates and method calls, instead of a
-disjoint union $\uplus$. This is because the action semantics allows
-double writes or calls. The conditions are defined as one of the
-well-formedness conditions, which is independent to the semantics.
+and $cs_2$ \emph{do not need to be disjoint} -- a normal union $\cup$
+is used to merge updates and method calls, instead of a disjoint union
+$\uplus$. This is because the action semantics allows double writes or
+calls. The conditions are defined as one of the well-formedness
+conditions, which is independent to the semantics.
 
 \paragraph{Correctness of the method-inlining operator}
 
@@ -183,7 +183,8 @@ we will get a merged judgement as explained.
   $\langle u, cs, v_r \rangle$ is never changed by the inlining.
 \end{proof}
 
-Below call case is where the well-formedness condition occurs firstly.
+Below call case is where the well-formedness condition occurs for the
+first time.
 
 \begin{lemma}[Correctness of $(\inlinedmsymb)$ for actions -- call case]
   \label{lem-inlinedm-action-call}

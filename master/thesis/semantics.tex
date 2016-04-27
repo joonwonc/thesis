@@ -1,15 +1,15 @@
 \chapter{An Inlining Approach to Hardware Semantics}
 \label{chap:semantics}
 
-In this chapter, we present a formal definition of inlining. The
-inlining operation is defined on the Kami language and the modular
-semantics~\cite{murali-thesis}. Finally, we present a new semantic
-approach to make up for the weakness of the modular semantics.
+In this chapter, we present a formal definition of inlining.  First,
+we define the inlining operation on the \Kami{} language and the
+modular semantics~\cite{murali-thesis}. We then present a new semantic
+approach, which employes the inlining operation.
 
 \paragraph{Notations}
 
-Before defining syntax and semantics, we define notations to represent
-general data structures.
+Before defining syntax and semantics, we introduce a number of
+notations to represent general data structures.
 \begin{itemize}
 \item Lists: we use a symbol $\vec{t}\;$ to represent a type of list
   whose elements are represented as a value $t$. \listnil{} represents
@@ -64,7 +64,7 @@ $r$, where \setregs{} is the set of register names. $x$ denotes a
 variable bound by a continuation. We define syntax as a
 continuation-passing style (CPS), hence variables are used to get the
 value of a continuation argument. Lastly, \eop{e} abstracts all
-inductive operations among expressions.
+operations among expressions.
 
 \paragraph{Actions}
 As explained in \refsect{sec:design-paradigm}, an action is a unit for
@@ -94,10 +94,12 @@ $e$ to assign the evaluated value of $e$ to $r$. A method call action
 takes a method name $f \in \setmeths{}$ to call, and an expression $e$
 as an argument. A return value for the call is bound to a variable $x$
 in a lambda continuation. \setmeths{} denotes the set of method
-names. An assert action takes an expression $e$ to be checked to
-progress the continuation. Lastly, a return action takes $e$ as a
-return value. Note that all action components except a return action
-also takes an action $a$ as a continuation.
+names. A let bind action gives a name to an expression $e$. The name
+is bound to a variable $x$ in a lambda continuation. A conditional
+branch action similarly has a lambda binder $x$ to capture the return
+value from true and false branches. An assert action takes an
+expression $e$ to be checked to progress the continuation. Lastly, a
+return action takes $e$ as a return value.
 
 \paragraph{Modules}
 A module is a unit of hardware components which has its own state (a
@@ -139,11 +141,11 @@ confirm there are no name conflicts for all modules.
 In this section, we present a modular semantics for hardware
 systems. A version of modular semantics has been defined in
 \cite{murali-thesis}.  However, this section defines a slightly
-different version of it, in which the current \Kami{} framework
-uses. The motivation is kept unchanged: semantic rules are defined
-with respect to module definitions, which include the one for
-combining modules. The semantics defined in this section will be used
-throughout the thesis, including the implication proof in
+different version, which is used in the current \Kami{} framework.
+The motivation is unchanged: semantic rules are defined with respect
+to module definitions, which include the one for combining
+modules. The semantics defined in this section will be used throughout
+the thesis, including the implication proof in
 \refchap{chap:implication}. Specifically, semantic definitions for
 expressions and actions are completely borrowed from
 \cite{murali-thesis}. Other higher semantics differ.
@@ -174,11 +176,11 @@ Semantics for constant and register read are straightforward. The
 constant itself is returned for a constant. Register read is performed
 by reading its value from the \emph{old state} $o: \sttype$.
 
-Semantics for variable is not defined, since it should be substituted
-to the value by $\beta$-reduction on higher semantics. Technically, in
-the \Kami{} framework, syntax is defined by PHOAS~\cite{adam-icfp},
-thus the variable term is abstracted into a syntax constructor
-$\textsf{Var}$. In this case, we rather can define
+Semantics for variable is not defined, since the variable is
+substituted to the value by $\beta$-reduction at higher semantics.
+Technically, in the \Kami{} framework, syntax is defined by
+PHOAS~\cite{adam-icfp}, thus the variable term is abstracted into a
+syntax constructor $\textsf{Var}$. In this case, we can define
 $\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is already substituted
 to a value but still contained in the constructor.
 
@@ -198,7 +200,7 @@ In the modular semantics, all method calls are first treated as they
 are external calls. In other words, the semantics for method calls, on
 the level of action, are defined as if we know the return value of the
 method for every argument. The validity of such assumptions are
-checked on higher-level semantics.
+checked at higher-level semantics.
 
 The semantics for actions have a form of a judgment relation
 \semact{o}{a}{u}{cs}{v}, where $o : \sttype{}$ is the old state, $a$
@@ -268,15 +270,14 @@ defines a single execution by a rule or a method. Definitions are
 simply lifted from the semantics for actions, since a rule or a method
 is defined by actions.
 
-A label is firstly used on this semantics, in order to represent
-communications with other external modules. A label has a form of
-\semlbl{\alpha}{ds}{cs}. $\alpha$ contains the information whether the
-label is formed by a rule or not. If the label is formed by a rule $s
-\in \setrules$, it takes $(\alpharule{s})$. Otherwise, it takes
-\alphameth{}. $\alpha$ is used to ensure that the label follows the
-one-rule-at-a-time semantics. $ds$ denotes \emph{defined methods},
-indicating methods executed in a cycle. Similarly, $cs$ denotes
-\emph{called methods}, indicating methods which are called in a cycle.
+A notion of label is used in this semantics, in order to represent
+communications with other external modules. A label has the form
+\semlbl{\alpha}{ds}{cs}, where $\alpha$ is a tag to indicate whether
+the label is formed by a rule or not. If the label is formed by a rule
+$s \in \setrules$, it takes $(\alpharule{s})$. Otherwise, it takes
+\alphameth{}. $ds$ denotes \emph{defined methods}, indicating methods
+executed in a cycle. Similarly, $cs$ denotes \emph{called methods},
+indicating methods which are called in a cycle.
 
 The \Substep{} semantics has a form of a judgment relation
 \semsstep{m}{o}{u}{\alpha}{ds}{cs}, where $m$ is the target module,
@@ -310,9 +311,7 @@ $o$ is the old state, $u$ is the updated state, and
 \end{definition}
 
 EmptyRule and EmptyMeth describe the cases where no progress is made
-in a cycle. These cases are similar to $\epsilon$-steps in the C
-language behaviors defined in CompCert~\cite{leroy-compcert-cacm}.
-However, an empty step by a rule and one by a method should be
+in a cycle. An empty step by a rule and one by a method should be
 separately defined in the \Substep{} semantics, in order to give
 explicit information when defining the refinement
 relation~\cite{murali-thesis}.
@@ -539,7 +538,7 @@ independent to semantic definitions, which has a dynamic aspect.  For
 instance, as briefly discussed in \refsect{sec:bluespec-semantics}, it
 is not allowed for a rule or a method to write the same register
 twice, or to call the same method twice. These conditions can be
-statically determined by iterating actions.
+statically and approximately determined by iterating actions.
 
 Well-formedness conditions should be checked not only for correct
 synthesis, but also for verification. Two representative
@@ -627,7 +626,7 @@ then double writes happen. Otherwise, double writes do not
 happen. However, as explained with the case in
 \reffig{ex-two-methods-disjoint}, analyzing predicates is difficult in
 most cases. Thus, we should define a checker in a sound manner, by
-assuming that $p$ is always \btrue{}.
+assuming that $p$ can be sometimes \btrue{}.
 
 Now we define a static checker for ensuring that there are no double
 writes or calls in an action. (\wfdoubleap{a}) is inductively defined
@@ -663,6 +662,11 @@ an action, respectively. When an action is a register write or a
 method call, then $(\wfdoubleap{a})$ checks if the register or the
 method is already written or called, respectively. If not, it collects
 the register and the method, and continues to check for next actions.
+Note that the action concatenation operation $(\concatsymb)$ is used
+to define the well-formedness of conditional branch actions. This is
+to collect register writes and called methods for true and false
+branches in parallel. See \refdef{def-concataction} for the definition
+of $(\concatsymb)$.
 
 The definition of (\wfdoublea{a}) is naturally extended to
 (\wfdouble{m}), by applying it for each action in $m$.
@@ -812,11 +816,11 @@ inlining for such a module is problematic. A module $m$ has two
 methods $f$ and $g$. It has a call cycle since $f$ calls $g$ and $g$
 calls $f$. When inlining $g$ first, $f$ becomes to have a
 \emph{self-recursive} call (a right figure). In this case, inlining
-for $f$ cannot be progressed, since inlining itself will cause
-register double-writes by $r_1$ and $r_2$. In order to avoid such
-cases, the method-inlining operator checks whether the method which
-will be inlined has a self-recursive method call or not. As described
-in \refdef{def-inlinedmm}, (\isrec{dm}) ensures that $dm$ is not
+for $f$ cannot progress, since inlining itself will cause register
+double-writes by $r_1$ and $r_2$. In order to avoid such cases, the
+method-inlining operator checks whether the method which will be
+inlined has a self-recursive method call or not. As described in
+\refdef{def-inlinedmm}, (\isrec{dm}) ensures that $dm$ is not
 self-recursive.
 
 \begin{figure}[t]

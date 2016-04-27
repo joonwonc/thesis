@@ -2,12 +2,13 @@
 
 Hardware components are extremely complex. The main reasons for the
 complexity is concurrency and the sheer size of components. For
-examples, realistic processors make use of instruction pipelining to
+example, realistic processors make use of instruction pipelining to
 execute multiple instructions concurrently. Complexity comes with such
-concurrent executions, since one must ensure that they are executed
-correctly. Size of components also grows by complexity. More realistic
-processors require additional hardware components such as a reorder
-buffer. The logic gets complicated again with these components.
+executions, since one must ensure that the concurrent executions
+should behave as if they are executed in order. Size of components
+also grows by complexity. More realistic processors require additional
+hardware components such as a reorder buffer. The logic gets
+complicated again with these components.
 
 Modularity has been considered as an effective way to design and
 understand such complex hardware components. A complex hardware
@@ -60,13 +61,14 @@ connected with other modules which can respond to them.
 
 However, modular semantics has an inherent weakness in that it is hard
 to infer internal changes. Even if modular semantics allow us to
-verify individual modules, we eventually should be able to understand
-a part of design, which is still composed of several modules, when the
-part cannot be decomposed anymore. In this case, modular semantics
+consider individual modules, we eventually should be able to
+understand a part of design which is still composed of several
+modules, when the part cannot be decomposed anymore. Modular semantics
 defines behaviors of such modules by giving the behaviors of each
-small modules \emph{for all possible combinations}. However, we
-certainly do not want to consider such all cases, since we know only a
-few cases are feasible by the design itself.
+small module. In this case, we should consider \emph{all possible
+  combinations} of the small module behaviors. However, we certainly
+do not want to consider all such cases, since we know only a few cases
+are feasible by the design itself.
 
 Hence, in this thesis, I present a new semantic approach, which is
 based on inlining. Inlining semantics is defined for open hardware
