@@ -1,30 +1,30 @@
 \chapter{Introduction}
 
 Hardware components are extremely complex. The main reasons for the
-complexity is concurrency and the sheer size of components. For
+complexity are concurrency and the sheer size of components. For
 example, realistic processors make use of instruction pipelining to
 execute multiple instructions concurrently. Complexity comes with such
 executions, since one must ensure that the concurrent executions
-should behave as if they are executed in order. Size of components
-also grows by complexity. More realistic processors require additional
-hardware components such as a reorder buffer. The logic gets
-complicated again with these components.
+behave as if they are executed in order. The size of components also
+grows by complexity. More realistic processors require additional
+hardware components such as a reorder buffer. The logic is further
+complicated with these components.
 
 Modularity has been considered as an effective way to design and
 understand such complex hardware components. A complex hardware
-component can can be constructed by composing several simple
-modules. The notion of modules is so ingrained in that all commercial
-Hardware Description Languages (HDLs) like Verilog, VHDL, Bluespec,
-and Chisel~\cite{verilog, vhdl, bsdef, chisel} support the notion of
+component can be constructed by composing several simple modules. The
+notion of modules is so ingrained that all commercial hardware
+description languages (HDLs) like Verilog, VHDL, Bluespec, and
+Chisel~\cite{verilog, vhdl, bsdef, chisel} support the notion of
 modules.
 
 Among various HDLs, \Bluespec{}~\cite{bsdef, bsref} allows designers
 to develop hardware not only based on modularity, but also based on
 the notion of Guarded Atomic Actions (GAAs)~\cite{daniel-gaa}. Even
-though most HDLs allow to design hardware in a modular manner, modules
-cannot be independently designed if they are entangled with
+though most HDLs allow users to design hardware in a modular manner,
+modules cannot be independently designed if they are entangled with
 clock-timing issues. For instance, when two modules, a producer of a
-value and a consumer of that value, are connected with wires and the
+value and a consumer of that value, are connected with wires, and the
 producer is optimized to use fewer clock cycles to produce the value,
 then the consumer should also be modified to consume the values
 faster; failure to do so will result in an incorrect overall design.
@@ -35,7 +35,7 @@ specifying, verifying, and synthesizing \Bluespec{}-style hardware
 components. \Kami{} presents a domain specific language similar to
 Bluespec. In addition, we define the formal semantics of the \Kami{}
 language to enable proving properties of hardware. The framework has
-been built on the Coq proof assistant; hence verification can be
+been built on the Coq proof assistant; hence, verification can be
 performed by mechanized proofs with a high degree of automation.
 
 The notion of modularity used in designing hardware can be extended to
@@ -51,37 +51,37 @@ larger design.
 Modules communicate with other modules by calling each other's
 methods. In our modular semantics, we model these communications using
 \emph{labels}. The semantics of these communicating modules is similar
-to those of Labeled Transition Systems (LTS)~\cite{lts}. Each module
+to those of labeled transition systems (LTS)~\cite{lts}. Each module
 changes its internal state and potentially calls methods of other
 modules during its state transition. These method calls become labels
-in our semantics.  The modular semantics, therefore, also defines
-behaviors of \emph{open systems}. Open systems have external
-interactions, whose specifics cannot be figured out unless it is
-connected with other modules which can respond to them.
+in our semantics. Modular semantics, therefore, also defines behaviors
+of \emph{open systems}. Open systems have external interactions, whose
+specifics cannot be determined unless they are connected with other
+modules which can respond to them.
 
 However, modular semantics has an inherent weakness in that it is hard
 to infer internal changes. Even if modular semantics allow us to
 consider individual modules, we eventually should be able to
-understand a part of design which is still composed of several
-modules, when the part cannot be decomposed anymore. Modular semantics
+understand a part of a design which is still composed of several
+modules, when the part cannot be further decomposed. Modular semantics
 defines behaviors of such modules by giving the behaviors of each
 small module. In this case, we should consider \emph{all possible
   combinations} of the small module behaviors. However, we certainly
 do not want to consider all such cases, since we know only a few cases
 are feasible by the design itself.
 
-Hence, in this thesis, I present a new semantic approach, which is
-based on inlining. Inlining semantics is defined for open hardware
-systems and resolve the weakness by construction. The semantics uses a
-static inlining operation to substitute internal calls to their method
+Hence, in this thesis, I present a new semantic approach that is based
+on inlining. Inlining semantics is defined for open hardware systems
+and resolves the weakness by construction. The semantics uses a static
+inlining operation to substitute internal calls to their method
 bodies. This operator erases all internal calls in a module, so that
 we do not need to care about internal communications.
 
-An implication from the modular semantics to the inlining semantics is
-also formally proven, thus it can be used in order to efficiently
-prove properties of hardware. Since the two semantics does not have
-equal capabilities, we give the implication proof saying that the
-modular semantics imply the inlining semantics.
+An implication from modular semantics to inlining semantics is also
+formally proven. Thus, it can be used in order to efficiently prove
+properties of hardware. Since the two semantics do not have equal
+capabilities, we give the implication proof saying that the modular
+semantics imply the inlining semantics.
 
 To sum up, the main contributions of this thesis are:
 \begin{itemize}

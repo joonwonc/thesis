@@ -530,12 +530,12 @@ in $m$.
 \section{Manipulating Module Structures}
 
 Before introducing an inlining operation and its corresponding
-semantics, we present an interesting property of the modular
-semantics, which is also related to inlining. The property says that
-how modules are composed does not affect the behaviors of the
-modules. In other words, two modules are semantically equivalent if
-they have the same set of registers, rules, and defined methods. It is
-formally described as follows:
+semantics, we present one of main properties of the modular semantics,
+which is also related to inlining. The property says that how modules
+are composed does not affect the behaviors of the modules. In other
+words, two modules are semantically equivalent if they have the same
+set of registers, rules, and defined methods. It is formally described
+as follows:
 
 \begin{lemma}
   \label{lem-equiv-modules}
@@ -557,10 +557,9 @@ Proving \reflem{lem-equiv-modules} is straightforward, simply by
 following inductive definitions of semantics. Since all inference
 rules from \Substep{} to \Step{} do not look at the structure of
 modules (how they are composed), the proof does not need any tricks.
-
-Following two corollaries are trivial but more intuitive statements
-for presenting that module structures are nothing to do with
-semantics.
+Using \reflem{lem-equiv-modules}, we obtain two more intuitive
+corollaries, which directly say that module structures are nothing to
+do with semantics.
 
 \begin{corollary}
   \label{lem-modules-comm}
@@ -598,7 +597,9 @@ semantics.
 The independence between module structures and modular semantics
 allows us to \emph{simplify} the structure without affecting its
 semantics. For instance, we can define and use a \emph{flattening
-  operation} for modules.
+  operation} for modules. The flattening operation
+$\modflatten{\cdot}$ converts a target module to one big basic module,
+by breaking the module structure.
 
 \begin{definition}
   \label{def-flattening}
@@ -632,14 +633,14 @@ following property:
   Straightforward by applying \reflem{lem-equiv-modules}.
 \end{proof}
 
-Once module structures are collapsed by flattening, the only concern
-for manipulating modules is internal calls. In order to solve the
-concern, we use inlining; given a flattened module, the inlining
-operation eliminates all internal calls by substituting their bodies
-to call sites. Hence, after flattening and inlining, we obtain a raw
-module, in which all internal structures are collapsed. See
-\refdef{def-inlinedmm} for details how the flattening operation is
-used during inlining.
+Once a module is collapsed by flattening, the only concern for
+efficiently dealing with modules comes from internal calls. In order
+to handle such internal calls, we use inlining; given a flattened
+module, the inlining operation eliminates all internal calls by
+substituting their bodies to call sites. Hence, after flattening and
+inlining, we obtain a \emph{raw module}, in which all internal
+structures are collapsed. See \refdef{def-inlinedmm} for details how
+the flattening operation is used during inlining.
 
 \section{Well-formedness of Modules}
 \label{sec-wf}
