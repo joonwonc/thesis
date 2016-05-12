@@ -13,17 +13,17 @@ notations to represent general data structures.
 \begin{itemize}
 \item Lists: we use a symbol $\vec{t}\;$ to represent a type of list
   whose elements are represented as a value $t$. \listnil{} represents
-  the nil list, and $(\listcons{hd}{tl})$ represents a list with a
+  the nil list, and $(\listcons{hd}{tl})$ represents the list with a
   head $hd$ and a tail $tl$.
 \item Sets: \emptyset{} represents an empty set, $(s \cup t)$
-  represents a union. $(a \in S)$ denotes an element $a$ which is in a
-  set $S$.
+  represents the union of sets $s$ and $t$. $(a \in S)$ denotes an
+  element $a$ in set $S$.
 \item Finite maps: we use a symbol $(K \finmapsymb V)$ to represent a
   finite map with a set of keys $K$ and a set of values
   $V$. \emptymap{} represents an empty map, and $\stupd{m}{k}{v}$
   represents a map update with a new key $k$ and a value
-  $v$. Singletons are represented by omitting \emptymap{}, like
-  $\stupd{}{k}{v}$.  $(\mapfilt{m}{ks})$ represents a map where all
+  $v$. Singletons are represented by
+  $\stupd{}{k}{v}$. $(\mapfilt{m}{ks})$ represents a map where all
   elements whose keys are in the list $ks$ are removed from $m$. We
   use the notation $\in$ also for finite maps to represent that a map
   has a certain key; $(k \in m)$ means that a map $m$ has a value for
@@ -39,7 +39,7 @@ expressions.
 
 \begin{definition}
   \label{def-expression}
-  An expression $e$ is inductively defined as follows:
+  An expression $e$ is defined inductively as follows:
   \begin{center}
     \begin{math}
       \begin{array}{rcll}
@@ -74,7 +74,7 @@ assert, and return.
 
 \begin{definition}
   \label{def-action}
-  An action $a$ is inductively defined as follows:
+  An action $a$ is defined inductively as follows:
   \begin{center}
     \begin{math}
       \begin{array}{rcll}
@@ -121,15 +121,14 @@ methods to communicate with other modules.
   \end{center}
 \end{definition}
 
-A module is either a \emph{basic module} or a \emph{composed module}
-where two modules are composed inductively. In a basic module,
-registers has a form of $\listof{\regpair{r}{c}}$, where $c$ is the
-default value for a corresponding register $r$. Rules are defined as
-$\listof{\rulepair{s}{a}}$, where $s$ is the name of a rule and $a$ is
-the body of it. Methods are defined as $\listof{\methodpair{f}{\lambda
-    x.a}}$, where $f$ is the name of a method and $\lambda x.a$ is the
-body of it. $x$ in the lambda form serves to take an argument of the
-method.
+A module is either a \emph{basic module} or a \emph{composed module}.
+In a basic module, $\listof{\regpair{r}{c}}$ represents registers
+where the initial value of register $r$ is $c$.
+$\listof{\rulepair{s}{a}}$ represents rules where $s$ is the name of a
+rule and $a$ is the body of it. $\listof{\methodpair{f}{\lambda x.a}}$
+represents methods where $f$ is the name of a method and $\lambda x.a$
+is the body of it. $x$ in the lambda form serves to take an argument
+of the method.
 
 All names for registers, rules, and methods are assumed to be globally
 unique in the module. A simple static checker can be implemented to
@@ -152,9 +151,8 @@ expressions and actions are completely borrowed from
 
 \paragraph{Expressions}
 
-We start by defining semantics from the one for expressions.
-\refdef{def-semexpr} describes denotational semantics \ssemexpr{\cdot}
-for expressions.
+We start by defining semantics for expressions. \refdef{def-semexpr}
+describes denotational semantics \ssemexpr{\cdot} for expressions.
 
 \begin{definition}
   \label{def-semexpr}
@@ -178,9 +176,9 @@ by reading its value from the \emph{old state} $o: \sttype$.
 
 Semantics for variable is not defined, since the variable is
 substituted to the value by $\beta$-reduction at higher semantics.
-Technically, in the \Kami{} framework, syntax is defined by
-PHOAS~\cite{adam-icfp}, thus the variable term is abstracted into a
-syntax constructor $\textsf{Var}$. In this case, we can define
+Technically, in the \Kami{} framework, syntax is defined with
+PHOAS~\cite{adam-icfp} terms, thus the variable term is abstracted
+into a syntax constructor $\textsf{Var}$. In this case, we can define
 $\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is already substituted
 to a value but still contained in the constructor.
 
@@ -190,7 +188,7 @@ inductively evaluated by the same semantic function.
 
 \paragraph{Actions}
 
-Actions are the basic unit where the communication among modules are
+Actions are the basic unit where the communication among modules is
 triggered by method calls. As defined in \refdef{def-action}, actions
 contain a method call. A method call can be either internal (calling a
 method in the module), or external (calling a method not in the
@@ -215,26 +213,26 @@ of $a$.
   \begin{center}
     \begin{math}
       \begin{array}{c}
-        \inference[ActionWriteReg:]{\semact{o}{a}{u}{cs}{v} & \semexpr{e}{o} = v_r}
+        \inference[ActionWriteReg:]{\semexpr{e}{o} = v_r & \semact{o}{a}{u}{cs}{v}}
                   {\semact{o}{\actwrite{r}{e}{a}}{\stupd{u}{r}{v_r}}{cs}{v}} \\
         \mbox{} \\
-        \inference[ActionCall:]{\semact{o}{(\lambda x.a)\ v_r}{u}{cs}{v} & \semexpr{e}{o} = v_a}
+        \inference[ActionCall:]{\semexpr{e}{o} = v_a & \semact{o}{(\lambda x.a)\ v_r}{u}{cs}{v}}
                   {\semact{o}{\actcall{x}{f}{e}{a}}{u}{\lblupd{cs}{f}{(v_a, v_r)}}{v}} \\
         \mbox{} \\
-        \inference[ActionLet:]{\semact{o}{(\lambda x.a)\ v_l}{u}{cs}{v} & \semexpr{e}{o} = v_l}
+        \inference[ActionLet:]{\semexpr{e}{o} = v_l & \semact{o}{(\lambda x.a)\ v_l}{u}{cs}{v}}
                   {\semact{o}{\actlet{e}{x}{a}}{u}{cs}{v}} \\
         \mbox{} \\
-        \inference[ActionIfElseT:]{\semact{o}{a_t}{u_t}{cs_t}{v_t} &
-          \semact{o}{(\lambda x.a)\ v_t}{u}{cs}{v} &
-          \semexpr{e}{o} = \btrue{}}
-                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_t}{u}}{\splus{cs_t}{cs}}{v}} \\
+        \inference[ActionIfElseT:]{\semexpr{e}{o} = \btrue{} &
+          \semact{o}{a_t}{u_t}{cs_t}{v_t} &
+          \semact{o}{(\lambda x.a)\ v_t}{u}{cs}{v}}
+                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\sunion{u_t}{u}}{\sunion{cs_t}{cs}}{v}} \\
         \mbox{} \\
-        \inference[ActionIfElseF:]{\semact{o}{a_f}{u_f}{cs_f}{v_f} &
-          \semact{o}{(\lambda x.a)\ v_f}{u}{cs}{v} &
-          \semexpr{e}{o} = \bfalse{}}
-                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\splus{u_f}{u}}{\splus{cs_f}{cs}}{v}} \\
+        \inference[ActionIfElseF:]{\semexpr{e}{o} = \bfalse{} &
+          \semact{o}{a_f}{u_f}{cs_f}{v_f} &
+          \semact{o}{(\lambda x.a)\ v_f}{u}{cs}{v}}
+                  {\semact{o}{\actifelse{e}{a_t}{a_f}{x}{a}}{\sunion{u_f}{u}}{\sunion{cs_f}{cs}}{v}} \\
         \mbox{} \\
-        \inference[ActionAssert:]{\semact{o}{a}{u}{cs}{v} & \semexpr{e}{o} = \btrue{}}
+        \inference[ActionAssert:]{\semexpr{e}{o} = \btrue{} & \semact{o}{a}{u}{cs}{v}}
                   {\semact{o}{\actassert{e}{a}}{u}{cs}{v}} \\
         \mbox{} \\
         \inference[ActionReturn:]{\semexpr{e}{o} = v}
@@ -257,8 +255,49 @@ properties will be discussed in \refsect{sec-wf}.
 
 An assert and a return action have straightforward semantics. Assert
 requires its argument $e$ to be \btrue{}, in order to continue
-execution. Return simply evaluates the expression $e$ to return the
-value.
+execution. There is no semantics when $e$ is evaluated to \bfalse{}.
+Return simply evaluates the expression $e$ to return the value.
+
+Note that action semantics is defined in a sequential manner, but in
+fact they are executed concurrently. All inference rules for actions
+use the old state $o$ to obtain values from registers, which indicates
+that no action uses an updated value during the execution. Due to this
+concurrent execution concept, when we \emph{concatenate} two arbitrary
+action sequences, we can easily obtain the semantics of the
+concatenated actions simply by merging two corresponding action
+semantics. \refdef{def-concataction} defines a syntactic action
+concatenation operator. A corresponding property is proven in
+\reflem{lem-concatsymb} in \refchap{chap:implication}.
+
+\begin{definition}
+  \label{def-concataction}
+  $(\concatsymb) : \textrm{Action} \to \textrm{Action} \to
+  \textrm{Action}$ is an infix operator, defined inductively with
+  respect to the left-hand side action:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \concataction{(\actwrite{r}{e}{a})}{a_c} & \triangleq & \actwrite{r}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actcall{x}{f}{e}{a})}{a_c} & \triangleq & \actcall{x}{f}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actlet{e}{x}{a})}{a_c} & \triangleq & \actlet{e}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actifelse{e}{a_t}{a_f}{x}{a})}{a_c} & \triangleq &
+        \actifelse{e}{a_t}{a_f}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actassert{e}{a})}{a_c} & \triangleq & \actassert{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actret{e})}{a_c} & \triangleq & \actlet{e}{x}{a_c} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+The only nontrivial definition comes from the return statement
+$(\actret{e})$. Concatenating two actions involves to pass the return
+value of the left action to the right action as an argument. However,
+a dynamic evaluation of an expression cannot be involved with the
+static concatenation operation. The problem can be solved by using
+$\textsf{let}$ syntax structure, saying that we declare a name in
+which $e$ is bound, and the value is used in the body ($\lambda
+x.a_c$). Considering the semantic rule for $\textsf{let}$, it is
+natural to define concatenation in such a way.
 
 \paragraph{Substep}
 Once the semantics for actions are defined, it should be employed to
@@ -275,9 +314,9 @@ communications with other external modules. A label has the form
 \semlbl{\alpha}{ds}{cs}, where $\alpha$ is a tag to indicate whether
 the label is formed by a rule or not. If the label is formed by a rule
 $s \in \setrules$, it takes $(\alpharule{s})$. Otherwise, it takes
-\alphameth{}. $ds$ denotes \emph{defined methods}, indicating methods
-executed in a cycle. Similarly, $cs$ denotes \emph{called methods},
-indicating methods which are called in a cycle.
+\alphameth{}. $ds$ denotes \emph{defined methods}, which are executed
+in an atomic action.  Similarly, $cs$ denotes \emph{called methods},
+which are called in an atomic action.
 
 The \Substep{} semantics has a form of a judgment relation
 \semsstep{m}{o}{u}{\alpha}{ds}{cs}, where $m$ is the target module,
@@ -443,7 +482,8 @@ The only nontrivial definition is $(\annplus{\alpha_1}{\alpha_2})$,
 which takes rule annotations from two annotations. It returns
 \alphameth{} if both of them are not a rule annotation. Note that the
 two annotations cannot both be the rule annotation by the condition
-$(\anndisj{\alpha_1}{\alpha_2})$.
+$(\anndisj{\alpha_1}{\alpha_2})$, which is following the concept of
+the one-rule-at-a-time semantics.
 
 \paragraph{Step}
 The \Step{} semantics describes behaviors of a module where all
@@ -513,8 +553,9 @@ in $m$.
   \begin{center}
     \begin{math}
       \begin{array}{lcl}
-        \callsofm{(\_, \rulepair{s}{a_r}, \methodpair{f}{\lambda x.a_m})}
-        & = & \listof{\callsofa{a_r}} \cup \listof{\callsofa{a_m}} \\
+        \callsofm{(\_, \listof{\rulepair{s}{a_r}}, \listof{\methodpair{f}{\lambda x.a_m}})}
+        & = & (\bigcup_{(s_i, a_{r_i}) \in \listof{\rulepair{s}{a_r}}}\ \callsofa{a_{r_i}})\ \cup \\
+        & & (\bigcup_{(f_i, \lambda x.a_{m_i}) \in \listof{\methodpair{f}{\lambda x.a_m}}}\ \callsofa{a_{m_i}}) \\
         \callsofm{(\modcomp{m_1}{m_2})} & = & \callsofm{m_1} \cup \callsofm{m_2} \\
         \callsofa{(\actwrite{r}{e}{a})} & = & \callsofa{a} \\
         \callsofa{(\actcall{x}{f}{e}{a})} & = & \{ f \} \cup \callsofa{a} \\
@@ -552,6 +593,14 @@ as follows:
     \end{math}
     \end{center}
 \end{lemma}
+
+Having the same set of registers, rules, and defined methods does not
+imply two modules are syntactically equal. For example, two modules
+$\modcomp{(\modcomp{m_1}{m_2})}{m_3}$ and
+$\modcomp{m_1}{(\modcomp{m_2}{m_3})}$ have different module structures
+(thus syntactically different), but they have the same set of
+registers, rules, and defined methods from the three modules $m_1$,
+$m_2$, and $m_3$.
 
 Proving \reflem{lem-equiv-modules} is straightforward, simply by
 following inductive definitions of semantics. Since all inference
@@ -653,7 +702,7 @@ independent to semantic definitions, which has a dynamic aspect.  For
 instance, as briefly discussed in \refsect{sec:bluespec-semantics}, it
 is not allowed for a rule or a method to write the same register
 twice, or to call the same method twice. These conditions can be
-statically and approximately determined by iterating actions.
+statically and approximately determined by examining actions.
 
 Well-formedness conditions should be checked not only for correct
 synthesis, but also for verification. Two representative
@@ -814,40 +863,6 @@ inlined module is easy to analyze.
 
 \subsection{Inlining Operation}
 
-\paragraph{Concatenating two actions}
-In order to design an inlining function, we first have to implement a
-function which simply concatenates two actions.
-
-\begin{definition}
-  \label{def-concataction}
-  $(\concatsymb) : \textrm{Action} \to \textrm{Action} \to
-  \textrm{Action}$ is an infix operator, defined inductively with
-  respect to the left-hand side action:
-  \begin{center}
-    \begin{math}
-      \begin{array}{rcl}
-        \concataction{(\actwrite{r}{e}{a})}{a_c} & \triangleq & \actwrite{r}{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actcall{x}{f}{e}{a})}{a_c} & \triangleq & \actcall{x}{f}{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actlet{e}{x}{a})}{a_c} & \triangleq & \actlet{e}{x}{(\concataction{a}{a_c})} \\
-        \concataction{(\actifelse{e}{a_t}{a_f}{x}{a})}{a_c} & \triangleq &
-        \actifelse{e}{a_t}{a_f}{x}{(\concataction{a}{a_c})} \\
-        \concataction{(\actassert{e}{a})}{a_c} & \triangleq & \actassert{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actret{e})}{a_c} & \triangleq & \actlet{e}{x}{a_c} \\
-      \end{array}
-    \end{math}
-  \end{center}
-\end{definition}
-
-The only nontrivial definition comes from the return statement
-$(\actret{e})$. Concatenating two actions involves to pass the return
-value of the left action to the right action as an argument. However,
-a dynamic evaluation of an expression cannot be involved with the
-static concatenation operation. The problem can be solved by using
-$\textsf{let}$ syntax structure, saying that we declare a name in
-which $e$ is bound, and the value is used in the body ($\lambda
-x.a_c$). Considering the semantic rule for $\textsf{let}$, it is
-natural to define concatenation in such a way.
-
 \paragraph{Inlining a method}
 There are several ways to implement an inlining function. One way is
 to define it like a breadth-first search; during the iteration of a
@@ -931,7 +946,7 @@ However, inlining gets complicated when there is \emph{a call cycle}
 in the module. \reffig{ex-inlining-callcycle} shows the case where
 inlining for such a module is problematic. A module $m$ has two
 methods $f$ and $g$. It has a call cycle since $f$ calls $g$ and $g$
-calls $f$. When inlining $g$ first, $f$ becomes to have a
+calls $f$. When inlining $g$ first, $f$ becomes a
 \emph{self-recursive} call (a right figure). In this case, inlining
 for $f$ cannot progress, since inlining itself will cause register
 double-writes by $r_1$ and $r_2$. In order to avoid such cases, the
@@ -1036,7 +1051,7 @@ methods.
 where the map filtering operator $(\mapfilt{m}{l})$ filters out
 elements of $m$ where the key is not in $l$.
 
-\subsection{Inlining semantics}
+\subsection{Inlining Semantics}
 
 \begin{figure}[t]
   \begin{subfigure}[b]{0.5\textwidth}

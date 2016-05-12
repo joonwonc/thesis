@@ -68,11 +68,11 @@ able to call $h$, even though they are executed concurrently.
 We can resolve this issue by converting designs to the ones without
 such methods by inlining. Bluespec has two notations for methods,
 called $\textbf{ActionMethod}$ and
-$\textbf{Method}$. $\textbf{ActionMethod}$ can write registers or call
-methods, while $\textbf{Method}$ cannot contain such actions. Hence,
-if we inline all $\textbf{Method}$s while converting designs from
-\Bluespec{} to \Kami{}, the issue will not happen (though the inlining
-in conversion will remain as a part of trusted base).
+$\textbf{Method}$. $\textbf{ActionMethod}$ can write registers, while
+$\textbf{Method}$ cannot contain such actions. Hence, if we inline all
+$\textbf{Method}$s while converting designs from \Bluespec{} to
+\Kami{}, the issue will not happen (though the inlining in conversion
+will remain as a part of trusted base).
 
 Based on the analysis so far, we give the main theorem for semantic
 implication. \refthm{thm-modtoinl} claims that the set of possible
