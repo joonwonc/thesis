@@ -61,7 +61,7 @@ specifics cannot be determined unless they are connected with other
 modules which can respond to them.
 
 However, modular semantics has an inherent weakness in that it is hard
-to infer internal changes. Even if modular semantics allow us to
+to infer internal changes. Even if modular semantics allows us to
 consider individual modules, we eventually should be able to
 understand a part of a design which is still composed of several
 modules, when the part cannot be further decomposed. Modular semantics
@@ -71,9 +71,9 @@ small module. In this case, we should consider \emph{all possible
 do not want to consider all such cases, since we know only a few cases
 are feasible by the design itself.
 
-Hence, in this thesis, I present a new semantic approach that is based
-on inlining. Inlining semantics is defined for open hardware systems
-and resolves the weakness by construction. The semantics uses a static
+Hence, in this thesis, I present a new semantic approach based on
+inlining. Inlining semantics is defined for open hardware systems and
+resolves the weakness by construction. The semantics uses a static
 inlining operation to substitute internal calls to their method
 bodies. This operator erases all internal calls in a module, so that
 we do not need to care about internal communications.
@@ -97,10 +97,10 @@ To sum up, the main contributions of this thesis are:
 The thesis is organized as follows: \refchap{chap:backgrounds}
 introduces a number of prerequisites to understand the hardware design
 concept of \Bluespec{}. Related works are also provided to compare
-previous approaches to define hardware semantics.
-\refchap{chap:semantics} presents the two semantics used in the
-\Kami{} framework: modular and inlining
-semantics. \refchap{chap:implication} compares capability of each
-semantics and presents the implication proof between them. Lastly, we
-draw conclusions and give future works in \refchap{chap:conclusions}.
+previous approaches to hardware semantics. \refchap{chap:semantics}
+presents the two semantics used in the \Kami{} framework: modular and
+inlining semantics. \refchap{chap:implication} compares the capability
+of each semantics, and presents the implication proof between
+them. Lastly, we draw conclusions and give future works in
+\refchap{chap:conclusions}.
 

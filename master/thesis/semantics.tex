@@ -4,7 +4,7 @@
 In this chapter, we present a formal definition of inlining.  First,
 we define the inlining operation on the \Kami{} language and the
 modular semantics~\cite{murali-thesis}. We then present a new semantic
-approach, which employes the inlining operation.
+approach, which is based on the inlining operation.
 
 \paragraph{Notations}
 
@@ -101,10 +101,54 @@ value from true and false branches. An assert action takes an
 expression $e$ to be checked to progress the continuation. Lastly, a
 return action takes $e$ as a return value.
 
+Even if actions are defined in a sequential manner, they are in fact
+executed concurrently. Semantically, all inference rules for actions
+will use the current state to obtain values from registers, which implies
+that no actions use any updated values during the execution (see
+\refdef{def-semaction} for details).
+
+Due to the concurrent execution concept, when we \emph{concatenate}
+two arbitrary action sequences, we can easily imagine the behavior of
+the concatenated actions simply by merging two corresponding
+behaviors. The action concatenation is used for various purposes such
+as inlining a method body. \refdef{def-concataction} defines a
+syntactic action concatenation operator. A semantic property will be
+proven in \reflem{lem-concatsymb}.
+
+\begin{definition}
+  \label{def-concataction}
+  $(\concatsymb) : \textrm{Action} \to \textrm{Action} \to
+  \textrm{Action}$ is an infix operator, defined inductively with
+  respect to the left-hand side action:
+  \begin{center}
+    \begin{math}
+      \begin{array}{rcl}
+        \concataction{(\actwrite{r}{e}{a})}{a_c} & \triangleq & \actwrite{r}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actcall{x}{f}{e}{a})}{a_c} & \triangleq & \actcall{x}{f}{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actlet{e}{x}{a})}{a_c} & \triangleq & \actlet{e}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actifelse{e}{a_t}{a_f}{x}{a})}{a_c} & \triangleq &
+        \actifelse{e}{a_t}{a_f}{x}{(\concataction{a}{a_c})} \\
+        \concataction{(\actassert{e}{a})}{a_c} & \triangleq & \actassert{e}{(\concataction{a}{a_c})} \\
+        \concataction{(\actret{e})}{a_c} & \triangleq & \actlet{e}{x}{a_c} \\
+      \end{array}
+    \end{math}
+  \end{center}
+\end{definition}
+
+The only nontrivial definition comes from the return statement
+$(\actret{e})$. Concatenating two actions involves to pass the return
+value of the left action to the right action as an argument. However,
+a dynamic evaluation of an expression cannot be involved with the
+static concatenation operation. The problem can be solved by using
+$\textsf{let}$ syntax structure, saying that we declare a name in
+which $e$ is bound, and the value is used in the body ($\lambda
+x.a_c$). Considering the semantic rule for $\textsf{let}$, it is
+natural to define concatenation in such a way.
+
 \paragraph{Modules}
-A module is a unit of hardware components which has its own state (a
-set of registers), rules for inducing internal state changes, and
-methods to communicate with other modules.
+A module is a unit of hardware systems which has its own state (a set
+of registers), rules to induce internal state changes, and methods to
+communicate with other modules.
 
 \begin{definition}
   \label{def-module}
@@ -132,7 +176,7 @@ of the method.
 
 All names for registers, rules, and methods are assumed to be globally
 unique in the module. A simple static checker can be implemented to
-confirm there are no name conflicts for all modules.
+confirm that there are no name conflicts for all modules.
 
 \section{Modular Semantics}
 \label{sec-semmod}
@@ -140,9 +184,9 @@ confirm there are no name conflicts for all modules.
 In this section, we present a modular semantics for hardware
 systems. A version of modular semantics has been defined in
 \cite{murali-thesis}.  However, this section defines a slightly
-different version, which is used in the current \Kami{} framework.
-The motivation is unchanged: semantic rules are defined with respect
-to module definitions, which include the one for combining
+different version, which is also used in the current \Kami{}
+framework.  The motivation is unchanged: semantics is defined with
+respect to module definitions, which includes the one for combined
 modules. The semantics defined in this section will be used throughout
 the thesis, including the implication proof in
 \refchap{chap:implication}. Specifically, semantic definitions for
@@ -152,7 +196,8 @@ expressions and actions are completely borrowed from
 \paragraph{Expressions}
 
 We start by defining semantics for expressions. \refdef{def-semexpr}
-describes denotational semantics \ssemexpr{\cdot} for expressions.
+describes deterministic and denotational semantics \ssemexpr{\cdot}
+for expressions.
 
 \begin{definition}
   \label{def-semexpr}
@@ -174,13 +219,14 @@ Semantics for constant and register read are straightforward. The
 constant itself is returned for a constant. Register read is performed
 by reading its value from the \emph{old state} $o: \sttype$.
 
-Semantics for variable is not defined, since the variable is
-substituted to the value by $\beta$-reduction at higher semantics.
-Technically, in the \Kami{} framework, syntax is defined with
-PHOAS~\cite{adam-icfp} terms, thus the variable term is abstracted
-into a syntax constructor $\textsf{Var}$. In this case, we can define
-$\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is already substituted
-to a value but still contained in the constructor.
+Semantics for variable is not defined, since the variable is always
+substituted to the value by $\beta$-reduction at higher semantics,
+before we need the semantic definition for it.  Technically, in the
+\Kami{} framework, syntax is defined with PHOAS~\cite{adam-icfp}
+terms, thus the variable term is abstracted into a syntax constructor
+$\textsf{Var}$. In this case, we can define
+$\semexpr{\textsf{Var}\ v}{o} = v$, where $v$ is a value already
+substituted but still contained in the $\textsf{Var}$ constructor.
 
 Lastly, semantics for operation is defined by using the semantic
 definition for \seop{}, denoted as $\denot{\seop{}}$. Arguments are
@@ -196,11 +242,11 @@ module).
 
 In the modular semantics, all method calls are first treated as they
 are external calls. In other words, the semantics for method calls, on
-the level of action, are defined as if we know the return value of the
-method for every argument. The validity of such assumptions are
+the level of action, is defined as if we know the return value of the
+method for every argument. The validity of such an assumption is
 checked at higher-level semantics.
 
-The semantics for actions have a form of a judgment relation
+The semantics for actions has a form of a judgment relation
 \semact{o}{a}{u}{cs}{v}, where $o : \sttype{}$ is the old state, $a$
 is the target action, $u : \sttype{}$ is the \emph{updated state}
 after executing $a$, $cs : \lbtype{}$ is the map from method names to
@@ -243,7 +289,7 @@ of $a$.
   \end{center}
 \end{definition}
 
-Semantics for actions do not check double-writes of registers or
+Semantics for actions does not check double-writes of registers or
 double-calls of method calls. For instance, in the rule
 ActionWriteReg, an evaluated value is simply updated to the updated
 state $u$ by the register name $r$, without confirming $u$ does not
@@ -258,56 +304,15 @@ requires its argument $e$ to be \btrue{}, in order to continue
 execution. There is no semantics when $e$ is evaluated to \bfalse{}.
 Return simply evaluates the expression $e$ to return the value.
 
-Note that action semantics is defined in a sequential manner, but in
-fact they are executed concurrently. All inference rules for actions
-use the old state $o$ to obtain values from registers, which indicates
-that no action uses an updated value during the execution. Due to this
-concurrent execution concept, when we \emph{concatenate} two arbitrary
-action sequences, we can easily obtain the semantics of the
-concatenated actions simply by merging two corresponding action
-semantics. \refdef{def-concataction} defines a syntactic action
-concatenation operator. A corresponding property is proven in
-\reflem{lem-concatsymb} in \refchap{chap:implication}.
-
-\begin{definition}
-  \label{def-concataction}
-  $(\concatsymb) : \textrm{Action} \to \textrm{Action} \to
-  \textrm{Action}$ is an infix operator, defined inductively with
-  respect to the left-hand side action:
-  \begin{center}
-    \begin{math}
-      \begin{array}{rcl}
-        \concataction{(\actwrite{r}{e}{a})}{a_c} & \triangleq & \actwrite{r}{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actcall{x}{f}{e}{a})}{a_c} & \triangleq & \actcall{x}{f}{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actlet{e}{x}{a})}{a_c} & \triangleq & \actlet{e}{x}{(\concataction{a}{a_c})} \\
-        \concataction{(\actifelse{e}{a_t}{a_f}{x}{a})}{a_c} & \triangleq &
-        \actifelse{e}{a_t}{a_f}{x}{(\concataction{a}{a_c})} \\
-        \concataction{(\actassert{e}{a})}{a_c} & \triangleq & \actassert{e}{(\concataction{a}{a_c})} \\
-        \concataction{(\actret{e})}{a_c} & \triangleq & \actlet{e}{x}{a_c} \\
-      \end{array}
-    \end{math}
-  \end{center}
-\end{definition}
-
-The only nontrivial definition comes from the return statement
-$(\actret{e})$. Concatenating two actions involves to pass the return
-value of the left action to the right action as an argument. However,
-a dynamic evaluation of an expression cannot be involved with the
-static concatenation operation. The problem can be solved by using
-$\textsf{let}$ syntax structure, saying that we declare a name in
-which $e$ is bound, and the value is used in the body ($\lambda
-x.a_c$). Considering the semantic rule for $\textsf{let}$, it is
-natural to define concatenation in such a way.
-
 \paragraph{Substep}
-Once the semantics for actions are defined, it should be employed to
-describe the semantics of rule or method executions. As explained in
+Once the semantics for actions is defined, it should be used to define
+the semantics for rules or methods. As explained in
 \refsect{sec:bluespec-semantics}, \Bluespec{} and \Kami{} follow the
 one-rule-at-a-time semantics; only one rule is executed in a cycle,
-while multiple method calls are executed. The \Substep{} semantics
-defines a single execution by a rule or a method. Definitions are
-simply lifted from the semantics for actions, since a rule or a method
-is defined by actions.
+while multiple method calls are allowed to be executed. The \Substep{}
+semantics defines a single execution by a rule or a method.
+Definitions are simply lifted from the semantics for actions, since a
+rule or a method is defined from actions.
 
 A notion of label is used in this semantics, in order to represent
 communications with other external modules. A label has the form
@@ -315,7 +320,7 @@ communications with other external modules. A label has the form
 the label is formed by a rule or not. If the label is formed by a rule
 $s \in \setrules$, it takes $(\alpharule{s})$. Otherwise, it takes
 \alphameth{}. $ds$ denotes \emph{defined methods}, which are executed
-in an atomic action.  Similarly, $cs$ denotes \emph{called methods},
+in an atomic action. Similarly, $cs$ denotes \emph{called methods},
 which are called in an atomic action.
 
 The \Substep{} semantics has a form of a judgment relation
@@ -351,8 +356,8 @@ $o$ is the old state, $u$ is the updated state, and
 
 EmptyRule and EmptyMeth describe the cases where no progress is made
 in a cycle. An empty step by a rule and one by a method should be
-separately defined in the \Substep{} semantics, in order to give
-explicit information when defining the refinement
+separately defined in the \Substep{} semantics, in order to maintain
+the information needed when defining the refinement
 relation~\cite{murali-thesis}.
 
 SingleRule and SingleMeth describe the case where a rule or a method
@@ -414,7 +419,7 @@ in \Substep{}. $l$ denotes the label formed in a cycle.
                     {\semlbl{\alphameth}{\emptymap}{\emptymap}}} \\
         \mbox{} \\
         \inference[SubstepsCons:]{\semsss{m}{o}{u_1}{l_1} & \semsstepr{m}{o}{u_2}{l_2} & \sdisj{u_1}{u_2} & \ldisj{l_1}{l_2}}
-                  {\semsss{m}{o}{\splus{u_1}{u_2}}{\lplus{l_1}{l_2}}} \\
+                  {\semsss{m}{o}{\sunion{u_1}{u_2}}{\lplus{l_1}{l_2}}} \\
         \mbox{} \\
       \end{array}
     \end{math}
@@ -456,9 +461,8 @@ are combinable.
   \end{center}
 \end{definition}
 
-Using the disjointness conditions, we define a \emph{disjoint union}
-for updated states $(\splus{u_1}{u_2})$ and the merged label
-$(\lplus{l_1}{l_2})$, where the label merging is defined as follows:
+Using the disjointness conditions, we define a label-merging operation
+$(\lplus{l_1}{l_2})$, defined as follows:
 
 \begin{definition}
   \label{def-lplus}
@@ -468,8 +472,8 @@ $(\lplus{l_1}{l_2})$, where the label merging is defined as follows:
       \begin{array}{rcl}
         \lplus{l_1}{l_2} & \triangleq &
         \semlbl{\annplus{\annotof{l_1}}{\annotof{l_2}}}
-               {\mplus{\defsof{l_1}}{\defsof{l_2}}}
-               {\mplus{\callsof{l_1}}{\callsof{l_2}}} \textrm{, where} \\
+               {\lunion{\defsof{l_1}}{\defsof{l_2}}}
+               {\lunion{\callsof{l_1}}{\callsof{l_2}}} \textrm{, where} \\
         \annplus{\alpha_1}{\alpha_2} & \triangleq &
         \textsf{if}\ \alpha_1 = \alpharule{s}\ \textsf{then}\ \alpha_1\
         \textsf{else}\ \alpha_2 \\
@@ -571,12 +575,12 @@ in $m$.
 \section{Manipulating Module Structures}
 
 Before introducing an inlining operation and its corresponding
-semantics, we present one of main properties of the modular semantics,
+semantics, we present one of main properties of modular semantics,
 which is also related to inlining. The property says that how modules
-are composed does not affect the behaviors of the modules. In other
-words, two modules are semantically equivalent if they have the same
-set of registers, rules, and defined methods. It is formally described
-as follows:
+are composed does not affect behaviors of the modules. In other words,
+two modules are semantically equivalent if they have the same set of
+registers, rules, and defined methods. It is formally described as
+follows:
 
 \begin{lemma}
   \label{lem-equiv-modules}
@@ -599,8 +603,8 @@ imply two modules are syntactically equal. For example, two modules
 $\modcomp{(\modcomp{m_1}{m_2})}{m_3}$ and
 $\modcomp{m_1}{(\modcomp{m_2}{m_3})}$ have different module structures
 (thus syntactically different), but they have the same set of
-registers, rules, and defined methods from the three modules $m_1$,
-$m_2$, and $m_3$.
+registers, rules, and defined methods (from three modules $m_1$,
+$m_2$, and $m_3$).
 
 Proving \reflem{lem-equiv-modules} is straightforward, simply by
 following inductive definitions of semantics. Since all inference
@@ -644,8 +648,8 @@ do with semantics.
 \end{proof}
 
 The independence between module structures and modular semantics
-allows us to \emph{simplify} the structure without affecting its
-semantics. For instance, we can define and use a \emph{flattening
+allows us to \emph{simplify} the module structure without affecting
+its semantics. For instance, we can define and use a \emph{flattening
   operation} for modules. The flattening operation
 $\modflatten{\cdot}$ converts a target module to one big basic module,
 by breaking the module structure.
@@ -656,7 +660,7 @@ by breaking the module structure.
   \begin{center}
     \begin{math}
       \begin{array}{lcl}
-        \modflatten{m} & \triangleq & \modbasic{(\regsofm{m})}{(\rulesofm{m})}{(\methsofm{m})}
+        \modflatten{m} & \triangleq & (\regsofm{m}, \rulesofm{m}, \methsofm{m})
       \end{array}
     \end{math}
   \end{center}
@@ -718,8 +722,8 @@ correctness proof of an inlining operation requires a well-formedness
 condition as a hypothesis (see \refchap{chap:implication} for
 details).
 
-Whereas, some conditions cannot be statically checked, thus should be
-defined in part of semantics. For example, when combining two
+Whereas, certain conditions cannot be statically checked, thus should
+be defined in part of semantics. For example, when combining two
 substeps, two corresponding updated states and labels are required to
 be disjoint, defined in the \Substeps{} semantics. However, in some
 cases, it is too challenging to statically ensure the updated states
@@ -858,7 +862,7 @@ corresponding semantics. The main purpose of inlining is to handle
 possible behaviors of modules easily. As explained in
 \refsect{sec:related-works}, internal calls are the main hurdle
 analyzing module behaviors. However, in consequence of inlining, a
-module will no longer have internal calls, which indicates that the
+module will no longer have internal calls, which implies that the
 inlined module is easy to analyze.
 
 \subsection{Inlining Operation}
@@ -871,13 +875,14 @@ inlining process is applied repeatedly until there are no internal
 method calls.
 
 We define an inlining function in a somewhat different way for proof
-efficiency. First, we pick a function which will be inlined. Then for
-every action in a target module, we search for all method calls to the
-target method, and inline all of them. This process is applied for
-every defined method in the module. The reason we chose this way is
-that inlining a single method is closely related to semantic label
-manipulation. See \refchap{chap:implication} for the detailed reason
-why this inlining is easier to prove properties.
+efficiency. First, we pick a function which will be inlined throughout
+a target module. Then for every action in the target module, we search
+for all method calls to the target method, and inline all of
+them. This process is applied for every defined method in the
+module. The reason we chose this way is that inlining a single method
+is closely related to semantic label manipulation. See
+\refchap{chap:implication} for the detailed reason why this inlining
+is easier to prove properties.
 
 For a target action $a$ and an inlining method $dm$, we define a
 method-inlining operator for an action, denoted as $(\inlinedmsymb)$.
@@ -1016,14 +1021,14 @@ inlining operator $\inline{\cdot}$ for a target module $m$.
 
 Why are method names used for inlining, instead of actual method
 bodies? The reason is that when we do inlining once for a particular
-method, then all related other method bodies are changed. In other
-words, when a method-inlining is done, we should take a new method
-which will be inlined next, by taking it from the \emph{inlined
-  module}, not from the original one.
+method, then all related method bodies are changed. In other words,
+when a method-inlining is done, we should take a new method which will
+be inlined next, by taking it from the \emph{inlined module}, not from
+the original one.
 
 \paragraph{Hiding internal methods}
 
-The last step for inlining is to hide internal methods so that they
+The last step of inlining is to hide internal methods so that they
 cannot be called from external modules. It is to ensure an original
 module and the inlined one have the same behaviors. According to the
 modular semantics, all interal methods cannot be called by external
