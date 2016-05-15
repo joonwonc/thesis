@@ -144,7 +144,7 @@ Note that two updates $u_1$ and $u_2$ and two called methods $cs_1$
 and $cs_2$ \emph{do not need to be disjoint} -- a normal union $\cup$
 is used to merge updates and method calls, instead of a disjoint union
 $\uplus$. This is because the action semantics allows double writes or
-calls. The conditions are defined as one of the well-formedness
+calls. These conditions are defined as one of the well-formedness
 conditions, which is independent to the semantics.
 
 \paragraph{Correctness of the method-inlining operator}
@@ -534,9 +534,9 @@ merged substep.
     \item If the head substep is defined for $f$, then
       \reflem{lem-inlinedmm-meth2} is applied to obtain the
       goal. $cs_f$ in the lemma cannot contain $f$, since the substep
-      is defined for $f$ and we know $(\neg\; \isrec{f})$ ($f$ is not
-      self-recursive), which is brought from the definition of
-      $(\inlinedmmsymb)$.  Thus, we obtain $f \in cs$ so
+      is defined for $f$, and we know $(\neg\; \isrec{f})$ ($f$ is not
+      self-recursive), which are obtained from the definition of
+      $(\inlinedmmsymb)$. Thus, we obtain $f \in cs$ so
       \reflem{lem-inlinedmm-meth2} can be applied properly.
     \item If the head substep is defined for a method $g$ where $g
       \neq f$, but calls $f$, then \reflem{lem-inlinedmm-meth1} is

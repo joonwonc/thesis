@@ -8,18 +8,18 @@ in a static way, thus it requires a computation with module
 structures. All the definitions about the operator generally perform
 two tasks; they either change action structures (by substituting call
 sites to their actual bodies), or compare two method names (in order
-to check a method call name equals the inlining target while
-traversing actions). Each definition is either an ordinary function or
-a fixpoint function -- there are no relational definitions. We call
-such definitions \emph{computational}, which indicates that no proofs
-are involved.
+to check a method call name equals the inlining target while examining
+actions). Each definition is either an ordinary function or a
+recursive function -- there are no relational definitions. We call
+such definitions \emph{computational}, which informally means that no
+proofs are involved.
 
 However, in the Coq proof assistant in which \Kami{} is built,
 variables make the computation stuck. \Kami{} allows module
 definitions to be \emph{parametric}, aiming for general designs and
 corresponding verifications. For example, a fifo implementation can be
 parametrized with respect to the size of the fifo. For a processor
-implementation, various sizes such as addresses, values, register
+implementation, various sizes such as addresses, values, and register
 files also can be parametrized.  However, once a module has
 parameters, inlining cannot be computationally performed, since
 variables cannot be compared unless they have concrete values. As a
@@ -34,32 +34,34 @@ term rewriting theorem, saying $\forall s.\; \textsf{is\_equal}\ s\ s
 = \btrue$. It is certainly not a complete theorem to include all
 possible parameter-comparison scenarios. However, we claim this kind
 of theorem is enough to perform inlining for practical designs. For
-instance, parameters happen to index processors for designing
+instance, parameters are used to index processors for designing
 multi-core processors. However, since processors do not communicate
 directly each others, method calls are used only within
 processors. This design fact indicates that parameter comparisons
-always show two aspects: they have different concrete prefixes ($p_i
-\neq q_i$), or they are exactly same even with the index ($p_i =
-p_i$). Therefore, in this case, the term rewriting for reflexivity is
-enough to rewrite comparisons.
+always show two aspects: either they have different concrete prefixes
+($p \neq q \to p_i \neq q_j$), or they are exactly same even with the
+index ($p_i = p_i$). Therefore, in this case, the term rewriting for
+reflexivity is enough to rewrite comparisons.
 
-However, because of the rewriting, the inlining operator lost its
+However, because of the term rewriting, the inlining operator lost its
 original performance. A term rewriting is considered to be slow in
-Coq. For a simple processor definition, it took around $30$ seconds to
-inline the processor module. One might say it is tolerable, but
-considering the inlining as a trivial and simple operation, it may not
-be tolerable. Furthermore, a profiler in Coq produced a result saying
-that over $80$ percentage of the time is due to term rewritings;
-inlining could have taken around $5$ seconds without parameters.
+Coq. For a simple processor definition (approximately $200$ lines of
+code), it took around $30$ seconds to inline the processor module. One
+might say it is tolerable, but considering the inlining as a trivial
+and simple operation, it may not be tolerable. Furthermore, a profiler
+in Coq produced a result saying that over $80$ percentage of the time
+is due to term rewritings; inlining could have taken around $5$
+seconds without parameters.
 
 \paragraph{Inlining and Synthesis}
 
 Inlining is designed for efficient proofs, not for synthesis. Inlined
 modules can be synthesized into actual hardware components, but they
-should not be used as synthesis targets. The main reason is due to
+should not be used as synthesis targets. The main reason is
 performance. In terms of synthesis, substituting action bodies to call
-sites implies the corresponding circuit is duplicated throughout the
-module. It certainly increases the size of the synthesized circuit.
+sites implies that the corresponding circuit is duplicated throughout
+the module. It certainly increases the size of the synthesized
+circuit.
 
 Thanks to the semantic implication proof, we can synthesize an
 original module, while verification is performed on the inlined
