@@ -1,12 +1,12 @@
-\chapter{Discussions and Conclusions}
+\chapter{Discussion and Conclusions}
 \label{chap:conclusions}
 
 \paragraph{Inlining for Parametrized Modules}
 
 The inlining operator $\inlineF{\cdot}$ manipulates module definitions
-in a static way, thus it requires a computation with module
-structures. All the definitions about the operator generally perform
-two tasks; they either change action structures (by substituting call
+in a static way. Therefore, it requires a computation with module
+structures. All definitions about the operator generally perform two
+tasks; they either change action structures (by substituting call
 sites to their actual bodies), or compare two method names (in order
 to check a method call name equals the inlining target while examining
 actions). Each definition is either an ordinary function or a
@@ -14,7 +14,7 @@ recursive function -- there are no relational definitions. We call
 such definitions \emph{computational}, which informally means that no
 proofs are involved.
 
-However, in the Coq proof assistant in which \Kami{} is built,
+However, in the Coq proof assistant on which \Kami{} is built,
 variables make the computation stuck. \Kami{} allows module
 definitions to be \emph{parametric}, aiming for general designs and
 corresponding verifications. For example, a fifo implementation can be
@@ -26,7 +26,7 @@ variables cannot be compared unless they have concrete values. As a
 result, the inlining operation is no longer computational when it
 comes to parametrzied modules.
 
-In order to solve this issue, a \emph{term rewriting theorem} was
+In order to solve this problem, a \emph{term rewriting theorem} was
 defined (proved) and has been used to rewrite parameter
 comparisons. Even if we cannot define a general way to compare two
 parameters without any hypotheses, at least we can prove a reflexive
@@ -36,22 +36,22 @@ possible parameter-comparison scenarios. However, we claim this kind
 of theorem is enough to perform inlining for practical designs. For
 instance, parameters are used to index processors for designing
 multi-core processors. However, since processors do not communicate
-directly each others, method calls are used only within
+directly with each others, method calls are used only within
 processors. This design fact indicates that parameter comparisons
 always show two aspects: either they have different concrete prefixes
-($p \neq q \to p_i \neq q_j$), or they are exactly same even with the
-index ($p_i = p_i$). Therefore, in this case, the term rewriting for
-reflexivity is enough to rewrite comparisons.
+($p \neq q \to p_i \neq q_j$), or they are exactly the same even with
+the index ($p_i = p_i$). Therefore, in this case, the term rewriting
+for reflexivity is enough to rewrite comparisons.
 
-However, because of the term rewriting, the inlining operator lost its
-original performance. A term rewriting is considered to be slow in
+However, because of the term rewriting, the inlining operator loses
+its original performance. Term rewriting is considered to be slow in
 Coq. For a simple processor definition (approximately $200$ lines of
 code), it took around $30$ seconds to inline the processor module. One
-might say it is tolerable, but considering the inlining as a trivial
-and simple operation, it may not be tolerable. Furthermore, a profiler
-in Coq produced a result saying that over $80$ percentage of the time
-is due to term rewritings; inlining could have taken around $5$
-seconds without parameters.
+might say this is tolerable, but considering inlining as a trivial and
+simple operation, it may not be tolerable. Furthermore, a profiler in
+Coq produced a result that over $80$ percentage of the time was due to
+term rewritings; inlining could have taken around $5$ seconds without
+parameters.
 
 \paragraph{Inlining and Synthesis}
 
@@ -71,34 +71,34 @@ implication theorem (\refthm{thm-modtoinl} in
 \refchap{chap:implication}) allows us to reduce the goal to
 $P'(\inlineF{m})$, where $P'$ is also related to semantics. $P'$ is
 generally easier to prove, since we can take advantage of properties
-of inlined modules, \eg{} there are no internal calls in inlined
+of inlined modules; \eg{} there are no internal calls in inlined
 modules.
 
-\paragraph{Conclusions and Future Works}
+\paragraph{Conclusions and Future Work}
 
-We have been building the \Kami{} framework for general hardware
-verification, which requires a series of general concepts. With the
-belief that modularity is the key concept of hardware designs, we have
-defined modular semantics. However, modular semantics has an inherent
-weakness in that it is hard to infer internal state changes. Hence, we
-adopt a new semantic concept based on inlining, in order to eliminate
-the weakness. We also proved an implication from the modular semantics
-to the inlined one, thus the inlining can be freely employed during
+We have built the \Kami{} framework for general hardware verification,
+which requires a series of general concepts. With the belief that
+modularity is the key concept of hardware designs, we have defined
+modular semantics. However, modular semantics has an inherent weakness
+in that it is hard to infer internal state changes. Hence, we adopt a
+new semantic concept based on inlining in order to eliminate the
+weakness. We also prove an implication from the modular semantics to
+the inlined one, thus the inlining can be freely employed during
 verification.
 
 The grand goal of the \Kami{} framework is to provide efficient tools
 for general and practical hardware verification. Modular semantics and
-inlining are main tools of the framework. In addition to them, we have
-been built other interfaces such as renaming, decomposition, and
+inlining are the main tools of the framework. In addition to them, we
+have built other interfaces such as renaming, decomposition, and
 modular refinement~\cite{murali-thesis}.
 
-Using these various tools, we aim for verifying real-world hardware
+Using these various tools, we aim to verify real-world hardware
 components. Modern hardware designs such as a pipelined processor or a
 multi-level cached memory are too complicated to provide completely
 general verifications. However, we believe that efficient and
-high-level verification interfaces can make such verifications
-remarkably easier. Modular semantics and the refinement theorem will
-separate verification into small pieces. Inlining will help us easily
-verify each small component. Equipped with an effective framework, it
-is no longer a dream to verify real-world hardware.
+high-level verification interfaces can make such verifications much
+easier. Modular semantics and the refinement theorem will separate
+verification into small pieces. Inlining will help us easily verify
+each small component. Equipped with an effective framework, it is no
+longer a dream to verify real-world hardware.
 

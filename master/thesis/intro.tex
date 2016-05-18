@@ -62,29 +62,29 @@ modules which can respond to them.
 
 However, modular semantics has an inherent weakness in that it is hard
 to infer internal changes. Even if modular semantics allows us to
-consider individual modules, we eventually should be able to
-understand a part of a design which is still composed of several
-modules, when the part cannot be further decomposed. Modular semantics
+consider individual modules, we should eventually be able to
+understand a part of a design that is still composed of several
+modules when the part cannot be further decomposed. Modular semantics
 defines behaviors of such modules by giving the behaviors of each
 small module. In this case, we should consider \emph{all possible
   combinations} of the small module behaviors. However, we certainly
 do not want to consider all such cases, since we know only a few cases
 are feasible by the design itself.
 
-Hence, in this thesis, I present a new semantic approach based on
-inlining. Inlining semantics is defined for open hardware systems and
-resolves the weakness by construction. The semantics uses a static
-inlining operation to substitute internal calls to their method
-bodies. This operator erases all internal calls in a module, so that
-we do not need to care about internal communications.
+In this thesis, I present a new semantic approach based on inlining.
+Inlining semantics is defined for open hardware systems and resolves
+the weakness by construction. The semantics uses a static inlining
+operation to substitute internal calls to their method bodies. This
+operator erases all internal calls in a module, so that we do not need
+to consider internal communications.
 
 An implication from modular semantics to inlining semantics is also
 formally proven. Thus, it can be used in order to efficiently prove
-properties of hardware. Since the two semantics do not have equal
-capabilities, we give the implication proof saying that the modular
-semantics imply the inlining semantics.
+properties of hardware systems. Since the two semantics do not have
+equal capabilities, we give the implication proof saying that modular
+semantics implies inlining semantics.
 
-To sum up, the main contributions of this thesis are:
+To sum up, the main contributions of this thesis are
 \begin{itemize}
 \item To define a new semantic approach based on inlining, for open
   hardware systems.
@@ -95,12 +95,13 @@ To sum up, the main contributions of this thesis are:
 \paragraph{Overview}
 
 The thesis is organized as follows: \refchap{chap:backgrounds}
-introduces a number of prerequisites to understand the hardware design
-concept of \Bluespec{}. Related works are also provided to compare
-previous approaches to hardware semantics. \refchap{chap:semantics}
-presents the two semantics used in the \Kami{} framework: modular and
-inlining semantics. \refchap{chap:implication} compares the capability
-of each semantics, and presents the implication proof between
-them. Lastly, we draw conclusions and give future works in
+introduces a number of prerequisites to understanding the hardware
+design concept of \Bluespec{}. Related works are also provided to
+compare previous approaches to hardware
+semantics. \refchap{chap:semantics} presents the two semantics used in
+the \Kami{} framework: modular and inlining
+semantics. \refchap{chap:implication} compares the capability of each
+semantics, and presents the implication proof between them. Lastly, we
+draw conclusions and consider future work in
 \refchap{chap:conclusions}.
 

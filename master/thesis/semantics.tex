@@ -246,13 +246,6 @@ the level of action, is defined as if we know the return value of the
 method for every argument. The validity of such an assumption is
 checked at higher-level semantics.
 
-The semantics for actions has a form of a judgment relation
-\semact{o}{a}{u}{cs}{v}, where $o : \sttype{}$ is the old state, $a$
-is the target action, $u : \sttype{}$ is the \emph{updated state}
-after executing $a$, $cs : \lbtype{}$ is the map from method names to
-pairs of argument and return values. Lastly, $v$ is the return value
-of $a$.
-
 \begin{definition}
   \label{def-semaction}
   The judgment \semact{o}{a}{u}{cs}{v} is defined as follows:
@@ -288,6 +281,13 @@ of $a$.
     \end{math}
   \end{center}
 \end{definition}
+
+Semantics for actions has a form of a judgment relation
+\semact{o}{a}{u}{cs}{v}, where $o : \sttype{}$ is the old state, $a$
+is the target action, $u : \sttype{}$ is the \emph{updated state}
+after executing $a$, $cs : \lbtype{}$ is the map from method names to
+pairs of argument and return values. Lastly, $v$ is the return value
+of $a$.
 
 Semantics for actions does not check double-writes of registers or
 double-calls of method calls. For instance, in the rule
