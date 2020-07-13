@@ -1,9 +1,10 @@
-# bibtex main
-# xelatex --shell-escape cover.tex
-# xelatex --shell-escape cover.tex
+.PHONY: all clean
+
+INPUTNAME=proposal
+BUILD=./build
+
 all:
-	xelatex --shell-escape cover.tex
+	latexmk -pdf -output-directory=$(BUILD) $(INPUTNAME).tex
 
 clean:
-	rm -rf *.aux *.bbl *.blg *.log *.out
-	rm -rf cover.pdf
+	rm -rf $(BUILD)
