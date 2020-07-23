@@ -1,0 +1,257 @@
+\def\title{Structural Design and Proof of Cache-Coherence Protocols}
+\def\author{Joonwon Choi}
+\def\addrone{32 Vassar St, 32-G888}
+\def\addrtwo{Cambridge, MA 02139}
+
+\def\degree{Doctor of Philosophy}
+\def\deptname{Electrical Engineering and Computer Science}
+\def\laboratory{Computer Science \& Artificial Intelligence Laboratory}
+
+\def\submissiondate{\today}
+\def\completiondate{February 2021}
+
+\def\supervisor{Professor Adam Chlipala}
+\def\supertitleone{Associate Professor of Electrical Engineering}
+\def\supertitletwo{and Computer Science}
+
+\def\readerone{Professor Arvind}
+\def\readeronetitleone{Professor of Electrical Engineering}
+\def\readeronetitletwo{and Computer Science}
+
+\def\readertwo{Professor Joel Emer}
+\def\readertwotitleone{Professor of Electrical Engineering}
+\def\readertwotitletwo{and Computer Science}
+
+\def\abstract{
+  Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
+  We often find multiple memory-access transactions executed in a \emph{distributed} manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
+  In this proposal, I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols, where a central reasoning principle is provided by the framework, allowing a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
+  A large proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using a well-known notion of commuting reduction.
+  The proof relies on conditions on the protocol topology and state-change rules, but the framework provides a domain-specific protocol languae that guides the user to design protocols that satisfy these properties by construction.
+  Hemiola as a framework has been implemented in the Coq proof assistant and used to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
+  This proposal also suggests a detailed work plan to obtain hardware-synthesizable protocols from the framework.
+  A so-called protocol compiler within the framework would take such a role, which takes a protocol described in Hemiola and generates a corresponding hardware implementation, equipped with optimized cache structures and controller circuitry.
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% You Should Not Need To Modify Anything Below Here %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Cover Page - Author signs %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{center}
+  {\Large \bf
+    Massachusetts Institute of Technology\\
+    Department of \deptname\\}
+  \vspace{.25in}
+  {\Large \bf
+    Proposal for Thesis Research in Partial Fulfillment\\
+    of the Requirements for the Degree of\\
+    \degree\\}
+\end{center}
+
+\vspace{.5in}
+
+\def\sig{{\small \sc (Signature of Author)}}
+
+\begin{tabular}{rlc}
+  {\small \sc Title:} & \multicolumn{2}{l}{\title} \\
+  {\small \sc Submitted by:} & \author & \\
+  & \addrone & \\
+  & \addrtwo & \\
+  \cline{3-3} & & \makebox[2in][c]{\sig} \\
+        {\small \sc Date of Submission:} & \multicolumn{2}{l}{\submissiondate} \\
+        {\small \sc Expected Date of Completion:} & \multicolumn{2}{l}{\completiondate} \\
+        {\small \sc Laboratory:} & \multicolumn{2}{l}{\laboratory}
+\end{tabular}
+
+
+\vspace{.75in}
+{\bf \sc Brief Statement of the Problem:}
+
+\abstract
+
+         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage %%% Supervision Agreement %%%
+         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{flushright}
+   Massachusetts Institute of Technology
+\\ Department of \deptname
+\\ Cambridge, Massachusetts 02139
+\end{flushright}
+
+\underline{\bf Doctoral Thesis Supervision Agreement}
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc To:}   & Department Graduate Committee
+\\ {\small \sc From:} & \supervisor
+\end{tabular}
+
+\vspace{.25in}
+The program outlined in the proposal:
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc Title:}  & \title
+\\ {\small \sc Author:} & \author
+\\ {\small \sc Date:}   & \submissiondate
+\end{tabular}
+
+\vspace{.25in}
+is adequate for a Doctoral thesis.
+I believe that appropriate readers for this thesis would be:
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc Reader 1:} & \readerone
+\\ {\small \sc Reader 2:} & \readertwo
+%\\ {\small \sc Reader 3:} & \readerthree
+\end{tabular}
+
+\vspace{.25in}
+Facilities and support for the research outlined in the proposal are available.
+I am willing to supervise the thesis and evaluate the thesis report.
+
+\vspace{.25in}
+\begin{tabular}{crc}
+  \hspace{2in} & {\sc Signed:} & \\ \cline{3-3}
+               &               & {\small \sc \supertitleone} \\
+               &               & {\small \sc \supertitletwo} \\
+               &               &                             \\
+               & {\sc Date:}   & \\ \cline{3-3}
+\end{tabular}
+
+\vspace{0in plus 1fill}
+
+Comments: \\
+\begin{tabular}{c}
+  \hspace{6.25in} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+%  \mbox{} \\ \cline{1-1} \mbox{} \\
+%  \mbox{} \\ \cline{1-1} \mbox{} \\
+%  \mbox{} \\ \cline{1-1} \mbox{} \\
+\end{tabular}
+
+          %%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage  %%% Reader I Agreement %%%
+          %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{flushright}
+   Massachusetts Institute of Technology
+\\ Department of \deptname
+\\ Cambridge, Massachusetts 02139
+\end{flushright}
+
+\underline{\bf Doctoral Thesis Reader Agreement}
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc To:}   & Department Graduate Committee
+\\ {\small \sc From:} & \readerone
+\end{tabular}
+
+\vspace{.25in}
+The program outlined in the proposal:
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc Title:}          & \title
+\\ {\small \sc Author:}         & \author
+\\ {\small \sc Date:}           & \submissiondate
+\\ {\small \sc Supervisor:}     & \supervisor
+\\ {\small \sc Other Reader:}   & \readertwo
+%\\ {\small \sc Other Reader:}   & \readerthree
+\end{tabular}
+
+\vspace{.25in}
+is adequate for a Doctoral thesis.
+I am willing to aid in guiding the research
+and in evaluating the thesis report as a reader.
+
+\vspace{.25in}
+\begin{tabular}{crc}
+  \hspace{2in} & {\sc Signed:} & \\ \cline{3-3}
+               &               & {\small \sc \readeronetitleone} \\
+               &               & {\small \sc \readeronetitletwo} \\
+               &               &                                 \\
+               & {\sc Date:}   & \\ \cline{3-3}
+\end{tabular}
+
+\vspace{0in plus 1fill}
+
+Comments: \\
+\begin{tabular}{c}
+  \hspace{6.25in} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+\end{tabular}
+
+
+          %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage  %%% Reader II Agreement %%%
+          %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{flushright}
+   Massachusetts Institute of Technology
+\\ Department of \deptname
+\\ Cambridge, Massachusetts 02139
+\end{flushright}
+
+\underline{\bf Doctoral Thesis Reader Agreement}
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc To:}   & Department Graduate Committee
+\\ {\small \sc From:} & \readertwo
+\end{tabular}
+
+\vspace{.25in}
+The program outlined in the proposal:
+
+\vspace{.25in}
+\begin{tabular}{rl}
+   {\small \sc Title:}          & \title
+\\ {\small \sc Author:}         & \author
+\\ {\small \sc Date:}           & \submissiondate
+\\ {\small \sc Supervisor:}     & \supervisor
+\\ {\small \sc Other Reader:}   & \readerone
+%\\ {\small \sc Other Reader:}   & \readerthree
+\end{tabular}
+
+\vspace{.25in}
+is adequate for a Doctoral thesis.
+I am willing to aid in guiding the research
+and in evaluating the thesis report as a reader.
+
+\vspace{.25in}
+\begin{tabular}{crc}
+  \hspace{2in} & {\sc Signed:} & \\ \cline{3-3}
+               &               & {\small \sc \readertwotitleone} \\
+               &               & {\small \sc \readertwotitletwo} \\
+               &               &                                 \\
+               & {\sc Date:}   & \\ \cline{3-3}
+\end{tabular}
+
+\vspace{0in plus 1fill}
+
+Comments: \\
+\begin{tabular}{c}
+  \hspace{6.25in} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+  \mbox{} \\ \cline{1-1} \mbox{} \\
+\end{tabular}
