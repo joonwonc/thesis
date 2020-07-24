@@ -1,4 +1,65 @@
+%%%%%%%%%% Commands --
+
+%% General commands
+\newcommand{\todo}[1]{\emph{\textcolor{red}{TODO: #1}}}
+\newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
+\newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
+
+\renewcommand{\subsectionautorefname}{section}
+\renewcommand{\subsubsectionautorefname}{section}
+
+\newcommand{\ie}{i.e.,}
+\newcommand{\eg}{e.g.,}
+\newcommand{\aka}{a.k.a.}
+
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+\renewcommand\qedsymbol{$\blacksquare$}
+
+%% Hemiola
+
+\newcommand{\hemiola}{Hemiola}
+
+%%%%%%%%%% Contents --
+
 \section{Introduction}\label{sec-intro}
 
 Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
-Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs.
+Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs~\cite{ccbug}.
+
+Research on model checking and theorem proving has produced sound techniques, though typically with significant limitations:
+either the verification is of a specific protocol, or state-space-explosion concerns limit applicability to quite small cache topologies~\cite{Komuravelli:2014,Murali:2015,Banks:2017,Oswald:2018}.
+In order to overcome the latter, recent approaches~\cite{Chen:2008,Chen:2010,McMillan:2016,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} utilized the notion of \emph{modularity} and successfully built verification tools that are scalable enough to verify hierarchical cache-coherence protocols.
+
+However, these modularity disciplines impose significant restrictions in protocol design, in order to obtain clear module boundaries among caches.
+A concrete limitation of modular design and verification comes when trying to verify cache-coherence protocols that are not \emph{inclusive}.
+Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive\footnote{Intel uses the term ``noninclusive cache'' to say that the cache is neither inclusive nor exclusive.} caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
+
+I would like to view the verification of hierarchical cache-coherence protocols from a different perspective.
+Viewing a cache-coherence protocol as a global distributed protocol, we look for commonalities across well-designed protocols.
+%% cross-cutting, global property that holds across all cache hierarchies.
+It is a good start to identify ``good-hygiene'' properties, but it is even better to formalize such properties in frameworks that guide the design of protocols.
+Then we can provide nonobvious and useful reasoning principles by-construction.
+
+Looking for another way to factor proofs, we can find a hint in terminology often employed by protocol designers and verification engineers.
+These protocols are distributed message-passing systems, so we can apply traditional software terminology like \emph{transaction} to them directly, and in fact we find similar intuitions employed in practice.
+In order to describe a case where the protocol deals with two different requests passing through the same cache, for instance, a designer often says ``this cache acts like a \emph{serialization point} so the two transactions can safely \emph{interleave} with each other.''
+While the notions of interleaving and serialization are already pervasive, I have found no past work trying to find a minimal set of conditions that ensure transactions are always serialized, formalizing them in a reusable framework.
+
+In this proposal, I propose a framework called \hemiola{}, embedded in the Coq proof assistant, which dramatically decreases the burden of designing and formally proving hierarchical cache-coherence protocols.
+In particular, on top of the framework, hardware developers can design cache-coherence protocols without worrying about possible complex interleavings among different transactions, standing for different concurrent memory accesses.
+We establish once-and-for-all that any invariant of a protocol under serialized execution is also an invariant under the interleaved executions that are necessary for good performance.
+
+More specifically, \hemiola{} formalizes a set of message-passing distributed protocols with tree hierarchies and particular topologies of channels between nodes, with associated locks.
+These protocols are defined by associating each tree node with a set of local state-transition rules that may remove messages from incoming queues and add messages to outgoing queues.
+\hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
+Furthermore, our framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
+
+To demonstrate usability of our framework, I would like to provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
+We also demonstrate that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in \hemiola{}.
+\todo{something more about the protocol compiler and its optimization in this proposal.}
+
+\section{Background:}
+
+\section{Research Questions}
+
+\section{Work Plan}
