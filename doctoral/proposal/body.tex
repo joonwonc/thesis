@@ -35,8 +35,7 @@ A concrete limitation of modular design and verification comes when trying to ve
 Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive\footnote{Intel uses the term ``noninclusive cache'' to say that the cache is neither inclusive nor exclusive.} caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
 
 I would like to view the verification of hierarchical cache-coherence protocols from a different perspective.
-Viewing a cache-coherence protocol as a global distributed protocol, we look for commonalities across well-designed protocols.
-%% cross-cutting, global property that holds across all cache hierarchies.
+Instead of decomposing a protocol design and proof, we view a cache-coherence protocol as a \emph{global} distributed protocol and look for commonalities across well-designed protocols.
 It is a good start to identify ``good-hygiene'' properties, but it is even better to formalize such properties in frameworks that guide the design of protocols.
 Then we can provide nonobvious and useful reasoning principles by-construction.
 
@@ -47,16 +46,16 @@ While the notions of interleaving and serialization are already pervasive, I hav
 
 In this proposal, I propose a framework called \hemiola{}, embedded in the Coq proof assistant, which dramatically decreases the burden of designing and formally proving hierarchical cache-coherence protocols.
 In particular, on top of the framework, hardware developers can design cache-coherence protocols without worrying about possible complex interleavings among different transactions, standing for different concurrent memory accesses.
-We establish once-and-for-all that any invariant of a protocol under serialized execution is also an invariant under the interleaved executions that are necessary for good performance.
+From the verification perspective, it is established that any invariant of a protocol under serialized execution is also an invariant under the interleaved executions that are necessary for good performance.
 
 More specifically, \hemiola{} formalizes a set of message-passing distributed protocols with tree hierarchies and particular topologies of channels between nodes, with associated locks.
 These protocols are defined by associating each tree node with a set of local state-transition rules that may remove messages from incoming queues and add messages to outgoing queues.
 \hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
-Furthermore, our framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
+Furthermore, the framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
 
-To demonstrate usability of our framework, I would like to provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
-We also demonstrate that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in \hemiola{}.
-\todo{something more about the protocol compiler and its optimization in this proposal.}
+To demonstrate usability of the framework, I plan to provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
+I also plan to build a compilation/synthesis toolchain that converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
+A so-called protocol compiler would take such a role, which employes prebuilt, optimized hardware components such as caches and resource controllers.
 
 \section{Background:}
 
