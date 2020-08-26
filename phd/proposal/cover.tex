@@ -18,20 +18,21 @@
 \def\readeronetitleone{Professor of Electrical Engineering}
 \def\readeronetitletwo{and Computer Science}
 
-\def\readertwo{Professor Joel Emer}
+\def\readertwo{Professor Nickolai Zeldovich}
 \def\readertwotitleone{Professor of Electrical Engineering}
 \def\readertwotitletwo{and Computer Science}
 
 \def\abstract{
-  Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
-  We often find multiple memory-access transactions executed in a \emph{distributed} manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
-  In this proposal, I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols.
-  The framework provides an effective reasoning principle that allows a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
-  A crucial proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using a well-known notion of commuting reduction.
-  The proof relies on conditions on the protocol topology and state-change rules, but the framework provides a domain-specific protocol languae that guides the user to design protocols that satisfy these properties by construction.
-  Hemiola as a framework has been implemented in the Coq proof assistant and used to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
-  This proposal also suggests a detailed work plan to obtain hardware-synthesizable protocols from the framework.
-  A protocol compiler in the framework would take such a role, which takes a protocol described in Hemiola and generates a corresponding hardware implementation, equipped with optimized cache structures and controller circuitry.
+Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
+We often find multiple memory-access transactions executed in a \emph{distributed} manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
+
+In this proposal, I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols.
+The framework provides an effective reasoning principle that allows a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
+A crucial proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using a well-known notion of commuting reduction.
+The proof relies on conditions on the protocol topology and state-change rules, but the framework provides a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
+
+Hemiola as a framework has been implemented in the Coq proof assistant and used to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
+This proposal will suggest a methodology to synthesize protocols designed in Hemiola into hardware; a protocol compiler in the framework will take such a role, employing predesigned cache structures and controller circuitry.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -3,11 +3,14 @@
 %%%%%%%%%% Packages --
 
 \usepackage[margin=1in]{geometry}
-\usepackage{xcolor}
-\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[bookmarks, colorlinks, breaklinks,
+  pdftitle={Joonwon Choi: PhD thesis proposal},pdfauthor={Joonwon Choi}]{hyperref}
 \hypersetup{
-  colorlinks=true,
-  citecolor=blue,
+  linkcolor=NavyBlue,
+  citecolor=BrickRed,
+  filecolor=BrickRed,
+  urlcolor=NavyBlue,
 }
 
 \usepackage{booktabs}
@@ -30,6 +33,7 @@
 %% \usepackage{wrapfig}
 \usepackage{multirow}
 \usepackage{hhline}
+\usepackage{setspace}
 
 \definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
 \lstset{
@@ -71,10 +75,16 @@
 \newtheorem{example}[theorem]{Example}
 \newtheorem{definition}[theorem]{Definition}
 
+\renewcommand*\contentsname{Table of Contents}
+
 \begin{document}
 
 \input{cover}
 \newpage
+\doublespacing
+\tableofcontents
+\newpage
+\singlespacing
 \input{body}
 
 %% Bibliography

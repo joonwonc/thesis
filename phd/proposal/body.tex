@@ -145,11 +145,11 @@ These protocols are defined by associating each tree node with a set of local st
 \hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
 Furthermore, the framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
 
-To demonstrate usability of the framework, I plan to provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
-I also plan to build a compilation/synthesis toolchain that converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
-A so-called protocol compiler would take such a role, which employes prebuilt, optimized hardware components such as caches and resource controllers.
+To demonstrate usability of the framework, I plan to provide complete correctness proofs of hierarchical, noninclusive cache-coherence protocols as case studies.
+A compilation/synthesis toolchain will also be provided, which converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
+A so-called protocol compiler would take such a role, which employes predesigned, optimized hardware components such as caches and resource controllers.
 
-\section{Background}
+\section{Motivation and Background}
 
 \subsection{Challenges in designing cache-coherence protocols}
 
@@ -326,10 +326,8 @@ In order to handle all the requests correctly, we should carefully consider some
 A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
-%% It is a typical challenge in proving correctness of a distributed protocol, asking ``if I am about to handle a certain message, is it fair to assume some properties of the global state?''
-
 If proper topology and locking are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
-That is exactly what we did with \hemiola{}, where, for instance, instead of the above pseudocode, rules are written more like the following one:
+That is exactly what we plan to reflect in \hemiola{}, where, for instance, instead of the above pseudocode, rules are written more like the following one:
 \begin{lstlisting}
 Rule c1RqMToP :=
   using template RqToP;
@@ -346,17 +344,222 @@ Instead, it just says that the rule is for making a request to the parent (\slst
 We further discovered that if a system is defined by using these rule templates, global invariants can be proven without explicit consideration of interference by concurrently executing memory accesses.
 The key is the notion of \emph{serializability} coming originally from the database-transactions literature.
 
-\subsection{Correctness of cache-coherence protocols}
+\subsection{Serializability in distributed systems}
 
+\subsubsection{Baseline: protocol transition systems}
+\label{sec-trs}
 
+\paragraph{Notations.}
+Throughout this proposal, we will use several notations for lists (sequences) and finite maps.
+A bold character (\eg{} $\listof{l}$) denotes a list.
+$\listnil{}$, $(\listcons{h}{\listof{t}})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
+$(\listdisj{\listof{l_1}}{\listof{l_2}})$ denote nil, cons, append, subtraction, and disjointness of lists, respectively.
+$\listconcat{\listof{l}}$ flattens the list of lists $\listof{l}$ with repeated concatenation.
+$\sizeof{\listof{l}}$ is the length of a list.
+Regarding a list of key-value pairs as a finite map, we override notations for lists.
+For example, $(\mapupds{M}{\listof{l}})$ updates multiple key-value pairs in a finite map $M$.
+Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single update for simplicity.
 
-\subsection{Formal notion of serializability}
+\paragraph{Syntax.}
+
+\begin{figure}[h]
+  \centering\small
+  \begin{tabular}{|c|c|}
+    \hline
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{Index} & i \in \hidt{} \\
+        \textrm{Value} & v \in \hvaluet{} \\
+        \textrm{Message} & m ::= \tuple{i, v} \in \hmsgt{} \triangleq \hidt \ast \hvaluet \\
+        \textrm{Object state} & o \in \hostt{} \\
+        \textrm{Rule precondition} & p \in
+        \hprect \triangleq \hostt \to \listtof{\hidmt} \to \propt \\
+        \textrm{Rule transition} & t \in
+        \htrst \triangleq \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt} \\
+      \end{array}
+    \end{math} &
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{Rule} & r ::= \tuple{i, p, t} \\
+        \textrm{Object} & O ::= \tuple{i, \listof{r}} \\
+        \textrm{System} & S ::= \hsyss{\listof{O}}{i} \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Protocol transition system}
+  \label{fig-trs-system}
+\end{figure}
+
+We first formally define protocol transition systems, which will be an underlying basis for the domain-specific language in \hemiola{}.
+\autoref{fig-trs-system} explains what such systems are, in the style of automata theory.
+Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
+A struct (a rule, an object, etc.)  sometimes has an \emph{index} to distinguish it from the other components.
+We will use $\tuple{\cdot}$ to denote a struct and use a name to access a field value.
+In our implementation, an index is a list of natural numbers, for easy hierarchical addressing.
+A \emph{value} $v$ refers to a general set of values, principally those that can be stored at memory addresses.
+A \emph{message} $m$ consists of a message id (effectively from an enumeration of message kinds) and value.
+
+A system $S$ contains information about objects and channels.
+It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
+Each object (or channel) has its own unique index.
+The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
+It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system.
+An object $O$ contains its object index (unique within a system) and rules (\listof{r}) that make local state transitions within the object.
+
+A rule $r$ consists of its rule index (unique within an object), a precondition ($p$), and a transition function ($t$).
+A precondition takes two arguments, a current object state and a list of (channel index, message) pairs as input messages, and decides whether the rule can be executed or not.
+A transition function takes the same arguments but returns the next object state and a list of (channel index, message) pairs as output messages.
+
+\begin{figure*}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepIns:]{\listof{m} \neq \listnil
+          & \listof{\idxOf{m}} \subseteq \hsysRqA{S}
+          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblIns{\listof{m}}}
+          {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepOuts:]{\listof{m} \neq \listnil
+          & \listof{\idxOf{m}} \subseteq \hsysRsA{S}
+          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblOuts{\listof{m}}}
+          {\hst{\listof{o}}{\deqMsgs{M}{\listof{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
+          & O \in S.\listof{O}
+          & r \in O.\listof{r} \\
+          \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
+          & \nodup{\midxIns{m}} \\
+          \listof{o}\ \idxOf{O} = o_0
+          & r.p\ o_0\ \msgIns{m}
+          & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
+          \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
+          & \nodup{\midxOuts{m}}
+          & \disj{\midxIns{m}}{\midxOuts{m}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}}
+          {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_1}}{\enqMsgs{\deqMsgs{M}{\msgIns{m}}}{\msgOuts{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{ccc}
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}} &
+        \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
+          & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{l_1}{\listof{l}}}{s_2}} &
+        \inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Semantics of protocol transition systems}
+  \vspace{-10pt}
+  \label{fig-trs-semantics}
+\end{figure*}
+
+\paragraph{Semantics.}
+\autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
+A state transition (step) happens by a rule that takes input messages and generates output messages.
+The semantics for a step is presented as a judgment $\semstep{S}{s_0}{l}{s_1}$, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $l$ is a label generated by the state transition.
+The state of a system (in domain $\hsyst{}$) is a pair, consisting of object states and message states.
+Object states are represented in finite maps from object indices to object states, and message states are represented in finite maps from channel indices to queues of messages.
+
+Rule [StepSilent] represents the case where no state transition happens in the current step; an empty label (\lblEmpty{}) is generated in this case.
+A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{m}) should not be empty, channels of the messages are valid, and none of them share the same channel ($\nodup{\listof{\idxOf{m}}}$); an external inputs label $(\lblIns{\listof{m}})$ is generated in this case.
+[StepOuts] describes the opposite case, for output messages being released to the external world.
+
+Lastly, [StepInt] deals with a state transition by a rule ($r$) in an object ($O$).
+It nondeterministically chooses an object and a rule in the object, checks that the precondition holds, and applies the transition to update the state of the system; an internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
+
+Note that the semantics is based on ordered channels, so messages are \emph{enqueued} and \emph{dequeued} in each state-transition case.
+We use notations $\enqMsgs{M}{\listof{m}}$ and $\deqMsgs{M}{\listof{m}}$ for such operations, and especially when messages are dequeued we implicitly assume that each element in $\listof{m}$ is at the front of its queue.
+It is also required that any state transition does not both dequeue and enqueue an element from the same queue; $\disj{\midxIns{m}}{\midxOuts{m}}$ in [StepInt] exactly describes this condition.
+
+The step semantics is naturally lifted to one for multiple steps, presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$, $s_0$, and $s_1$ are similar to ones in the step semantics, and $\listof{l}$ is a sequence of labels generated by executions of the steps.
+[StepsNil] serves the case where no state transitions happen at all.
+[StepsCons] is a natural inductive constructor that combines previous steps and a new one.
+Note that the latest label is added to the head, thus the last label in the sequence is the oldest one.
+(We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
+
+We will sometimes call a sequence of labels a \emph{history}.
+We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We use a simpler notation $\semrch{S}{s}$ for reachable states.
+We also apply the symmetrical notion that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We write $\semleg{S}{\listof{l}}$ to assert that a history is legal.
+
+\paragraph{Behaviors and correctness.}
+A system $S$ has a behavior $\behOf{\listof{l}}$ if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior]).
+Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
+We call such a sequence of labels a \emph{trace}.
+Finally we define a notion of correctness in \hemiola{}.
+
+\begin{definition}[Trace Refinement]
+  A system $I$ (``implementation'') is said to trace-refine another system $S$
+  (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is
+  also a trace of $S$:
+  \begin{displaymath}
+    \refines{I}{S} \triangleq \forall \listof{t}.\; \sembeh{I}{\listof{t}} \to \sembeh{S}{\listof{t}}.
+  \end{displaymath}
+\end{definition}
+
+\subsubsection{Serializability in protocol transition systems}
 
 Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness that originated with databases and distributed systems.
 While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} atomically in some order with no interleaving.
+The protocol transition system described in \autoref{sec-trs} follows standard ideas of message-passing systems, thus it is natural to define and reason about serializability.
 
-In order to understand the notion of serializability better, we first provide basic definitions of atomic histories and transactions.
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \arraycolsep=-2pt
+      \begin{array}{c}
+        \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{m}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{m}}}{\listof{\amsge{m}}}}}{\listof{\amsge{m}}}} \\
+        \inference[AtomicCont:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}
+          & \msgIns{n} \neq \listnil
+          & \msgIns{n} \subseteq \listof{\amsge{m}}}{\atomicLong{\listof{m_0}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{(\listapp{\listsub{\listof{\amsge{m}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+        \mbox{}\vspace{-5pt} %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{cc}
+        \begin{array}{c}
+          \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\
+          \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
+          \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{m}}}}} \\
+          \mbox{}\vspace{-5pt} %% padding
+        \end{array} &
+        \begin{array}{l}
+          \textrm{\footnotesize TrsAtomic:} \\
+          \inference[]{\extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\trsn{S}{\listof{l}}}
+        \end{array} \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Atomic histories and transactions}
+  \vspace{-5pt}
+  \label{fig-hemiola-trs}
+\end{figure}
+
+\paragraph{Atomic histories.}
+In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, in \autoref{fig-hemiola-trs}.
 A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{m}}}{h}{\listof{\amsge{m}}})$ with \emph{starting messages} $\listof{\amsgi{m}}$ and \emph{live messages} $\listof{\amsge{m}}$.
+[AtomicStart] initializes a history with an internal label for its first step.
+[AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label should be from live messages of the previous atomic history.
 
 \begin{figure}[h]
   \centering
@@ -422,35 +625,58 @@ This example shows that an atomic history intuitively captures a \emph{transacti
 Note that an atomic history does not need to be a completed transaction.
 The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response to an external channel.
 
-Now with a clear notion of atomic histories, we can easily think of sequential histories and serializability:
+We call a history \emph{externally atomic} (denoted as \extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}) if starting
+messages are external requests ($\listof{\amsgi{m}} \subseteq \hsysRqA{S}$).
+In other words, an externally atomic history records the way the system responded to some set of messages received from the outside world.
+
+\paragraph{Transactions.}
+Transactions are the next level of abstraction, defined by the final rules in \autoref{fig-hemiola-trs}.
+A transaction is either a single silent label ([TrsSilent]), a single external inputs label ([TrsIns]), a single external outputs label ([TrsOuts]), or an externally atomic history ([TrsAtomic]).
+In other words, the permitted atomic execution steps, in this transactional semantics, are arrival of new messages from the outside world, release of messages to the outside world, or uninterrupted execution of an atomic history.
+We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
+
+Note that an external-inputs label and an atomic history are regarded as separate transactions, thus the atomic history can start with inputs from multiple external-inputs labels.
+This relaxed design choice is due to our eventual goal, trace refinement.
+In order to prove trace refinement, we should preserve the \emph{order of external labels} while reasoning over histories.
+In particular, we do not want a serialized history having a different trace from the original history.
+A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
+
+\paragraph{Sequential histories and serializability.}
+With a clear notion of transactions, we can easily define sequential histories and serializability.
+
 \begin{definition}[Sequential Histories]
-  A history is sequential iff it is a concatenation of atomic histories.
+  A history $h$ is \emph{sequential} iff the history is a concatenation of
+  transactions:
+  \begin{displaymath}
+    \hseq{S}{h} \triangleq \exists \listof{t}.\; (\forall t \in \listof{t}.\; \trsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
+  \end{displaymath}
   \label{def-seq}
 \end{definition}
+
 \begin{definition}[Serializability]\mbox{}\\
-  \vspace{-15pt}
   \begin{enumerate}
-  \item A history is serializable in the system iff there exists a sequential history that reaches the same state.
-  \item A system is serializable iff every legal history is serializable in the system.
+  \item A legal history $h$ is \emph{serializable} in the system $S$ iff there
+    exists a sequential history that reaches the same state:
+    \begin{displaymath}
+      \hsrzl{S}{h} \triangleq \forall s.\; \semsteps{S}{\sysInit{S}}{h}{s} \to \exists h_{\textrm{seq}}.\; \hseq{S}{h_{\textrm{seq}}} \wedge \semsteps{S}{\sysInit{S}}{h_{\textrm{seq}}}{s}.
+    \end{displaymath}
+  \item A system $S$ is \emph{serializable} iff every legal history is serializable:
+    \begin{displaymath}
+      \hsrz{S} \triangleq \forall h.\; \hsrzl{S}{h}.
+    \end{displaymath}
   \end{enumerate}
   \label{def-sz}
 \end{definition}
 
-We have not yet discussed how to exploit this notion of serializability.
-How does it help prove trace refinement between an implementation and its spec?
-There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
-However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
+Note that we are reasoning only about serializability of sequences of rule executions, taking for granted that rules can be executed atomically.
+Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serializability for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
 
-It is much easier to describe and prove invariants of a serializable system since 1) an invariant can be stated per-transaction, and 2) it does not need to take interleavings into account.
-The following notion of \emph{atomic invariants} reflects these two benefits:
-\begin{definition}[Atomic Invariants]
-  $(\mathcal{A}: \listtof{\hidmt{}} \to \hsyst{} \to \hsyst{} \to \listtof{\hidmt{}} \to \propt{})$ is called an atomic invariant iff $(\mathcal{A}\ \listof{m_i}\; s_0\; s_1\; \listof{m_o})$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
-  \label{def-atomic-invariant}
-\end{definition}
-An atomic invariant takes starting messages, a prestate, a poststate, and live messages from an atomic history.
-Since it takes starting messages, we can specify which transaction we would like to deal with, via conditions on those messages.
-Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
+\section{Proposed Work}
 
-\section{Research Questions}
+\subsection{\hemiola{} DSL and automated proof of serializability on top of it}
 
-\section{Work Plan}
+\subsection{Protocol compiler to synthesize \hemiola{} protocols}
+
+\subsection{Fully proven hierarchical, noninclusive MSI and MESI protocols in hardware}
+
+\section{Timeline and Milestones}
