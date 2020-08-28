@@ -319,7 +319,7 @@ Now imagine a scenario where two children $C_1$ and $C_2$ requested $\textsf{rqM
 Proper locking is indeed required here, since otherwise the parent will handle two $\textsf{rqM}$s simultaneously, which might lead to an incoherent state -- two M statuses in the system.
 \autoref{fig-motive-2-c} presents this case, where an invalidation request was made to $C_2$ ($\textsf{rqI}\circ$) and even before this, $C_2$ requested $\textsf{rqM}\blackdiamond$ to the parent.
 In order to handle all the requests correctly, we should carefully consider some corner cases:
-\begin{itemize}
+\begin{itemize}[leftmargin=*]
 \item Since $C_2$ requested $\textsf{rqM}\blackdiamond$, it is locked when the $\textsf{rqI}\circ$ message arrives. It should still be able to handle this invalidation request even if it is locked. We see that \emph{locking should be fine-grained enough to distinguish message kinds} while handling a request.
 \item Due to the existence of $\textsf{rqM}\blackdiamond$, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take $\textsf{rqM}\blackdiamond$ since it was locked after making an invalidation request. It cannot take $\textsf{rsI}\bullet$ as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
 \end{itemize}
@@ -345,7 +345,7 @@ Instead, it just says that the rule is for making a request to the parent (\slst
 We further discovered that if a system is defined by using these rule templates, global invariants can be proven without explicit consideration of interference by concurrently executing memory accesses.
 The key is the notion of \emph{serializability} coming originally from the database-transactions literature.
 
-\subsection{Serializability in distributed systems}
+\subsection{Formal notion of serializability}
 
 \subsubsection{Baseline: protocol transition systems}
 \label{sec-trs}
@@ -736,7 +736,7 @@ The object cannot make any further upward requests while uplocked, but \emph{it 
 On the contrary, a downlock is set when an object makes a downward request(s) to some of its children ($P_2$ in the figure); similarly it is released when the object gets corresponding response(s) from the child requestee(s).
 The object cannot make any further downward requests while downlocked.
 
-\subsubsection{Rule Templates}
+\subsubsection{Rule templates}
 
 \newcommand{\rtname}[1]{{\small\sf\bf #1}}
 
@@ -914,8 +914,169 @@ On top of the \hemiola{} DSL, we can now claim that the use of good topology and
 While this theorem has been already proven, in order to achieve the completely automated proof, we need to prove \ontree{S}{t} and \goodrules{S}{t} automatically as well.
 Each of these predicates is defined like a static checker that looks at the system definition, thus it is fair to say that automating these predicate proof is to build a verified validator.
 
-\subsection{Protocol compiler to synthesize \hemiola{} protocols}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TODO: FROM HERE
+\subsection{Complete proofs of hierarchical noninclusive MSI and MESI protocols}
 
-\subsection{Fully proven hierarchical, noninclusive MSI and MESI protocols in hardware}
+On top of the \hemiola{} framework, we would like to prove the correctness of hierarchical, noninclusive MSI and MESI protocols as case studies.
+They use directories to keep track of child statuses and use noninclusive caches that do not require the parent cache to contain all lines existing in children.
+We will also investigate how \hemiola{} helps implement and prove these protocols, by taking full advantage of \autoref{thm-sz-guarantee}.
+
+\subsubsection{Design principles}
+We start by summarizing the design principles we apply to both case studies.
+
+\paragraph{Topology as a parameter.}
+
+Each design is parameterized by a tree $t$ that decides the topology of the memory subsystem.
+In other words, whenever we instantiate the tree parameter, we get a cache-coherence design and its correctness proof for free.
+There are three different kinds of caches in this topology-parameterized protocol.
+First of all, there are L1 caches (denoted as $L_1$) that correspond to leaf nodes in the tree.
+Symmetrically, each uses the same set of rules.
+The second kind is the last-level cache (LLC), which is the only one attached to the main memory, the root of the tree.
+All the other caches between the L1 caches and the LLC are called intermediate caches (denoted as $L_i$), and they share a common set of rules as well.
+
+\paragraph{Directory-based coherence.}
+
+The protocol uses a well-known directory structure~\cite{Tang:1976} to ensure coherence.
+In our designs, each node with children has its own directory structure to track their statuses.
+The directory holds sound information about the status of each child \emph{subtree}.
+For example, for a certain cache line, if an L1 cache $L_1$ has M status for the line, then all the ancestors (including the main memory) of $L_1$ have the directory status M pointing to the child subtree that contains $L_1$.
+
+\paragraph{Voluntary evictions.}
+
+The protocol allows voluntary evictions, \ie{} there are rules in each cache that can be executed even without being triggered by input messages, to evict a cache line.
+This design itself is certainly not realistic, but it always has more behaviors than any design with specific eviction policies, thus in terms of correctness a refinement to a specific design is trivial.
+
+\paragraph{Noninclusiveness.}
+
+The protocol is noninclusive so the parent cache does not have to contain all the lines that children have, and back invalidations are not required to evict a line.
+In inclusive caches, in order to maintain the inclusion policy, it is required to invalidate each cache line of a child recursively before evicting the parent's line, which adds overhead.
+On the other hand, noninclusive caches do not need such a process, but it may take more time to read a clean line value, since the absence of a line in higher-level caches does not imply absence in lower-level caches, so we might have to search the lower-level caches.
+
+\paragraph{Design and proof per-line.}
+
+The protocol is defined just for a single cache line first, then naturally extended to all cache lines using a protocol compiler that will be introduced in \autoref{sec-synthesis}.
+This approach is reasonable in terms of correctness, since a transaction does not affect coherence for lines other than its own.
+Consider the ``duplicated'' protocol first, where each cache line, its status, a directory entry, communication channels, and a lock holder are all duplicated per-line.
+It is infeasible to extend the protocol literally in this way, since we cannot require physically distinct channels and lock holders for all cache lines.
+The protocol compiler restricts the resources (\eg{} channels, lock holders, etc.) to make the implementation hardware-synthesizable.
+
+\subsubsection{The protocols: MSI and MESI}
+
+\newcommand{\mesi}{\ensuremath{\textsf{MESI}}}
+\newcommand{\msi}{\ensuremath{\textsf{MSI}}}
+\newcommand{\stM}{\ensuremath{\textsf{M}}}
+\newcommand{\stE}{\ensuremath{\textsf{E}}}
+\newcommand{\stS}{\ensuremath{\textsf{S}}}
+\newcommand{\stI}{\ensuremath{\textsf{I}}}
+\newcommand{\dir}[2]{\ensuremath{#1_{\tuple{#2}}}}
+
+The MSI protocol is known as a base cache-coherence protocol that can be optimized to more sophisticated protocols like MESI, MOSI, etc.
+Even though it is a base protocol, there are a lot of nontrivial cases that require deep understanding of the protocol itself and the nature of distributed protocols, especially in hierarchical protocols.
+The MESI protocol~\cite{Papamarcos:1984} applies further optimizations to the MSI protocol, by adding a status called Exclusive-Unmodified.
+As the name of the status says, if a cache line has \stE{} status, then the line is exclusive to the cache but also clean.
+
+\subsubsection{Correctness proofs of the protocols}
+
+The correctness proofs of the MSI and MESI protocols claim that the both implementations refine to a single-line memory as a spec.
+Most of the time, a refinement proof requires two steps: 1) to prove \emph{invariants} of the implementation that help relating it to the spec and 2) to define and prove a \emph{simulation} relation between an implementation and the spec that directly implies a refinement.
+We would like to demonstrate \hemiola{} helps proving necessary invariants for the correctness proofs.
+
+\paragraph{Logical status of an object.}
+The MSI protocol largely has three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}.
+For instance, we want to claim that whenever a cache has \stM{} status, all the other objects have \stI{} status.
+Unfortunately, this invariant is not true, since there might be another cache that has not handled an invalidation response yet, thus retaining a valid status.
+
+In order to deal with this subtlety, we introduce a notion called \emph{logical status} to obtain an abstract status of each object.
+In the above example, even if the cache has not handled the invalidation response yet, the logical status is \stI{}.
+Logical statuses are defined formally as follows:
+\begin{itemize}[leftmargin=*]
+\item An object has logical status \stM{} if the object has \stM{} and there is no invalidation response to the object.
+\item It has logical status \stS{} if either 1) the object has \stS{} and there is no invalidation response to the object or 2) there is a response \slstinline{rsS} to the object.
+\item It has logical status \stI{} if either 1) the object has \stI{} and there is no \slstinline{rsM} or \slstinline{rsS} to the object or 2) there is an invalidation response \slstinline{rsI} to the object.
+\end{itemize}
+Note that the logical status of an object is \emph{not} \stM{} when there is a response \slstinline{rsM} to the object, since the response could imply an ongoing invalidation process.
+
+We should extend the notion of logical status for the MESI protocol, declaring that an object in MESI is \stE{} if either 1) the object has \stE{} and there is no invalidation response to the object or 2) there is a response \slstinline{rsE} to the object.
+
+\paragraph{Invariants.}
+Using the logical status of each object, we can state the desired invariant for each status:
+\begin{itemize}[leftmargin=*]
+\item The \emph{exclusiveness} invariant claims an expected property regarding \stM{} (or \stE{}) status. It says that whenever a cache (or the main memory) has logical status \stM{} (or \stE{}), then all the other caches are in logical \stI{} status.
+\item The \emph{sharing} invariant claims that all objects in logical \stS{} status have the same value.
+\item The \emph{invalidness} invariant claims that a certain set of objects are all in logical \stI{} status. Such a set may refer to the objects inside (or outside) a subtree of the system, determined by looking at the directory status or the ownership bit. For example, if an object $O$ has an ownership bit true, then all the objects outside $O$ have logical \stI{} status.
+\item The invariant for \stE{} claims that if an object takes an invalidation request without writeback from a child, and the directory status pointing to the child is \stE{}, then the object has a coherent value.
+\end{itemize}
+
+\paragraph{Invariant proofs using predicate messages.}
+
+\newcommand{\subtree}[1]{\ensuremath{\textrm{tr}(#1)}}
+\newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}(#1)}}
+\newcommand{\objsinv}[1]{\ensuremath{\textsf{Invalid}(#1)}}
+
+While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness invariant and the invalidness invariant.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node at (0, 0) {$O$};
+    \node at (-0.6, 1) {$P$};
+    \draw [>->] (-0.5, 0.8) -- (-0.1, 0.2);
+    \node[label={[label distance=-6pt]right:{\small $\textsf{rsM}\{\objsinv{\subtreec{O}}\}$}}] at (-0.3, 0.5) {$\bullet$};
+    %% tr(O)
+    \draw [thick,loosely dotted] (-0.2, -0.3) -- (-0.4, -0.6);
+    \draw [thick,loosely dotted] (0, -0.3) -- (0, -0.7);
+    \draw [thick,loosely dotted] (0.2, -0.3) -- (0.4, -0.6);
+    %% tr-1(P)
+    \draw [thick,loosely dotted] (-0.8, 0.7) -- (-1, 0.3);
+    \draw [thick,loosely dotted] (-0.6, 0.7) -- (-0.6, 0.3);
+    \draw [thick,loosely dotted] (-0.8, 1.2) -- (-1, 1.5);
+  \end{tikzpicture}
+  \caption{Predicate messages over \slstinline{rsM}}
+  \label{fig-predicate-msg}
+\end{figure}
+
+The common underlying difficulty comes from stating invariants for certain types of messages.
+For instance, \autoref{fig-predicate-msg} depicts what the desired invariant is when a message with the ID \slstinline{rsM} exists in the system.
+Defining $\subtree{O}$ ($\subtreec{O}$) as a set of objects inside (outside) the subtree rooted at $O$, the desired invariant is that each object in $\subtreec{O}$ is in logically invalid state, denoted as $\objsinv{\subtreec{O}}$.
+This invariant is indeed required at the moment when an L1 cache takes \slstinline{rsM} and changes its status to \stM{}.
+
+We call this invariant over a specific message a \emph{predicate message}, since it is like a message carrying a predicate over the target system.
+How could we prove the correctness of predicate messages?
+A naive but typical approach is to strengthen the invariant repeatedly by manually considering possible states.
+In the case of \slstinline{rsM}:
+\begin{itemize}[leftmargin=*]
+\item We should strengthen the invariant by claiming that each object in $\subtreec{O}$ cannot take \slstinline{rsS} as well; if there is an object that can take it, then its state becomes \stS{}, which violates the invariant.
+\item Following the above case, we also should claim that an object in $\subtreec{O}$ cannot take \slstinline{downRsS}, otherwise it may take the message and release \slstinline{rsS}, which violates the invariant.
+\item $\cdots$ we should repeat this process until the invariant is provable by induction, which checks each state transition by a rule.
+\end{itemize}
+Such a process represents a typical burden in stating and proving an invariant, especially in distributed systems.
+
+Thanks to \hemiola{}'s serializability support, we need not strengthen the invariant at all.
+Instead, we can employ \emph{atomic invariants}, restricting the proof to the predicates for live messages in a current atomic history.
+Revisiting the case of \slstinline{rsM}, in the middle of an atomic history, \slstinline{rsM} is the only live message.
+Now if we state the atomic invariant that provides a predicate for each live message, we do not need to worry about whether the predicates for the other live messages still hold when making a state transition with \slstinline{rsM}.
+
+\paragraph{Refinement proofs.}
+
+%% We just need minimum spacing to detach `Coh` and `Spec` from the left parenthesis `(`
+\newcommand{\implcoh}[3]{\ensuremath{\textit{Coh}\,(#1, #2, #3)}}
+\newcommand{\speccoh}[1]{\ensuremath{\textit{Spec}\,(v)}}
+
+Once equipped with sufficient invariants, it is straightforward to prove the refinement between the implementation and the spec.
+The only work is to define a correct simulation that relates all the coherent values in the implementation and the single value in the spec.
+The coherent values are collected by looking at the logical status of each object; if the logical status is not \stI{} then values either in the object or in some messages (\eg{} \slstinline{rsS}) are coherent.
+
+Denoting by $\implcoh{s}{o}{v}$ that an object state in a system state $s$ contains a coherent value $v$, the simulation can be stated as follows for the MSI protocol:
+\begin{theorem}[Correctness of the MSI protocol]
+  The following simulation relation holds between the implementation system state $s^I$ and the spec system state $s^S$.
+  \begin{displaymath}
+    s^I \sim s^S \triangleq \exists v.\; \forall o.\; \implcoh{s^I}{o}{v} \wedge s^S = \speccoh{v}.
+  \end{displaymath}
+  where $\speccoh{v}$ represents a single-value state for the spec.
+\end{theorem}
+The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover objects with \stE{} status and messages with ID \slstinline{rsE}.
+
+\subsection{Protocol compiler to synthesize \hemiola{} protocols}
+\label{sec-synthesis}
 
 \section{Timeline and Milestones}
