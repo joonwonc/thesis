@@ -152,6 +152,7 @@ A so-called protocol compiler would take such a role, which employes predesigned
 \section{Motivation and Background}
 
 \subsection{Challenges in designing cache-coherence protocols}
+\label{sec-example}
 
 Before proposing the \hemiola{} framework, we provide a simple yet motivating example to introduce cache-coherence protocols and typical challenges in the design and verification.
 For simplicity, in this section, we will consider only \emph{a single memory location} and design a protocol only for this location.
@@ -673,7 +674,245 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
 
 \section{Proposed Work}
 
-\subsection{\hemiola{} DSL and automated proof of serializability on top of it}
+\subsection{\hemiola{} DSL and automated proof of serializability}
+\label{sec-hemiola-dsl}
+
+We would like to develop a simple means that helps prove the correctness of various cache-coherence protocols that use certain families of networks and locking mechanisms.
+In fact, our new characterization in \hemiola{} will just require that the system is defined on a template provided by the framework.
+More particularly, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates} from the list of nine we have identified.
+
+\subsubsection{Topology and network requirements}
+
+In order to employ the serializability guarantee in \hemiola{}, the objects in a given system should form a tree topology.
+Most cache-coherent memory subsystems follow this topology, where leaf nodes correspond to L1 caches, and the root corresponds to the main memory.
+A child and its parent in the tree communicate using the three channels shown in \autoref{sec-example}, \eg{} whenever a child wants to send a request to the parent, it should use the upward-request channel.
+
+\hemiola{} as a Coq library generates the topology and network channels automatically from instances of a simple inductive type.
+For example, the following tree definition will generate topology and channels for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
+\begin{displaymath}
+  t : \textit{tree} \triangleq \small{\textsf{Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]]}}.
+\end{displaymath}
+
+\subsubsection{Locking mechanism}
+\label{sec-locking-mechanism}
+
+We saw in \autoref{sec-example} how correctness requires a fine-grained locking mechanism for communication between a child and its parent.
+For example, revisiting the issue described in \autoref{fig-motive-2-b}, a child should be able to handle an invalidation request from the parent even if it is locked while waiting for a response to its own request.
+\hemiola{} supports a general locking mechanism that can deal with this situation.
+Instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more relaxed} locking, just by looking at whether the message is from the parent or one of its children.
+This relaxed locking mechanism is still sufficient to prove serializability.
+
+\tikzset{
+  uprightedge/.pic = {
+    \draw [>->] (0.2, 0.25) -- (0.5, 0.75);
+  },
+}
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node at (0, 0) {$C$};
+    \pic at (0, 0) {uprightedge};
+    \node[label={[label distance=-6pt]right:{\small {\sf rq1}}}] at (0.35, 0.5) {$\bullet$};
+    \node at (0.7, 1) {$P_1$};
+    \pic at (0.7, 1) {uprightedge};
+    \node[label={[label distance=-6pt]left:{\small {\sf rq2}}}] at (1.05, 1.5) {$\bullet$};
+    \node at (1.4, 2) {$P_2$};
+
+    \draw [>=stealth,double,->] (1.6, 1.75) -- (1.9, 1.25);
+    \node[label={[label distance=-6pt]right:{\small {\sf rqs}}}] at (1.75, 1.5) {$\bullet$};
+
+    \node[draw,align=left] at (3.2, 0.4) {$P_1$ sets an uplock\\ when sending $\textsf{rq2}$ to $P_2$};
+    \node[draw,align=left] at (5.0, 1.7) {$P_2$ sets a downlock\\ when sending $\textsf{rqs}$ to children};
+  \end{tikzpicture}
+  \caption{Locking mechanism in Hemiola}
+  \label{fig-locking}
+\end{figure}
+
+In particular, \hemiola{} provides two kinds of locks: \emph{uplocks and downlocks}.
+We say an object is uplocked (or downlocked) when it holds an uplock (or downlock), respectively.
+\autoref{fig-locking} depicts the locking mechanism in \hemiola{}.
+An uplock is set when an object makes an upward request to its parent ($P_1$ in the figure); it is released when the object gets a corresponding response from the parent.
+The object cannot make any further upward requests while uplocked, but \emph{it can handle requests from the parent}.
+On the contrary, a downlock is set when an object makes a downward request(s) to some of its children ($P_2$ in the figure); similarly it is released when the object gets corresponding response(s) from the child requestee(s).
+The object cannot make any further downward requests while downlocked.
+
+\subsubsection{Rule Templates}
+
+\newcommand{\rtname}[1]{{\small\sf\bf #1}}
+
+\newcommand{\uled}{\ensuremath{\textsf{UL}}}
+\newcommand{\dled}{\ensuremath{\textsf{DL}}}
+\newcommand{\ulfree}{\ensuremath{\textsf{UL}_{\times}}}
+\newcommand{\dlfree}{\ensuremath{\textsf{DL}_{\times}}}
+
+\newcommand{\setul}{\ensuremath{\textsf{UL}\Uparrow}}
+\newcommand{\setdl}{\ensuremath{\textsf{DL}\Uparrow}}
+\newcommand{\relul}{\ensuremath{\textsf{UL}\Downarrow}}
+\newcommand{\reldl}{\ensuremath{\textsf{DL}\Downarrow}}
+\newcommand{\stsilent}{\ensuremath{\textsf{SLT}}}
+
+\newcommand{\ppo}[3]{\ensuremath{\{#1\}#2\lbrack#3\rbrack}}
+\newcommand*{\bfrac}[2]{\genfrac{}{}{0pt}{}{#1}{#2}}
+
+On top of the topology/network requirements and the locking mechanism, \hemiola{} provides rule templates to ensure that objects communicate within the topology and locks are properly set.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.1, 0.5) -- (-0.1, 0.8);
+      \draw [dotted] (0.1, 0.5) -- (0.1, 0.8);
+      \node at (0, 0.2) {$\ppo{\bfrac{\ulfree{}}{\dlfree{}}}{O}{\cdot}$};
+      \draw [<-<] (-0.1, -0.2) -- (-0.1, -0.8);
+      \draw [>->] (0.1, -0.2) -- (0.1, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.1, -0.5) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rs}}}] at (0.1, -0.5) {$\bullet$};
+      \node at (0, -0.5) {$(\qquad\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(a) immediate-down (\rtname{immd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [<-<] (-0.1, 0.1) -- (-0.1, 0.8);
+      \draw [>->] (0.1, 0.1) -- (0.1, 0.8);
+      \node at (0, -0.2) {$\ppo{\dlfree{}}{O}{\cdot}$};
+      \draw [dotted] (-0.1, -0.5) -- (-0.1, -0.8);
+      \draw [dotted] (0.1, -0.5) -- (0.1, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.1, 0.45) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rs}}}] at (0.1, 0.45) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(b) immediate-up (\rtname{immu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [>->] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\ulfree{}}{O}{\bfrac{\setul{}}{\stsilent{}}}$};
+      \draw [<-<] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, -0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, 0.55) {$\bullet$};
+      \node at (-0.1, -0.55) {$(\qquad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(c) request-up-up (\rtname{rquu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \vspace{5pt}
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\bfrac{\uled{}}{\dlfree{}}}{O}{\relul{}}$};
+      \draw [>->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, -0.55) {$\bullet$};
+      \node at (-0.1, -0.55) {$(\qquad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(d) response-down-down (\rtname{rsdd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.2, 0.5) -- (-0.2, 0.8);
+      \draw [dotted] (0.2, 0.5) -- (0.2, 0.8);
+      \node at (0, 0.2) {$\ppo{\dlfree{}}{O}{\bfrac{\setdl{}}{\stsilent{}}}$};
+      \draw [<-<] (-0.2, -0.1) -- (-0.2, -0.8);
+      \draw [>=stealth,double,->] (0.2, -0.1) -- (0.2, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.2, -0.45) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf {\bf rqs}}}}] at (0.2, -0.45) {$\bullet$};
+      \node at (-0.35, -0.45) {$(\enspace\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(e) request-up-down (\rtname{rqud})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.2, 0.5) -- (-0.2, 0.8);
+      \draw [dotted] (0.2, 0.5) -- (0.2, 0.8);
+      \node at (0, 0.2) {$\ppo{\dled{}}{O}{\reldl{}}$};
+      \draw [>->] (-0.2, -0.1) -- (-0.2, -0.8);
+      \draw [>=stealth,double,<-] (0.2, -0.1) -- (0.2, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (-0.2, -0.45) {$\bullet$};
+      \node[label={[label distance=-6pt]right:{\small {\sf {\bf rss}}}}] at (0.2, -0.45) {$\circ$};
+      \node at (-0.35, -0.45) {$(\enspace\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(f) response-up-down (\rtname{rsud})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \vspace{5pt}
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\dlfree{}}{O}{\bfrac{\setdl{}}{\stsilent{}}}$};
+      \draw [>=stealth,double,->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rqs}}}}] at (0, -0.55) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(g) request-down-down (\rtname{rqdd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [>->] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\dled{}}{O}{\reldl{}}$};
+      \draw [>=stealth,double,<-] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\bullet$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rss}}}}] at (0, -0.55) {$\circ$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(h) response-up-up (\rtname{rsuu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\bfrac{\uled{}}{\dlfree{}}}{O}{\bfrac{\relul{}}{\setdl{}}}$};
+      \draw [>=stealth,double,->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rqs}}}}] at (0, -0.55) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(i) resp-down-req-down (\rtname{rsrq})}
+  \end{subfigure}
+  \caption{Rule templates in Hemiola}
+  \label{fig-rule-templates}
+\end{figure}
+
+\autoref{fig-rule-templates} presents the nine rule templates supported in \hemiola{}.
+Each diagram has the form $\ppo{P}{O}{Q}$ and arrows with $\circ$ and $\bullet$.
+It means that the rule template is for an object $O$, requires input messages ($\circ$) and a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
+
+$\uled$, $\dled$, $\ulfree$, and $\dlfree$ in a precondition indicate that the object is uplocked, downlocked, uplock-free, and downlock-free, respectively.
+$\setul$, $\setdl$, $\relul$, and $\reldl$ in a state transition indicate setting an uplock, setting a downlock, releasing an uplock, and releasing a downlock, respectively.
+$\stsilent{}$ annotates that the rule template forbids any state modification beside locking.
+
+The rule templates are carefully designed to perform any practical transactions \emph{safely} with serializable behavior.
+Considering an extreme case, in a cache-coherence protocol, if an L1 cache wants to obtain a write permission, all the other caches should be invalidated (changing each cache status to Invalid).
+In order to perform such a transaction, it must be able to traverse all the other caches.
+This transaction kind is one of the longest-running in cache-coherence protocols, and the rule templates are designed with proper locking ($\uled$ and $\dled$) and a state-change condition ($\stsilent$), not to create any incoherence while such a long transaction is interleaved with other transactions.
+
+\subsubsection{Automated proof of serializability}
+
+\newcommand{\ontree}[2]{\ensuremath{\textit{OnTree}\ #1\ #2}}
+\newcommand{\goodrules}[2]{\ensuremath{\textit{GoodRules}\ #1\ #2}}
+
+On top of the \hemiola{} DSL, we can now claim that the use of good topology and the rule templates automatically guarantees serializability:
+\begin{theorem}[\hemiola{}'s serializability guarantee]
+  \begin{displaymath}
+    \forall S, t.\; \ontree{S}{t} \land \goodrules{S}{t} \to \hsrz{S},
+  \end{displaymath}
+  where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$ conforms to one of the rule templates.
+  \label{thm-sz-guarantee}
+\end{theorem}
+While this theorem has been already proven, in order to achieve the completely automated proof, we need to prove \ontree{S}{t} and \goodrules{S}{t} automatically as well.
+Each of these predicates is defined like a static checker that looks at the system definition, thus it is fair to say that automating these predicate proof is to build a verified validator.
 
 \subsection{Protocol compiler to synthesize \hemiola{} protocols}
 
