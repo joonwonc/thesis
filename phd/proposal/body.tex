@@ -961,6 +961,7 @@ It is infeasible to extend the protocol literally in this way, since we cannot r
 The protocol compiler restricts the resources (\eg{} channels, lock holders, etc.) to make the implementation hardware-synthesizable.
 
 \subsubsection{The protocols: MSI and MESI}
+\label{sec-protocols}
 
 \newcommand{\mesi}{\ensuremath{\textsf{MESI}}}
 \newcommand{\msi}{\ensuremath{\textsf{MSI}}}
@@ -1078,5 +1079,171 @@ The simulation relation for the MESI protocol is just the same as the one for th
 
 \subsection{Protocol compiler to synthesize \hemiola{} protocols}
 \label{sec-synthesis}
+
+As mentioned in \autoref{sec-protocols}, we have dealt with cache-coherence protocols for a single line, where the specification has a single line as well.
+In order to build a hardware-synthesizable multiline implementation, we plan to develop a compiler that takes a single-line \hemiola{} protocol as a source program and generates a multiline implementation described in Kami~\cite{kami}.
+Kami is a hardware formal-verification framework, where its own HDL and proof tools are defined in Coq, allowing users to design, specify, verify, and synthesize their hardware components.
+
+The protocol transition system and the rule templates given in the \hemiola{} DSL match well rule-based HDLs like Kami; a rule in \hemiola{} naturally maps to an equivalent rule in Kami, which describes atomic state transitions in hardware modules.
+Instead of directly compiling \hemiola{} protocols to a register-transfer language (RTL), we chose to build a compiler from \hemiola{} to Kami as a first step toward using the protocols and their correctness proofs within larger Kami proofs including processors -- though our experiments here do not include those composition proofs.
+Since Kami already has a hardware-synthesis toolchain, we can just compile a \hemiola{} program to Kami and use the toolchain to run it on FPGAs.
+
+\subsubsection{Compilation of a \hemiola{} protocol}
+\label{sec-compiler}
+
+\begin{figure}
+  \centering
+  \tikzstyle{arg} = [inner sep=1pt]
+  \tikzstyle{component} = [rectangle, draw=black, inner sep=5pt, outer sep=2pt]
+  \tikzstyle{libcomp} = [rectangle, draw=black, inner sep=3pt, outer sep=1pt, minimum width=2cm]
+  \tikzstyle{arrow}=[-{stealth}]
+  \tikzstyle{dataflow}=[-{latex}]
+  \begin{tikzpicture}
+    \node[arg] (hemiolaSource) at (0, 1.2) {\small\sf{(Single-line) \hemiola{} protocol}};
+    \node[component] (compiler) at (0, 0) {\small\sf{Protocol Compiler}};
+    \node[arg, fill=white] (kamiTarget) at (0, -1.2) {\small\sf{(Multiline) Kami implementation}};
+    \node[anchor=east, arg] (extComp) at (-2, 0.4) {\scriptsize\sf{Custom data structure reifier/compiler}};
+    \node[anchor=east, arg] (infoEnc) at (-2, 0) {\scriptsize\sf{Tag/Information encoder/decoder}};
+    \node[anchor=east, arg] (cacheConfig) at (-2, -0.4) {\scriptsize\sf{Cache/MSHR configuration}};
+
+    \node[anchor=west,
+      rectangle, draw=black,
+      minimum width=2.2cm,
+      minimum height=1.5cm] (lib) at (2.5, 0) {};
+    \node[above right] at (lib.north west) {\scriptsize\sf{Prebuilt Kami library}};
+    \node[anchor=west, libcomp] (bitvector) at (2.6, 0.5) {\scriptsize\tt{Bitvector}};
+    \node[anchor=west, libcomp] (cache) at (2.6, 0) {\scriptsize\tt{Cache}};
+    \node[anchor=west, libcomp] (mshrs) at (2.6, -0.5) {\scriptsize\tt{MSHRs}};
+
+    \draw [dataflow] (hemiolaSource) to
+    node[left, inner sep=1pt] (reifyArrow) {}
+    node[right] {\scriptsize\sf\it{after reification}} (compiler);
+    \draw [dataflow] (compiler) to (kamiTarget);
+    \draw [arrow] (extComp) to[out=0,in=180] (reifyArrow);
+    \draw [arrow] (extComp) to[out=0,in=180] (compiler);
+    \draw [arrow] (infoEnc) to (compiler);
+    \draw [arrow] (cacheConfig) to[out=0,in=180] (compiler);
+    \draw [arrow] (lib) to[out=180,in=0] (compiler);
+
+    \node[anchor=west, arg] (bsvTarget) at (0.5, -1.7) {\small\sf{Bluespec implementation}};
+    \node[anchor=west, arg] (fpga) at (2.7, -2.2) {\small\sf{Circuit on FPGA}};
+
+    \draw [dataflow] (kamiTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
+    \draw [dataflow] (bsvTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Bluespec synthesis}} (fpga);
+
+    \begin{pgfonlayer}{bg}
+      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1) {\scriptsize\sf\it{compilation}};
+      \draw[dashed] (-6.5, -1.2) -- (5.5, -1.2);
+      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1.4) {\scriptsize\sf\it{synthesis}};
+    \end{pgfonlayer}
+  \end{tikzpicture}
+  \caption{Compilation and Synthesis of \hemiola{} protocols}
+  \label{fig-compiler}
+\end{figure}
+
+\autoref{fig-compiler} depicts a compilation/synthesis flow from a given \hemiola{} protocol to an FPGA-ready circuit.
+A source program of the protocol compiler is a single-line protocol described in \hemiola{} with the rule templates.
+
+\paragraph{Preprocessing: reification.}
+
+Before feeding a \hemiola{} source program to the compiler, a preprocessing step is required, which is to reify the program into an AST we can hand off to the compiler.
+\hemiola{} supports automated, correct-by-construction reification driven by a series of tactics in Coq.
+For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \hemiola{} rule to the corresponding rule AST, where \slstinline{HRule} is a Coq \slstinline{Record} containing the AST and its correctness, \ie{} denotation of the AST matches the denotation of the original rule:
+\begin{lstlisting}[numbers=none, frame=none, xleftmargin=10pt]
+Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
+\end{lstlisting}
+
+\paragraph{Compiling asynchronous line accesses.}
+
+One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
+In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
+
+In order to optimize asynchronous line accesses, we plan to make the protocol compiler transform a \hemiola{} rule into multiple Kami rules, each of which takes part of the source-rule execution.
+Furthermore, we would like to optimize such rules to be executed in a \emph{pipelined} way, so that a status read and a value write for different addresses are executed in parallel.
+This optimization is nontrivial but ubiquitous in real cache controllers.
+
+\paragraph{Prebuilt hardware components.}
+The compiler uses prebuilt hardware components described in Kami.
+One of them is a cache, whose interface includes making read/write requests and getting the responses.
+The cache normally uses a BRAM (block RAM), which is defined as a primitive in Kami.
+The Kami BRAM is later synthesized to a BRAM on an FPGA.
+The cache module also manages \emph{victim lines} that should be evicted eventually.
+Optimization opportunities remain in the cache itself, especially for noninclusive caches.
+To improve space efficiency, we plan to implement NCID~\cite{Zhao:2010,Yan:2019} that already has been used in industry.
+
+Another prebuilt component holds a finite number of MSHRs, whose abstract interface includes registering, updating, and releasing MSHRs with respect to their types (uplock or downlock) and locking addresses.
+Recall that ideally (as a spec) MSHRs are assigned per-line, but the actual design can contain only a finite number of them.
+The compiler takes several counts as configuration parameters to determine the sizes of caches (\eg{} \#lines, \#ways) and MSHRs (\eg{} \#uplocks, \#downlocks).
+
+\paragraph{Compiling custom data structures.}
+Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for it.
+This task is straightforward for the user, since both reification and compilation work at the level of expressions, not rules.
+For instance, a field access \slstinline{dir.(dir_sharers)} for a Coq record \slstinline{dir} is reified to an expression AST node \slstinline{(HDirGetSh hdir)}, where \slstinline{hdir} is the reified directory structure, and compiled to \slstinline{cdir@."dir_sharers"} in Kami, which uses a field-access expression.
+
+\subsubsection{Correctness of a cache and its controller}
+
+As explained in \autoref{sec-compiler}, the protocol compiler takes a cache configuration as an argument, thus we can have several different implementations by providing different configurations.
+Then what would be the specification for all possible implementations from a given source protocol?
+The core idea comes from the fact that \emph{the coherence of each line is orthogonal to coherence of others}.
+In this case, a single-line \hemiola{} protocol is naturally extended to a multiline one by using the notion of compositionality.
+Compositionality claims that if two systems are index-disjoint (\ie{} objects and channel indices are disjoint) thus not communicating with each other, then refinement of the composed system is obtained for free just by composing the specs:
+\begin{theorem}[Compositionality]
+  \begin{displaymath}
+    \forall I_1, I_2, S_1, S_2.\ \refines{I_1}{S_1} \land \refines{I_2}{S_2} \to
+    \refines{I_1 \oplus I_2}{S_1 \oplus S_2},
+  \end{displaymath}
+  where $I_1 \oplus I_2$ implicitly assumes that the indices used in $I_1$ and $I_2$ are disjoint.
+\end{theorem}
+
+\hemiola{} additionally supports an \emph{index-extension} mechanism, which takes a system $S$ and a \emph{prefix index} $i$, generating a new system $S^{(i)}$ where every object or channel index in the system is extended by attaching $i$.
+Note that an index in \hemiola{} is a list of numbers, so it is easy to extend an index just by concatenating another one.
+\hemiola{} also provides a lemma that $S^{(i)}$ and $S^{(j)}$ are index-disjoint when $i \neq j$.
+
+Composing these elements, we obtain a replication theorem that is used directly to convert a single-line cache-coherence protocol to an ideal multiline protocol:
+\begin{theorem}[Replication]
+  $\forall I, S.\ \refines{I}{S} \to \forall n.\ \refines{\bigoplus^{n}_{i=0} I^{(i)}}{\bigoplus^{n}_{i=0} S^{(i)}}$.
+  \label{thm-replication}
+\end{theorem}
+
+The multiline protocol derived from the replication theorem is indeed ideal; it has line values, lock holders, and communication channels per cache line.
+Thus the protocol can serve as a spec for all the multiline implementations generated by the protocol compiler, since they have limited resources, which implies that the behavior of the multiline protocol covers their behaviors.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node (ih0) at (0, 0) {$I^{h}_{0}$};
+    \node (rh0) at (0.6, 0) {$\sqsubseteq_{h}$};
+    \node (sh0) at (1.2, 0) {$S^{h}_{0}$};
+
+    \node (ihM) at (0, -1.2) {$I^{h}_{M}$};
+    \node (rhM) at (0.6, -1.2) {$\sqsubseteq_{h}$};
+    \node (shM) at (1.2, -1.2) {$S^{h}_{M}$};
+
+    \node (ikm) at (-1.2, -2.4) {$I^{k}_{m}$};
+    \node (rkm) at (-0.6, -2.4) {$\sqsubseteq_{k}$};
+    \node (ikM) at (0, -2.4) {$I^{k}_{M}$};
+    \node (rkM) at (0.6, -2.4) {$\sqsubseteq_{k}$};
+    \node (skM) at (1.2, -2.4) {$S^{k}_{M}$};
+
+    \draw (-1.4, -2.75) to (0.2, -2.75);
+    \node (compCorrect) at (-0.6, -3.0) {\small\sf{(compiler correctness)}};
+
+    \draw[|-{latex}] (ih0) to[out=180,in=90] node[left] {
+      \small\sf\begin{tabular}{r}
+      compiles-to\\
+      (\autoref{sec-compiler})
+      \end{tabular}} (ikm);
+    \draw[->] (rh0) to node[right] {\small\sf{replication (\autoref{thm-replication})}} (rhM);
+    \draw[->] (rhM) to node[right] {\small\sf{(transliteration)}} (rkM);
+  \end{tikzpicture}
+  \caption{A single-line protocol, a multiline spec, and multiline implementations}
+  \label{fig-multiline-spec}
+\end{figure}
+
+\autoref{fig-multiline-spec} elaborates more on the role of the multiline specification.
+For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
+Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
+After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
+Proving compiler correctness in this manner is on our list of valuable future work -- we would like to prove and describe the compiler correctness in the thesis, if time permits.
 
 \section{Timeline and Milestones}
