@@ -3,7 +3,7 @@
 %%%%%%%%%% Packages --
 
 \usepackage[margin=1in]{geometry}
-\usepackage[dvipsnames]{xcolor}
+\usepackage[dvipsnames,table]{xcolor}
 \usepackage[bookmarks, colorlinks, breaklinks,
   pdftitle={Joonwon Choi: PhD thesis proposal},pdfauthor={Joonwon Choi}]{hyperref}
 \hypersetup{
@@ -22,9 +22,9 @@
 \usepackage{semantic}
 \usepackage{stmaryrd}
 \usepackage{tikz}
-\usetikzlibrary{arrows,decorations.markings}
-\pgfdeclarelayer{bg} % declare background layer
-\pgfsetlayers{bg,main} % set the order of the layers (main is the standard layer)
+\usetikzlibrary{arrows,decorations.markings,calc,tikzmark}
+\pgfdeclarelayer{procomp}
+\pgfsetlayers{procomp,main}
 
 \usepackage{enumitem}
 \usepackage{listings}

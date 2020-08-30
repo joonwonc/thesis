@@ -1131,7 +1131,7 @@ Since Kami already has a hardware-synthesis toolchain, we can just compile a \he
     \draw [dataflow] (kamiTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
     \draw [dataflow] (bsvTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Bluespec synthesis}} (fpga);
 
-    \begin{pgfonlayer}{bg}
+    \begin{pgfonlayer}{procomp}
       \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1) {\scriptsize\sf\it{compilation}};
       \draw[dashed] (-6.5, -1.2) -- (5.5, -1.2);
       \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1.4) {\scriptsize\sf\it{synthesis}};
@@ -1247,3 +1247,31 @@ After all, the correctness of the protocol compiler must be the refinement from 
 Proving compiler correctness in this manner is on our list of valuable future work -- we would like to prove and describe the compiler correctness in the thesis, if time permits.
 
 \section{Timeline and Milestones}
+
+\begin{figure}[h]
+  \renewcommand{\arraystretch}{1.25}
+  \centering\small
+  \begin{tabular}{r|l}
+    \hline
+    \multirow{3}{*}{Sep 2020} & \bf \hemiola{} DSL and the serializability proof \\
+    & \quad Clean up the current DSL definitions and proof code \\
+    & \quad Automate the rule-template checker \\
+    \hline
+    \multirow{2}{*}{Oct 2020} & \bf Complete proofs of the case-study protocols \\
+    & \quad Clean up all the proofs \\
+    \hline
+    \multirow{4}{*}{Sep -- Dec 2020} & \bf Protocol compiler to synthesize \hemiola{} protocols \\
+    & \quad Design the cache interface + Implement NCID \\
+    & \quad Design and implement the cache-controller pipeline \\
+    & \quad Evaluate the protocol implementation \\
+    \hline
+    Oct 2020 -- Jan 2021 & \bf Write thesis \\
+    Dec 11, 2020 & \quad Thesis title submission deadline \\
+    Jan 8, 2021 & \quad PhD thesis submission deadline \\
+    Nov -- Dec 2020 & Prepare presentation for thesis defense \\
+    Dec 2020 & \bf Thesis defense \\
+    \hline
+  \end{tabular}
+\end{figure}
+
+
