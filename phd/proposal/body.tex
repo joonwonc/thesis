@@ -232,7 +232,6 @@ We will see it is still nontrivial to design a correct protocol.
     \pic at (3.7, -0.7) {spec};
   \end{tikzpicture}
   \caption{A simple MSI directory protocol}
-  \vspace{-5pt}
   \label{fig-motive-1}
 \end{figure}
 
@@ -288,7 +287,6 @@ Note that channels are depicted in a logical way; the actual hardware implementa
     \label{fig-motive-2-c}
   \end{subfigure}
   \caption{Rule-execution cases in the simple MSI protocol}
-  \vspace{-5pt}
   \label{fig-motive-2}
 \end{figure}
 
@@ -465,7 +463,6 @@ A transition function takes the same arguments but returns the next object state
     \hline
   \end{tabular}
   \caption{Semantics of protocol transition systems}
-  \vspace{-10pt}
   \label{fig-trs-semantics}
 \end{figure*}
 
@@ -552,7 +549,6 @@ The protocol transition system described in \autoref{sec-trs} follows standard i
     \hline
   \end{tabular}
   \caption{Atomic histories and transactions}
-  \vspace{-5pt}
   \label{fig-hemiola-trs}
 \end{figure}
 
@@ -612,7 +608,6 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
     \end{math}
   \end{tabular}
   \caption{An example of an atomic history}
-  \vspace{-5pt}
   \label{fig-ex-atomic-history}
 \end{figure}
 
@@ -916,6 +911,7 @@ Each of these predicates is defined like a static checker that looks at the syst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TODO: FROM HERE
 \subsection{Complete proofs of hierarchical noninclusive MSI and MESI protocols}
+\label{sec-casestudy}
 
 On top of the \hemiola{} framework, we would like to prove the correctness of hierarchical, noninclusive MSI and MESI protocols as case studies.
 They use directories to keep track of child statuses and use noninclusive caches that do not require the parent cache to contain all lines existing in children.
@@ -1252,26 +1248,38 @@ Proving compiler correctness in this manner is on our list of valuable future wo
   \renewcommand{\arraystretch}{1.25}
   \centering\small
   \begin{tabular}{r|l}
+    \multicolumn{2}{l}{\normalsize\bf Framework Development} \\
     \hline
-    \multirow{3}{*}{Sep 2020} & \bf \hemiola{} DSL and the serializability proof \\
+    \multirow{3}{*}{Sep 2020} & {\bf \hemiola{} DSL and the serializability proof (\autoref{sec-hemiola-dsl})} \\
     & \quad Clean up the current DSL definitions and proof code \\
     & \quad Automate the rule-template checker \\
     \hline
-    \multirow{2}{*}{Oct 2020} & \bf Complete proofs of the case-study protocols \\
+    \multirow{2}{*}{Oct 2020} & {\bf Complete proofs of the case-study protocols (\autoref{sec-casestudy})} \\
     & \quad Clean up all the proofs \\
     \hline
-    \multirow{4}{*}{Sep -- Dec 2020} & \bf Protocol compiler to synthesize \hemiola{} protocols \\
+    \multirow{4}{*}{Sep -- Dec 2020} & {\bf Protocol compiler to synthesize \hemiola{} protocols (\autoref{sec-synthesis})} \\
     & \quad Design the cache interface + Implement NCID \\
     & \quad Design and implement the cache-controller pipeline \\
     & \quad Evaluate the protocol implementation \\
+    & \quad (Prove the compiler correctness) \\
     \hline
-    Oct 2020 -- Jan 2021 & \bf Write thesis \\
+    \multicolumn{2}{l}{} \\
+    \multicolumn{2}{l}{\normalsize\bf Thesis} \\
+    \hline
+    Oct 2020 -- Jan 2021 & {\bf Write thesis} \\
     Dec 11, 2020 & \quad Thesis title submission deadline \\
     Jan 8, 2021 & \quad PhD thesis submission deadline \\
     Nov -- Dec 2020 & Prepare presentation for thesis defense \\
-    Dec 2020 & \bf Thesis defense \\
+    Dec 2020 & {\bf Thesis defense} \\
     \hline
   \end{tabular}
 \end{figure}
 
+The \hemiola{} framework has been developed around 2 years; the domain-specific language and the main serializability proof have been already established.
+It will take a small amount of time to clean up the codebase, in particular to make the rule-template checker automated.
+The case-study protocols also have been designed and proven to be correct on top of the framework -- this code will need to be cleaned up as well.
+On the other hand, the protocol compiler still requires a decent amount of work.
+The optimized cache structures and pipelined controllers will be implemented and evaluated during the Fall term.
+If time permits, the protocol compiler will be proven as a bonus.
+The PhD thesis will have been written in parallel with the framework development, aiming to submit in January 2021.
 
