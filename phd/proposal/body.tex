@@ -124,9 +124,9 @@ In order to overcome the latter, recent approaches~\cite{Chen:2008,Chen:2010,McM
 
 However, these modularity disciplines impose significant restrictions in protocol design, in order to obtain clear module boundaries among caches.
 A concrete limitation of modular design and verification comes when trying to verify cache-coherence protocols that are not \emph{inclusive}.
-Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive\footnote{Intel uses the term ``noninclusive cache'' to say that the cache is neither inclusive nor exclusive.} caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
+Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
 
-I would like to view the verification of hierarchical cache-coherence protocols from a different perspective.
+We would like to view the verification of hierarchical cache-coherence protocols from a different perspective.
 Instead of decomposing a protocol design and proof, we view a cache-coherence protocol as a \emph{global} distributed protocol and look for commonalities across well-designed protocols.
 It is a good start to identify ``good-hygiene'' properties, but it is even better to formalize such properties in frameworks that guide the design of protocols.
 Then we can provide nonobvious and useful reasoning principles by-construction.
@@ -145,8 +145,8 @@ These protocols are defined by associating each tree node with a set of local st
 \hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
 Furthermore, the framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
 
-To demonstrate usability of the framework, I plan to provide complete correctness proofs of hierarchical, noninclusive cache-coherence protocols as case studies.
-A compilation/synthesis toolchain will also be provided, which converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
+To demonstrate usability of the framework, we plan to provide complete correctness proofs of hierarchical, noninclusive cache-coherence protocols as case studies.
+A compilation/synthesis toolchain will be provided as well, which converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
 A so-called protocol compiler would take such a role, which employes predesigned, optimized hardware components such as caches and resource controllers.
 
 \section{Motivation and Background}
@@ -1257,7 +1257,7 @@ Proving compiler correctness in this manner is on our list of valuable future wo
     \multirow{2}{*}{Oct 2020} & {\bf Complete proofs of the case-study protocols (\autoref{sec-casestudy})} \\
     & \quad Clean up all the proofs \\
     \hline
-    \multirow{4}{*}{Sep -- Dec 2020} & {\bf Protocol compiler to synthesize \hemiola{} protocols (\autoref{sec-synthesis})} \\
+    \multirow{5}{*}{Sep -- Dec 2020} & {\bf Protocol compiler to synthesize \hemiola{} protocols (\autoref{sec-synthesis})} \\
     & \quad Design the cache interface + Implement NCID \\
     & \quad Design and implement the cache-controller pipeline \\
     & \quad Evaluate the protocol implementation \\

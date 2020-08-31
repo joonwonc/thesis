@@ -1,4 +1,4 @@
-\def\title{Structural Design and Proof of Cache-Coherence Protocols}
+\def\title{Structural Design and Proof of Hierarchical Cache-Coherence Protocols}
 \def\author{Joonwon Choi}
 \def\addrone{32 Vassar St, 32-G888}
 \def\addrtwo{Cambridge, MA 02139}
@@ -8,7 +8,7 @@
 \def\laboratory{Computer Science \& Artificial Intelligence Laboratory}
 
 \def\submissiondate{\today}
-\def\completiondate{February 2021}
+\def\completiondate{January 2021}
 
 \def\supervisor{Professor Adam Chlipala}
 \def\supertitleone{Associate Professor of Electrical Engineering}
@@ -26,13 +26,13 @@
 Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
 We often find multiple memory-access transactions executed in a \emph{distributed} manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
 
-In this proposal, I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols.
+I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols.
 The framework provides an effective reasoning principle that allows a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
 A crucial proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using a well-known notion of commuting reduction.
 The proof relies on conditions on the protocol topology and state-change rules, but the framework provides a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
 
 Hemiola as a framework has been implemented in the Coq proof assistant and used to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
-This proposal will suggest a methodology to synthesize protocols designed in Hemiola into hardware; a protocol compiler in the framework will take such a role, employing predesigned cache structures and controller circuitry.
+This proposal will also suggest a methodology to synthesize protocols designed in Hemiola into hardware; a protocol compiler in the framework will take such a role, employing predesigned cache structures and controller circuitry.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,19 +56,21 @@ This proposal will suggest a methodology to synthesize protocols designed in Hem
 
 \vspace{.5in}
 
-\def\sig{{\small \sc (Signature of Author)}}
-
-\begin{tabular}{rlc}
-  {\small \sc Title:} & \multicolumn{2}{l}{\title} \\
-  {\small \sc Submitted by:} & \author & \\
-  & \addrone & \\
-  & \addrtwo & \\
-  \cline{3-3} & & \makebox[2in][c]{\sig} \\
-        {\small \sc Date of Submission:} & \multicolumn{2}{l}{\submissiondate} \\
-        {\small \sc Expected Date of Completion:} & \multicolumn{2}{l}{\completiondate} \\
-        {\small \sc Laboratory:} & \multicolumn{2}{l}{\laboratory}
+\begin{figure}[h]
+\centering
+\begin{tabular}{ll}
+  \multicolumn{2}{l}{{\small \sc Title:} \title} \\
+  {\small \sc Submitted by:} & \author \\
+  & \addrone \\
+  & \addrtwo \\
+  & \\
+  & \\
+  \cline{2-2} & \makebox[4in][c]{{\small \sc (Signature of Author)}} \\
+  \multicolumn{2}{l}{{\small \sc Date of Submission:} \submissiondate} \\
+  \multicolumn{2}{l}{{\small \sc Expected Date of Completion:} \completiondate} \\
+  \multicolumn{2}{l}{{\small \sc Laboratory:} \laboratory}
 \end{tabular}
-
+\end{figure}
 
 \vspace{.75in}
 {\bf \sc Brief Statement of the Problem:}
