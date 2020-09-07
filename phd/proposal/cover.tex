@@ -26,13 +26,13 @@
 Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
 We often find multiple memory-access transactions executed in a \emph{distributed} manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
 
-I would like to propose a framework called Hemiola, which is for designing, proving, and synthesizing various cache-coherence protocols.
+I propose a framework called Hemiola, for designing, proving, and synthesizing various cache-coherence protocols.
 The framework provides an effective reasoning principle that allows a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
-A crucial proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using a well-known notion of commuting reduction.
+A crucial proof is already provided at the framework level and shared for each protocol, which shows that any state reachable with concurrent memory access is also reachable with serialized memory access using the well-known notion of commuting reductions.
 The proof relies on conditions on the protocol topology and state-change rules, but the framework provides a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
 
 Hemiola as a framework has been implemented in the Coq proof assistant and used to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
-This proposal will also suggest a methodology to synthesize protocols designed in Hemiola into hardware; a protocol compiler in the framework will take such a role, employing predesigned cache structures and controller circuitry.
+This proposal will also suggest a methodology to synthesize protocols designed in Hemiola into hardware; a protocol compiler in the framework will take a protocol and compile it to a corresponding hardware-synthesizable program, employing predesigned cache structures and controller circuitry.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,7 +91,7 @@ This proposal will also suggest a methodology to synthesize protocols designed i
 
 \vspace{.25in}
 \begin{tabular}{rl}
-   {\small \sc To:}   & Department Graduate Committee
+   {\small \sc To:}   & Committee on Graduate Students
 \\ {\small \sc From:} & \supervisor
 \end{tabular}
 
@@ -106,7 +106,7 @@ The program outlined in the proposal:
 \end{tabular}
 
 \vspace{.25in}
-is adequate for a Doctoral thesis.
+\noindent is adequate for a Doctoral thesis.
 I believe that appropriate readers for this thesis would be:
 
 \vspace{.25in}
@@ -156,7 +156,7 @@ Comments: \\
 
 \vspace{.25in}
 \begin{tabular}{rl}
-   {\small \sc To:}   & Department Graduate Committee
+   {\small \sc To:}   & Committee on Graduate Students
 \\ {\small \sc From:} & \readerone
 \end{tabular}
 
@@ -174,9 +174,8 @@ The program outlined in the proposal:
 \end{tabular}
 
 \vspace{.25in}
-is adequate for a Doctoral thesis.
-I am willing to aid in guiding the research
-and in evaluating the thesis report as a reader.
+\noindent is adequate for a Doctoral thesis.
+I am willing to aid in guiding the research and in evaluating the thesis report as a reader.
 
 \vspace{.25in}
 \begin{tabular}{crc}
@@ -216,7 +215,7 @@ Comments: \\
 
 \vspace{.25in}
 \begin{tabular}{rl}
-   {\small \sc To:}   & Department Graduate Committee
+   {\small \sc To:}   & Committee on Graduate Students
 \\ {\small \sc From:} & \readertwo
 \end{tabular}
 
@@ -234,9 +233,8 @@ The program outlined in the proposal:
 \end{tabular}
 
 \vspace{.25in}
-is adequate for a Doctoral thesis.
-I am willing to aid in guiding the research
-and in evaluating the thesis report as a reader.
+\noindent is adequate for a Doctoral thesis.
+I am willing to aid in guiding the research and in evaluating the thesis report as a reader.
 
 \vspace{.25in}
 \begin{tabular}{crc}
