@@ -216,7 +216,7 @@
 \label{sec-intro}
 
 Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
-Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs~\cite{ccbug}.
+Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs.%% ~\cite{ccbug}.
 
 Research on model checking and theorem proving has produced sound techniques, though typically with significant limitations:
 either the verification is of a specific protocol, or state-space-explosion concerns limit applicability to quite small cache topologies~\cite{Komuravelli:2014,Murali:2015,Banks:2017,Oswald:2018}.
@@ -801,6 +801,9 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
 \subsection{The Payoff: Atomic Invariants}
 \label{sec-atomic-invariants}
 
+\todo{1) Provide more intuitions on atomic invariants by giving an actual, minimal example.}
+\todo{2) Maybe it's better to introduce the notion of predicate messages here?}
+
 We have not yet discussed how to exploit our notion of serializability.
 How does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
@@ -819,6 +822,10 @@ Also, the invariant does not need to be stated considering interleavings, since 
 We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
 
 \subsection{Proving Serializability Using Reduction}
+
+\todo{1) Forget about justifying the reduction orders.}
+\todo{2) Instead of the orders, it should be better to explain what the ``certain'' conditions are.}
+\todo{3) Maybe also by examples?}
 
 We now introduce a general proof methodology that can prove serializability via commuting reductions~\cite{reduction}.
 Given a history where multiple transactions are interleaved, we can perform a finite number of reductions to get a sequential history that reaches the same state.
@@ -1170,6 +1177,9 @@ We believe this case provides evidence that a carefully predesigned locking mech
 
 \subsection{Automated Proof of Serializability}
 
+\todo{1) We really need to provide the ``intuition'' why serializability holds with the topology and rule conditions.}
+\todo{2) The proof sketch could go to the appendix, with enough intuitions provided.}
+
 \newcommand{\ontree}[2]{\ensuremath{\textit{OnTree}\ #1\ #2}}
 \newcommand{\goodrules}[2]{\ensuremath{\textit{GoodRules}\ #1\ #2}}
 
@@ -1331,6 +1341,8 @@ In the figure, all the other caches outside $P$, after pulling a value from $C_1
 
 \paragraph{Protocol description with rule templates.}
 
+\todo{1) Need to shrink this paragraph a lot.}
+
 We present a number of rule descriptions in the MSI protocol that employ the rule templates provided in \hemiola{}.
 Each rule template is defined in Coq, taking in several parameters and generating a rule.
 We exploited Coq's notation mechanism to have a compact definition for each rule template.
@@ -1454,6 +1466,8 @@ For example, the rule in \autoref{fig-rule-li-downRsS} just takes a message \sls
 Proving the preservation of the invariant for this rule should be very trivial.
 
 \paragraph{Invariant proofs using predicate messages.}
+
+\todo{1) Need to give much more intuitions why invariants proofs are hard and how predicate messages help prove them.}
 
 \newcommand{\subtree}[1]{\ensuremath{\textrm{tr}(#1)}}
 \newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}(#1)}}
@@ -1760,6 +1774,8 @@ Development of an optimized cache controller is one of our future-work direction
 
 \subsection{Deriving a Multiline Specification by Compositionality}
 \label{sec-multiline}
+
+\todo{This section may have to be moved to appendix.}
 
 %% As explained in the previous sections, the protocol compiler compiles a \emph{single-line} \hemiola{} protocol to a \emph{multiline} cache-coherent Kami implementation.
 %% The Kami implementation has finite, limited \emph{resources}; a cache only contains a finite number of line values, and a small number of lock holders (MSHRs) are assigned to each cache.
