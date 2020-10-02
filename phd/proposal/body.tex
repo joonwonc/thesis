@@ -1,9 +1,9 @@
 %%%%%%%%%% Commands --
 
 %% General commands
-\newcommand{\todo}[1]{\emph{\textcolor{red}{TODO: #1}}}
-\newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
-\newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
+%% \newcommand{\todo}[1]{\emph{\textcolor{red}{TODO: #1}}}
+%% \newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
+%% \newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
 
 \renewcommand{\subsectionautorefname}{section}
 \renewcommand{\subsubsectionautorefname}{section}
@@ -145,7 +145,7 @@ These protocols are defined by associating each tree node with a set of local st
 \hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
 Furthermore, the framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
 
-To demonstrate usability of the framework, we plan to provide complete correctness proofs of hierarchical, noninclusive cache-coherence protocols as case studies.
+To demonstrate usability of the framework, we plan to provide complete correctness proofs of various hierarchical cache-coherence protocols as case studies, including noninclusive protocols.
 A compilation/synthesis toolchain will be provided as well, which converts a cache-coherence protocol described in \hemiola{} to a corresponding hardware implementation running on FPGAs.
 A so-called protocol compiler would take such a role, which employes predesigned, optimized hardware components such as caches and resource controllers.
 
@@ -909,8 +909,7 @@ On top of the \hemiola{} DSL, we can now claim that the use of good topology and
 While this theorem has been already proven, in order to achieve the completely automated proof, we need to prove \ontree{S}{t} and \goodrules{S}{t} automatically as well.
 Each of these predicates is defined like a static checker that looks at the system definition, thus it is fair to say that automating these predicate proof is to build a verified validator.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TODO: FROM HERE
-\subsection{Complete proofs of hierarchical noninclusive MSI and MESI protocols}
+\subsection{Correctness proofs of hierarchical noninclusive MSI and MESI protocols}
 \label{sec-casestudy}
 
 On top of the \hemiola{} framework, we would like to prove the correctness of hierarchical, noninclusive MSI and MESI protocols as case studies.
@@ -918,6 +917,8 @@ They use directories to keep track of child statuses and use noninclusive caches
 We will also investigate how \hemiola{} helps implement and prove these protocols, by taking full advantage of \autoref{thm-sz-guarantee}.
 
 \subsubsection{Design principles}
+\label{sec-design}
+
 We start by summarizing the design principles we apply to both case studies.
 
 \paragraph{Topology as a parameter.}
@@ -957,7 +958,6 @@ It is infeasible to extend the protocol literally in this way, since we cannot r
 The protocol compiler restricts the resources (\eg{} channels, lock holders, etc.) to make the implementation hardware-synthesizable.
 
 \subsubsection{The protocols: MSI and MESI}
-\label{sec-protocols}
 
 \newcommand{\mesi}{\ensuremath{\textsf{MESI}}}
 \newcommand{\msi}{\ensuremath{\textsf{MSI}}}
@@ -973,6 +973,7 @@ The MESI protocol~\cite{Papamarcos:1984} applies further optimizations to the MS
 As the name of the status says, if a cache line has \stE{} status, then the line is exclusive to the cache but also clean.
 
 \subsubsection{Correctness proofs of the protocols}
+\label{sec-protocols}
 
 The correctness proofs of the MSI and MESI protocols claim that both implementations refine to a single-line memory as a spec.
 Most of the time, a refinement proof requires two steps: 1) to prove \emph{invariants} of the implementation that help relate it to the spec and 2) to define and prove a \emph{simulation} relation between an implementation and the spec that directly implies a refinement.
@@ -1072,6 +1073,13 @@ Denoting by $\implcoh{s}{o}{v}$ that an object state in a system state $s$ conta
   where $\speccoh{v}$ represents a single-value state for the spec.
 \end{theorem}
 The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover objects with \stE{} status and messages with ID \slstinline{rsE}.
+
+\subsubsection{Optional task: design and proof of an inclusive MSI protocol}
+
+As motivated in \autoref{sec-intro}, we set the noninclusive protocols as case studies to demonstrate that \hemiola{} can support verification of certain cache-coherence protocols that the other approaches have hardly dealt with.
+However, we claim that the proposed design methodology and proof techniques -- rule templates, serializability, logical statuses, predicate messages, etc. -- are general enough to be used for some other protocols.
+In order to show the practicality of the framework, if time permits, we plan to design and prove a hierarchical \emph{inclusive} MSI protocol as an extra case study.
+While the inclusive protocol requires additional rules (\eg{} ones for back invalidation) to be defined, we expect to reuse a significant amount of invariant proofs from the noninclusive protocol, since a lot of rules are shared between the two.
 
 \subsection{Protocol compiler to synthesize \hemiola{} protocols}
 \label{sec-synthesis}
@@ -1201,10 +1209,7 @@ Composing these elements, we obtain a replication theorem that is used directly 
   \label{thm-replication}
 \end{theorem}
 
-The multiline protocol derived from the replication theorem is indeed ideal; it has line values, lock holders, and communication channels per cache line.
-Thus the protocol can serve as a spec for all the multiline implementations generated by the protocol compiler, since they have limited resources, which implies that the behavior of the multiline protocol covers their behaviors.
-
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \node (ih0) at (0, 0) {$I^{h}_{0}$};
@@ -1236,6 +1241,9 @@ Thus the protocol can serve as a spec for all the multiline implementations gene
   \label{fig-multiline-spec}
 \end{figure}
 
+The multiline protocol derived from the replication theorem is indeed ideal; it has line values, lock holders, and communication channels per cache line.
+Thus the protocol can serve as a spec for all the multiline implementations generated by the protocol compiler, since they have limited resources, which implies that the behavior of the multiline protocol covers their behaviors.
+
 \autoref{fig-multiline-spec} elaborates more on the role of the multiline specification.
 For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
 Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
@@ -1254,8 +1262,9 @@ Proving compiler correctness in this manner is on our list of valuable future wo
     & \quad Clean up the current DSL definitions and proof code \\
     & \quad Automate the rule-template checker \\
     \hline
-    \multirow{2}{*}{Oct 2020} & {\bf Complete proofs of the case-study protocols (\autoref{sec-casestudy})} \\
+    \multirow{3}{*}{Oct 2020} & {\bf Complete proofs of the case-study protocols (\autoref{sec-casestudy})} \\
     & \quad Clean up all the proofs \\
+    & \quad (Design and prove an inclusive MSI protocol) \\
     \hline
     \multirow{5}{*}{Sep -- Dec 2020} & {\bf Protocol compiler to synthesize \hemiola{} protocols (\autoref{sec-synthesis})} \\
     & \quad Design the cache interface + Implement NCID \\
@@ -1278,7 +1287,8 @@ Proving compiler correctness in this manner is on our list of valuable future wo
 The \hemiola{} framework has been developed over around 2 years; the domain-specific language and the main serializability proof have already been established.
 It will take a small amount of time to clean up the codebase, in particular to make the rule-template checker automated.
 The case-study protocols also have been designed and proven to be correct on top of the framework -- this code will need to be cleaned up as well.
-On the other hand, the protocol compiler still requires a decent amount of work.
+If the cleanup takes shorter than expected, an inclusive MSI protocol will be designed and proven, in order to claim the practicality of the framework better.
+The protocol compiler, on the other hand, still requires a decent amount of work.
 The optimized cache structures and pipelined controllers will be implemented and evaluated during the Fall term.
 If time permits, the protocol compiler will be proven as a bonus.
 The PhD thesis will have been written in parallel with the framework development, aiming to submit in January 2021.
