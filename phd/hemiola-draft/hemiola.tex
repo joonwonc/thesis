@@ -1,0 +1,2160 @@
+%% \documentclass[sigplan,preprint,screen]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\documentclass[sigplan,10pt,review,anonymous,screen]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+
+%%%%%%%%%% Packages
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{semantic}
+\usepackage{stmaryrd}
+%% \usepackage{hyperref}
+%% \hypersetup{
+%%   colorlinks=true,
+%%   linkcolor=blue,
+%% }
+%% \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows,decorations.markings}
+\pgfdeclarelayer{bg} % declare background layer
+\pgfsetlayers{bg,main} % set the order of the layers (main is the standard layer)
+
+\usepackage{enumitem}
+\usepackage{listings}
+%% \usepackage{url}
+%% \def\UrlBreaks{\do\/\do-}
+%% \usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage{hhline}
+
+\definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
+  emph={fun, assert, Definition, Rule, rule, Endrule, endrule, using, template, accepts, holding, release, from, me, requires, transition, ltac},
+  emphstyle={\bfseries\color{forestgreen}},
+  %% backgroundcolor=\color{backcolour},
+  %% commentstyle=\color{codegreen},
+  %% keywordstyle=\color{magenta},
+  %% numberstyle=\tiny\color{codegray},
+  %% stringstyle=\color{codepurple},
+  breakatwhitespace=false,
+  %% breaklines=true,
+  %% captionpos=b,
+  belowcaptionskip=8pt,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  frame=single,
+  xleftmargin=0.1\columnwidth,
+  xrightmargin=0.1\columnwidth,
+}
+\def\slstinline{\lstinline[basicstyle=\ttfamily\small]}
+
+\begin{document}
+
+%% Title information
+%% \title[Short Title]{Full Title}
+\title{Hemiola: A Framework for Structural Design and Proof of Cache-Coherence Protocols}
+%% \titlenote{}
+%% \subtitle{\emph{DRAFT: please do not distribute.}}
+%% \subtitlenote{}
+
+%% \author{Joonwon Choi}
+%% \author{Adam Chlipala}
+%% \affiliation{
+%%   \institution{MIT CSAIL}
+%%   \country{USA}
+%% }
+
+\begin{abstract}
+  Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
+  Under the hood, we often find multiple memory-access transactions executed in a distributed manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
+  We introduce \hemiola{}, a framework for designing, proving, and synthesizing cache-coherence protocols, where a central reasoning principle is provided by the framework, allowing a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
+  At the framework level, using commuting reductions, we prove that any state reachable with concurrent memory access is also reachable with serialized memory access.
+  The proof relies on conditions on the protocol topology and state-change rules, but we have designed a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
+  We implemented \hemiola{} as a framework embedded in Coq and used it to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
+  %% , and we synthesized these protocols to run on FPGAs.
+\end{abstract}
+
+%% Commands --
+
+%% General commands
+\newcommand{\todo}[1]{\emph{\textcolor{red}{TODO: #1}}}
+\newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
+\newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
+
+\renewcommand{\subsectionautorefname}{section}
+\renewcommand{\subsubsectionautorefname}{section}
+
+\newcommand{\ie}{i.e.,}
+\newcommand{\eg}{e.g.,}
+\newcommand{\aka}{a.k.a.}
+
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+\renewcommand\qedsymbol{$\blacksquare$}
+
+%% Hemiola
+
+\newcommand{\hemiola}{Hemiola}
+
+\renewcommand{\listof}[1]{\ensuremath{\overline{#1}}}
+\newcommand{\listtof}[1]{\ensuremath{\overrightarrow{#1}}}
+\newcommand{\listnil}{\ensuremath{\lbrack\rbrack}}
+\newcommand{\listcons}[2]{\ensuremath{#1 : #2}}
+\newcommand{\listsingle}[1]{\ensuremath{\lbrack #1 \rbrack}}
+\newcommand{\listapp}[2]{\ensuremath{#1 + #2}}
+\newcommand{\listsub}[2]{\ensuremath{#1 - #2}}
+\newcommand{\listdisj}[2]{\ensuremath{#1 \; \# \; #2}}
+\newcommand{\listconcat}[1]{\ensuremath{\oplus #1}}
+\newcommand{\sizeof}[1]{\ensuremath{|\, #1\, |}}
+
+\newcommand{\mapupd}[3]{\listapp{#1}{(#2, #3)}}
+\newcommand{\mapupds}[2]{\listapp{#1}{#2}}
+\newcommand{\mapsubs}[2]{\listsub{#1}{#2}}
+
+\newcommand{\idxOf}[1]{\ensuremath{#1.i}}
+
+\newcommand{\propt}{\ensuremath{\mathbb{P}}}
+\newcommand{\hidt}{\ensuremath{\mathbb{I}}}
+\newcommand{\hvaluet}{\ensuremath{\mathbb{V}}}
+\newcommand{\hmsgt}{\ensuremath{\mathbb{M}}}
+\newcommand{\hostt}{\ensuremath{\mathbb{O}}}
+\newcommand{\hsyst}{\ensuremath{\mathbb{S}}}
+\newcommand{\hidmt}{\ensuremath{\hidt \ast \hmsgt}}
+\newcommand{\hprect}{\ensuremath{\mathcal{P}}}
+\newcommand{\htrst}{\ensuremath{\mathcal{T}}}
+
+\newcommand{\hsysIn}[1]{\ensuremath{\listof{#1_{\textrm{in}}}}}
+\newcommand{\hsysRq}[1]{\ensuremath{\listof{#1_{\textrm{rq}}}}}
+\newcommand{\hsysRs}[1]{\ensuremath{\listof{#1_{\textrm{rs}}}}}
+\newcommand{\hsys}[4]{\ensuremath{\tuple{#1, #2, #3, #4}}}
+\newcommand{\hsyss}[2]{\hsys{#1}{\hsysIn{#2}}{\hsysRq{#2}}{\hsysRs{#2}}}
+\newcommand{\hsysInA}[1]{\ensuremath{#1.\hsysIn{i}}}
+\newcommand{\hsysRqA}[1]{\ensuremath{#1.\hsysRq{i}}}
+\newcommand{\hsysRsA}[1]{\ensuremath{#1.\hsysRs{i}}}
+
+\newcommand{\hsysobjs}[1]{\ensuremath{#1.\listof{O}}}
+\newcommand{\hobjrules}[1]{\ensuremath{#1.\listof{r}}}
+
+\newcommand{\msgIns}[1]{\listof{#1^{\textrm{ins}}}}
+\newcommand{\msgOuts}[1]{\listof{#1^{\textrm{outs}}}}
+\newcommand{\midxIns}[1]{\listof{\idxOf{#1^{\textrm{ins}}}}}
+\newcommand{\midxOuts}[1]{\listof{\idxOf{#1^{\textrm{outs}}}}}
+
+\newcommand{\lblEmpty}{\ensuremath{l_\epsilon}}
+\newcommand{\lblIns}[1]{\ensuremath{l_{\textrm{in}}(#1)}}
+\newcommand{\lblOuts}[1]{\ensuremath{l_{\textrm{out}}(#1)}}
+\newcommand{\lblInt}[4]{\ensuremath{l_{\textrm{int}}(#1, #2, #3, #4)}}
+
+\newcommand{\hmpt}{\ensuremath{\mathcal{M}}}
+\newcommand{\hsttr}{\ensuremath{\listtof{\hostt} \ast \hmpt}}
+\newcommand{\hstt}{\ensuremath{\mathbb{S}}}
+\newcommand{\hst}[2]{\ensuremath{\tuple{#1, #2}}}
+\newcommand{\hstm}[2]{\ensuremath{\left\langle\begin{array}{l}#1,\\ #2 \end{array}\right\rangle}}
+\newcommand{\sysInit}[1]{\ensuremath{#1_{\textsf{init}}}}
+
+\newcommand{\disj}[2]{\ensuremath{#1 \; \# \; #2}}
+\newcommand{\nodup}[1]{\ensuremath{\textsf{nodup}\: #1}}
+
+\newcommand{\semstep}[4]{\ensuremath{#2 \xrightarrow[#1]{#3} #4}}
+\newcommand{\semsteps}[4]{\ensuremath{#2 \xRightarrow[#1]{#3} #4}}
+\newcommand{\semrch}[2]{\ensuremath{#1 \Rightarrow #2}}
+\newcommand{\semleg}[2]{\ensuremath{#1 \xRightarrow{#2} \bullet}}
+\newcommand{\sembeh}[2]{\ensuremath{#1 \Downarrow #2}}
+\newcommand{\behOf}[1]{\ensuremath{\llbracket #1 \rrbracket}}
+
+\newcommand{\refines}[2]{\ensuremath{#1 \sqsubseteq #2}}
+
+\newcommand{\enqMsgs}[2]{\mapupds{#1}{#2}}
+\newcommand{\deqMsgs}[2]{\mapsubs{#1}{#2}}
+
+%% Serializability
+
+\newcommand{\atomic}[3]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow} #3}}
+\newcommand{\atomicLong}[3]{\ensuremath{#1 \frac{\scriptstyle{#2}}{}\hspace{-5pt}\rightsquigarrow #3}}
+\newcommand{\extatomic}[4]{\ensuremath{#1 \vdash #2 \stackrel{#3}{\rightsquigarrow}_{\textsf{ext}} #4}}
+\newcommand{\extatomicLong}[4]{\ensuremath{#1 \vdash #2 \frac{\scriptstyle{#3}}{}\hspace{-5pt}\rightsquigarrow_{\textsf{ext}} #4}}
+\newcommand{\trsn}[2]{\ensuremath{#1 \sswarrow #2}}
+
+\newcommand{\extatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
+\newcommand{\intatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{int}}}}
+
+\newcommand{\amsgi}[1]{\ensuremath{#1^{\textrm{init}}}}
+\newcommand{\amsge}[1]{\ensuremath{#1^{\textrm{end}}}}
+
+\newcommand{\hseq}[2]{\ensuremath{#1 \parallel #2}}
+\newcommand{\hsrzl}[2]{\ensuremath{\mathit{Serializable}\ #1\ #2}}
+\newcommand{\hsrz}[1]{\ensuremath{\mathit{Serializable}\ #1}}
+
+\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{s} #2}}
+\newcommand{\hsseq}[3]{\ensuremath{#1 \parallel_{#3} #2}}
+
+%% -- End of Commands
+
+\maketitle
+
+\section{Introduction}
+\label{sec-intro}
+
+Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
+Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs~\cite{ccbug}.
+
+Research on model checking and theorem proving has produced sound techniques, though typically with significant limitations:
+either the verification is of a specific protocol, or state-space-explosion concerns limit applicability to quite small cache topologies~\cite{Komuravelli:2014,Murali:2015,Banks:2017,Oswald:2018}.
+In order to overcome the latter, recent approaches~\cite{Chen:2008,Chen:2010,McMillan:2016,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} utilized the notion of \emph{modularity} and successfully built verification tools that are scalable enough to verify hierarchical cache-coherence protocols.
+
+However, these modularity disciplines impose significant restrictions in protocol design, in order to obtain clear module boundaries among caches.
+A concrete limitation of modular design and verification comes when trying to verify cache-coherence protocols that are not \emph{inclusive}.
+Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive\footnote{Intel uses the term ``noninclusive cache'' to say that the cache is neither inclusive nor exclusive.} caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
+
+We would like to view the verification of hierarchical cache-coherence protocols from a different perspective.
+Viewing a cache-coherence protocol as a global distributed protocol, we look for commonalities across well-designed protocols.
+%% cross-cutting, global property that holds across all cache hierarchies.
+It is a good start to identify ``good-hygiene'' properties, but it is even better to formalize such properties in frameworks that guide the design of protocols.
+Then we can provide nonobvious and useful reasoning principles by-construction.
+
+Looking for another way to factor proofs, we can find a hint in terminology often employed by protocol designers and verification engineers.
+These protocols are distributed message-passing systems, so we can apply traditional software terminology like \emph{transaction} to them directly, and in fact we find similar intuitions employed in practice.
+In order to describe a case where the protocol deals with two different requests passing through the same cache, for instance, a designer often says ``this cache acts like a \emph{serialization point} so the two transactions can safely \emph{interleave} with each other.''
+While the notions of interleaving and serialization are already pervasive, we have found no past work trying to find a minimal set of conditions that ensure transactions are always serialized, formalizing them in a reusable framework.
+
+In this paper, we introduce the \hemiola{} framework, embedded in the Coq proof assistant, which dramatically decreases the burden of designing and formally proving hierarchical cache-coherence protocols.
+In particular, on top of the framework, hardware developers can design cache-coherence protocols without worrying about possible complex interleavings among different transactions, standing for different concurrent memory accesses.
+We establish once-and-for-all that any invariant of a protocol under serialized execution is also an invariant under the interleaved executions that are necessary for good performance.
+
+More specifically, \hemiola{} formalizes a set of message-passing distributed protocols with tree hierarchies and particular topologies of channels between nodes, with associated locks.
+These protocols are defined by associating each tree node with a set of local state-transition rules that may remove messages from incoming queues and add messages to outgoing queues.
+\hemiola{} exposes a domain-specific language of protocols, such that any expressible program is guaranteed to validate a \emph{serializability} property for single memory requests.
+Furthermore, our framework provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is confined to the framework, not proofs of individual protocols.
+
+To demonstrate usability of our framework, we provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
+We also demonstrate that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in \hemiola{}.
+
+\paragraph{Contributions.}
+To sum up, the contribution of this paper largely consists of two parts\footnote{All the code and proofs of the framework and the case studies are available in the supplementary material we provided for the paper submission.}:
+\begin{itemize}
+\item We discover a minimal set of topology and lock conditions that ensures \emph{serializability}, extracted from usual cache-coherence protocol designs. We then identify a domain-specific protocol language, where every protocol defined in this language ensures serializability by construction, backed up with mechanized Coq proof (\autoref{sec-hemiola-dsl}). Lastly, we formalize how serializability helps prove correctness (refinement), by using the novel notion of \emph{predicate messages} in distributed protocols.
+\item Using the protocol language, we provide the complete correctness proofs of hierarchical, noninclusive MSI and MESI cache-coherence protocols (\autoref{sec-case-study}). Ours are the first complete mechanized proofs for various hierarchical noninclusive cache-coherence protocols, and as a bonus they share a large segment of reusable proofs.
+%% \item We provide a toolchain to synthesize \hemiola{} protocols to run on FPGAs, and we run experiments using our case-study protocols, in order to demonstrate that they indeed run on hardware with reasonable performance.
+\end{itemize}
+
+%% \paragraph{Organization.}
+%% This paper is organized as follows: we first provide a simple yet motivating example to introduce the typical concerns in designing and proving cache-coherence protocols (\autoref{sec-example}).
+%% Then we formally introduce protocol transition systems as a semantic base (\autoref{sec-trs}) and the formal notion of serializability (\autoref{sec-sz-in-hemiola}) on top of them.
+%% We then introduce the \hemiola{} DSL designed to ensure serializability in cache-coherence protocols (\autoref{sec-hemiola-dsl}).
+%% As case studies, we prove MSI and MESI directory protocols (\autoref{sec-case-study}) and demonstrate their synthesis to hardware (\autoref{sec-synthesis}).
+%% We discuss applicability and compare to related work (\autoref{sec-discussion}) and conclude with future work (\autoref{sec-conclusion}).
+
+\section{A Motivating Example: MSI Directory Protocol with Two Caches}
+\label{sec-example}
+
+Before introducing our method for structural design and proof of cache-coherence protocols, we provide a simple yet motivating example to explain the typical challenges.
+For simplicity, in this section, we will consider only \emph{a single memory location} and design a protocol only for this location.
+We will see it is still nontrivial to design a correct protocol.
+
+\tikzset{
+  msi/.pic = {
+    \node at (0, 0) {$P(S, v, S_{\tuple{1, 2}})$};
+    \node at (-1.5, -1.5) {$C_1(S, v)$};
+    \node at (1.5, -1.5) {$C_2(S, v)$};
+    % between P and C_1
+    \draw [<-<] (-0.6, -0.3) -- (-1.5, -1.2);
+    \draw [<-<] (-0.4, -0.3) -- (-1.3, -1.2);
+    \draw [>->] (-0.2, -0.3) -- (-1.1, -1.2);
+    % between P and C_2
+    \draw [<-<] (0.6, -0.3) -- (1.5, -1.2);
+    \draw [<-<] (0.4, -0.3) -- (1.3, -1.2);
+    \draw [>->] (0.2, -0.3) -- (1.1, -1.2);
+    % C_1 external
+    \draw [<-<] (-1.6, -1.8) -- (-1.6, -2.3);
+    \draw [>->] (-1.4, -1.8) -- (-1.4, -2.3);
+    % C_2 external
+    \draw [<-<] (1.6, -1.8) -- (1.6, -2.3);
+    \draw [>->] (1.4, -1.8) -- (1.4, -2.3);
+  },
+  msipc1/.pic = {
+    \node at (0, 0) {$P(S, v, S_{\tuple{1, 2}})$};
+    \node at (0, -1.5) {$C_1(S, v)$};
+    % between P and C_1
+    \draw [<-<] (-0.2, -0.3) -- (-0.2, -1.2);
+    \draw [<-<] (0, -0.3) -- (0, -1.2);
+    \draw [>->] (0.2, -0.3) -- (0.2, -1.2);
+    % C_1 external
+    \draw [<-<] (-0.1, -1.8) -- (-0.1, -2.3);
+    \draw [>->] (0.1, -1.8) -- (0.1, -2.3);
+  },
+  msipc2/.pic = {
+    \node at (0, 0) {$P(S, v, S_{\tuple{1, 2}})$};
+    \node at (0, -1.5) {$C_2(I, \cdot)$};
+    % between P and C_1
+    \draw [<-<] (-0.4, -0.3) -- (-0.4, -1.2);
+    \draw [<-<] (-0.2, -0.3) -- (-0.2, -1.2);
+    \draw [>->] (0.4, -0.3) -- (0.4, -1.2);
+    % C_1 external
+    \draw [<-<] (-0.1, -1.8) -- (-0.1, -2.3);
+    \draw [>->] (0.1, -1.8) -- (0.1, -2.3);
+  },
+  msipc3/.pic = {
+    \node at (0, 0) {$P(I, \cdot, M_{\tuple{1}})$};
+    \node at (0, -1.5) {$C_1(S, v)$};
+    \node at (1.8, 0) {$C_2(I, \cdot)$};
+    % between P and C_1
+    \draw [<-<] (-0.2, -0.3) -- (-0.2, -1.2);
+    \draw [<-<] (0, -0.3) -- (0, -1.2);
+    \draw [>->] (0.2, -0.3) -- (0.2, -1.2);
+    % between P and C_2
+    \draw [<->] (0.9, 0) -- (1.2, 0);
+    % C_1 external
+    \draw [<-<] (-0.1, -1.8) -- (-0.1, -2.3);
+    \draw [>->] (0.1, -1.8) -- (0.1, -2.3);
+  },
+  spec/.pic = {
+    \node at (0, 0) {$\textrm{Spec}(v)$};
+    % C_1 external
+    \draw [<-<] (-0.4, -0.3) -- (-0.5, -0.8);
+    \draw [>->] (-0.2, -0.3) -- (-0.3, -0.8);
+    % C_2 external
+    \draw [<-<] (0.4, -0.3) -- (0.5, -0.8);
+    \draw [>->] (0.2, -0.3) -- (0.3, -0.8);
+  }
+}
+\begin{figure}[h]
+  \begin{tikzpicture}
+    \pic at (0, 0) {msi};
+    \node at (2.5, -1) {$\sqsubseteq$};
+    \pic at (3.7, -0.7) {spec};
+  \end{tikzpicture}
+  \caption{A simple MSI directory protocol}
+  \vspace{-5pt}
+  \label{fig-motive-1}
+\end{figure}
+
+The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
+In other words, if the system is coherent, then it should behave like an ordinary memory.
+\autoref{fig-motive-1} shows objects and channels for a simple directory-based MSI protocol.
+Since we deal with only a single memory location, the specification (RHS of $\sqsubseteq$) is a single-value ($v$) container with atomic read and write.
+
+Looking at the implementation (LHS of $\sqsubseteq$), there are three objects $P$, $C_1$, and $C_2$, and each of them has its own status (M, S, or I) and data ($v$).
+A status of an object represents a permission on its local replica.
+In this MSI protocol, an object can read/write the data with the M (``modified'') status, only read with S (``shared''), and cannot read/write with I (``invalid'').
+The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
+For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
+
+Objects communicate through ordered channels (shown as $\rightarrowtail$ in the figure).
+$C_1$ and $C_2$ have channels to receive and respond to external requests (from processor cores).
+There are three types of channels between a parent and a child: a single channel for parent-to-child messages and two channels for child-to-parent requests and responses, respectively.
+It is natural to wonder why two separate channels are required from a child to a parent; we will see the reason very soon.
+%% Note that channels are depicted in a logical way; the actual hardware implementation may use different hardware components (\eg{} finite-capacity FIFOs or buses) that can simulate ordered channels.
+
+\newcommand{\blackdiamond}{\raisebox{.4ex}{\ensuremath{\scriptscriptstyle\blacklozenge}}}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.48\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \pic at (0, 0) {msipc1};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-0.2, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-0.1, -2.05) {$\circ$};
+    \end{tikzpicture}
+    \caption{$C_1$ requesting to the parent}
+    \label{fig-motive-2-a}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.48\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \pic at (0, 0) {msipc2};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-0.4, -0.7) {$\blackdiamond$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rqI}}}] at (0.4, -0.7) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rsI}}}] at (-0.2, -0.7) {$\bullet$};
+    \end{tikzpicture}
+    \caption{$C_2$ responding to the parent}
+    \label{fig-motive-2-c}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.98\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \pic at (0, 0) {msi};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-1, -0.7) {$\circ$};
+      \node[label={[label distance=-8pt]210:{\small {\sf rqI}}}] at (0.6, -0.7) {$\bullet$};
+    \end{tikzpicture}
+    \caption{$P$ making an invalidation request}
+    \label{fig-motive-2-b}
+  \end{subfigure}
+  \caption{Rule-execution cases in the simple MSI protocol}
+  \vspace{-5pt}
+  \label{fig-motive-2}
+\end{figure}
+
+All objects run concurrently, repeatedly executing \emph{rules} that define local state transitions.
+In message-passing systems, a rule may take some messages from input channels, perform a state transition, and put messages in output channels.
+A rule may also have a precondition, blocking use of that rule when the precondition does not hold.
+\autoref{fig-motive-2} shows some example rule-execution cases depending on statuses of the objects.
+\autoref{fig-motive-2-a} is the case where a child $C_1$ takes an external request ($\textsf{rqM}\circ$) to write data, but it does not have M status and thus forwards the request to the parent ($\textsf{rqM}\bullet$).
+At this moment the child usually \emph{sets a lock} not to allow any further external requests for the value.
+The following pseudocode describes the rule:
+\begin{lstlisting}
+Rule c1RqMToP :=
+  assert !C1.locked();
+  assert (C1.status != M);
+  assert (C1.extRq.first == rqM);
+  C1.extRq.deq();
+  C1.rqToP.enq(rqM);
+  C1.lock();
+Endrule
+\end{lstlisting}
+The rule checks whether $C_1$ is not locked so it can handle $\textsf{rqM}\circ$, confirms it does not have a write permission, dequeues an external request from \slstinline{extRq}, sends a request to $P$ by using a channel \slstinline{rqToP}, and sets a lock.
+
+As a next rule-execution step, $\textsf{rqM}\circ$ (previously outputted from \autoref{fig-motive-2-a}) is handled by the parent $P$, as shown in \autoref{fig-motive-2-b}.
+It makes \emph{invalidation} requests ($\textsf{rqI}$) to the other children ($C_2$ is the only other child in this system) to change their statuses to I, since when a child has M the others should not be able to read/write the data.
+After making invalidation requests, the parent also sets a lock to disallow requests from the children.
+
+Now imagine a scenario where two children $C_1$ and $C_2$ requested $\textsf{rqM}$ to the parent (to obtain M) at the same time, and the parent decided to deal with the request from $C_1$ first.
+Proper locking is indeed required here, since otherwise the parent will handle two $\textsf{rqM}$s simultaneously, which might lead to an incoherent state -- two M statuses in the system.
+\autoref{fig-motive-2-c} presents this case, where an invalidation request was made to $C_2$ ($\textsf{rqI}\circ$) and even before this, $C_2$ requested $\textsf{rqM}\blackdiamond$ to the parent.
+In order to handle all the requests correctly, we should carefully consider some corner cases:
+\begin{itemize}
+\item Since $C_2$ requested $\textsf{rqM}\blackdiamond$, it is locked when the $\textsf{rqI}\circ$ message arrives. It should still be able to handle this invalidation request even if it is locked. We see that \emph{locking should be fine-grained enough to distinguish message kinds} while handling a request.
+\item Due to the existence of $\textsf{rqM}\blackdiamond$, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take $\textsf{rqM}\blackdiamond$ since it was locked after making an invalidation request. It cannot take $\textsf{rsI}\bullet$ as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
+\end{itemize}
+
+A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
+While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
+
+%% It is a typical challenge in proving correctness of a distributed protocol, asking ``if I am about to handle a certain message, is it fair to assume some properties of the global state?''
+
+If proper topology and locking are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
+That is exactly what we did with \hemiola{}, where, for instance, instead of the above pseudocode, rules are written more like the following one:
+\begin{lstlisting}
+Rule c1RqMToP :=
+  using template RqToP;
+  accepts rqM;
+  assert (me.status != M);
+  release rqM;
+Endrule
+\end{lstlisting}
+Note that this pseudocode does not mention specific channels or locking at all.
+Instead, it just says that the rule is for making a request to the parent (\slstinline{RqToP}), and it gives various associated assertions and actions, fitting slots associated with this kind of rule.
+
+\hemiola{} provides \emph{rule templates} that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
+
+We further discovered that if a system is defined by using these rule templates, global invariants can be proven without explicit consideration of interference by concurrently executing memory accesses.
+The key is the notion of \emph{serializability} coming originally from the database-transactions literature.
+Before explaining more about the relation between the rule templates and serializability (\autoref{sec-hemiola-dsl}), we introduce an appropriate class of semantic models for protocols (\autoref{sec-trs}) and a formal notion of serializability within it (\autoref{sec-sz-in-hemiola}).
+
+\section{Protocol Transition Systems}
+\label{sec-trs}
+
+\paragraph{Notations.}
+Throughout this paper, we will use several notations for lists (sequences) and finite maps.
+An overline (\eg{} $\listof{l}$) denotes a list.
+$\listnil{}$, $(\listcons{h}{\listof{t}})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
+$(\listdisj{\listof{l_1}}{\listof{l_2}})$ denote nil, cons, append, subtraction, and disjointness of lists, respectively.
+$\listconcat{\listof{l}}$ flattens the list of lists $\listof{l}$ with repeated concatenation.
+$\sizeof{\listof{l}}$ is the length of a list.
+Regarding a list of key-value pairs as a finite map, we override notations for lists.
+For example, $(\mapupds{M}{\listof{l}})$ updates multiple key-value pairs in a finite map $M$.
+Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single update for simplicity.
+
+\subsection{Syntax}
+\label{sec-syntax}
+
+\begin{figure}[t]
+  \centering\small
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{Index} & i \in \hidt{} \\
+        \textrm{Value} & v \in \hvaluet{} \\
+        \textrm{Message} & m ::= \tuple{i, v} \in \hmsgt{} \triangleq \hidt \ast \hvaluet \\
+        \textrm{Object state} & o \in \hostt{} \\
+        \textrm{Rule precondition} & p \in
+        \hprect \triangleq \hostt \to \listtof{\hidmt} \to \propt \\
+        \textrm{Rule transition} & t \in
+        \htrst \triangleq \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt} \\
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{Rule} & r ::= \tuple{i, p, t} \\
+        \textrm{Object} & O ::= \tuple{i, \listof{r}} \\
+        \textrm{System} & S ::= \hsyss{\listof{O}}{i} \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Protocol transition system}
+  \label{fig-trs-system}
+\end{figure}
+
+\hemiola{} uses formal protocol transition systems as an underlying basis for the domain-specific language.
+\autoref{fig-trs-system} explains what such systems are, in the style of automata theory.
+Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
+A struct (a rule, an object, etc.)  sometimes has an \emph{index} to distinguish it from the other components.
+We will use $\tuple{\cdot}$ to denote a struct and use a name to access a field value.
+In our implementation, an index is a list of natural numbers, for easy hierarchical addressing.
+A \emph{value} $v$ refers to a general set of values, principally those that can be stored at memory addresses.
+A \emph{message} $m$ consists of a message id (effectively from an enumeration of message kinds) and value.
+
+A system $S$ contains information about objects and channels.
+It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
+Each object (or channel) has its own unique index.
+The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
+It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system.
+An object $O$ contains its object index (unique within a system) and rules (\listof{r}) that make local state transitions within the object.
+
+A rule $r$ consists of its rule index (unique within an object), a precondition ($p$), and a transition function ($t$).
+A precondition takes two arguments, a current object state and a list of (channel index, message) pairs as input messages, and decides whether the rule can be executed or not.
+A transition function takes the same arguments but returns the next object state and a list of (channel index, message) pairs as output messages.
+The rule templates, which were briefly mentioned in \autoref{sec-example}, will be defined on top of this notion of rules, as detailed in \autoref{sec-hemiola-dsl}.
+
+\subsection{Semantics}
+\label{sec-semantics}
+
+\begin{figure*}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepIns:]{\listof{m} \neq \listnil
+          & \listof{\idxOf{m}} \subseteq \hsysRqA{S}
+          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblIns{\listof{m}}}
+          {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepOuts:]{\listof{m} \neq \listnil
+          & \listof{\idxOf{m}} \subseteq \hsysRsA{S}
+          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblOuts{\listof{m}}}
+          {\hst{\listof{o}}{\deqMsgs{M}{\listof{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
+          & O \in S.\listof{O}
+          & r \in O.\listof{r} \\
+          \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
+          & \nodup{\midxIns{m}} \\
+          \listof{o}\ \idxOf{O} = o_0
+          & r.p\ o_0\ \msgIns{m}
+          & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
+          \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
+          & \nodup{\midxOuts{m}}
+          & \disj{\midxIns{m}}{\midxOuts{m}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}}
+          {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_1}}{\enqMsgs{\deqMsgs{M}{\msgIns{m}}}{\msgOuts{m}}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{ccc}
+        \mbox{}\vspace{-5pt} \\ %% padding
+        \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}} &
+        \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
+          & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{l_1}{\listof{l}}}{s_2}} &
+        \inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}} \\
+        \mbox{}\vspace{-5pt} \\ %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Semantics of protocol transition systems}
+  \vspace{-10pt}
+  \label{fig-trs-semantics}
+\end{figure*}
+
+\paragraph{Steps.}
+\autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
+A state transition (step) happens by a rule that takes input messages and generates output messages.
+The semantics for a step is presented as a judgment $\semstep{S}{s_0}{l}{s_1}$, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $l$ is a label generated by the state transition.
+The state of a system (in domain $\hsyst{}$) is a pair, consisting of object states and message states.
+Object states are represented in finite maps from object indices to object states, and message states are represented in finite maps from channel indices to queues of messages.
+
+Rule [StepSilent] represents the case where no state transition happens in the current step; an empty label (\lblEmpty{}) is generated in this case.
+A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{m}) should not be empty, channels of the messages are valid, and none of them share the same channel ($\nodup{\listof{\idxOf{m}}}$); an external inputs label $(\lblIns{\listof{m}})$ is generated in this case.
+[StepOuts] describes the opposite case, for output messages being released to the external world.
+
+Lastly, [StepInt] deals with a state transition by a rule ($r$) in an object ($O$).
+It nondeterministically chooses an object and a rule in the object, checks that the precondition holds, and applies the transition to update the state of the system; an internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
+
+Note that the semantics is based on ordered channels, so messages are \emph{enqueued} and \emph{dequeued} in each state-transition case.
+We use notations $\enqMsgs{M}{\listof{m}}$ and $\deqMsgs{M}{\listof{m}}$ for such operations, and especially when messages are dequeued we implicitly assume that each element in $\listof{m}$ is at the front of its queue.
+It is also required that any state transition does not both dequeue and enqueue an element from the same queue; $\disj{\midxIns{m}}{\midxOuts{m}}$ in [StepInt] exactly describes this condition.
+
+The step semantics is naturally lifted to one for multiple steps, presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$, $s_0$, and $s_1$ are similar to ones in the step semantics, and $\listof{l}$ is a sequence of labels generated by executions of the steps.
+[StepsNil] serves the case where no state transitions happen at all.
+[StepsCons] is a natural inductive constructor that combines previous steps and a new one.
+Note that the latest label is added to the head, thus the last label in the sequence is the oldest one.
+(We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
+
+We will sometimes call a sequence of labels a \emph{history}.
+We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We use a simpler notation $\semrch{S}{s}$ for reachable states.
+We also apply the symmetrical notion that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We write $\semleg{S}{\listof{l}}$ to assert that a history is legal.
+
+\paragraph{Behaviors and correctness.}
+A system $S$ has a behavior $\behOf{\listof{l}}$ if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior]).
+Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
+We call such a sequence of labels a \emph{trace}.
+Finally we define a notion of correctness in \hemiola{}.
+
+\begin{definition}[Trace Refinement]
+  A system $I$ (``implementation'') is said to trace-refine another system $S$
+  (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is
+  also a trace of $S$:
+  \begin{displaymath}
+    \refines{I}{S} \triangleq \forall \listof{t}.\; \sembeh{I}{\listof{t}} \to \sembeh{S}{\listof{t}}.
+  \end{displaymath}
+\end{definition}
+
+\section{Serializability in Protocol Transition Systems}
+\label{sec-sz-in-hemiola}
+
+Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness that originated with databases and distributed systems.
+While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} atomically in some order with no interleaving.
+Our notion of protocol transition systems follows standard ideas of message-passing systems, thus it is natural to define and reason about serializability.
+In this section, we introduce the notion and present a general and structural way to prove it, by using commuting reductions.
+
+It is worth recalling that we build the framework to prove cache-coherence protocols more easily.
+In later sections we will explore which conditions in cache-coherence protocols ensure serializability and how a serializability guarantee eases correctness proofs.
+
+\subsection{From Atomic Histories to Serializability}
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \arraycolsep=-2pt
+      \begin{array}{c}
+        \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{m}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{m}}}{\listof{\amsge{m}}}}}{\listof{\amsge{m}}}} \\
+        \inference[AtomicCont:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}
+          & \msgIns{n} \neq \listnil
+          & \msgIns{n} \subseteq \listof{\amsge{m}}}{\atomicLong{\listof{m_0}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{(\listapp{\listsub{\listof{\amsge{m}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+        \mbox{}\vspace{-5pt} %% padding
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{cc}
+        \begin{array}{c}
+          \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\
+          \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
+          \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{m}}}}} \\
+          \mbox{}\vspace{-5pt} %% padding
+        \end{array} &
+        \begin{array}{l}
+          \textrm{\footnotesize TrsAtomic:} \\
+          \inference[]{\extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\trsn{S}{\listof{l}}}
+        \end{array} \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Atomic histories and transactions}
+  \vspace{-5pt}
+  \label{fig-hemiola-trs}
+\end{figure}
+
+\subsubsection{Atomic histories}
+In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, in \autoref{fig-hemiola-trs}.
+A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{m}}}{h}{\listof{\amsge{m}}})$ with \emph{starting messages} $\listof{\amsgi{m}}$ and \emph{live messages} $\listof{\amsge{m}}$.
+[AtomicStart] initializes a history with an internal label for its first step.
+[AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label should be from live messages of the previous atomic history.
+
+\begin{figure}[h]
+  \begin{tabular}{c}
+    \begin{tikzpicture}
+      \node at (0, 0) {$P$};
+      \node at (-1.5, -1.5) {$C_1$};
+      \node at (1.5, -1.5) {$C_2$};
+      % between P and C_1
+      \draw [<-<] (-0.6, -0.3) -- (-1.5, -1.2);
+      \draw [<-<] (-0.4, -0.3) -- (-1.3, -1.2);
+      \draw [>->] (-0.2, -0.3) -- (-1.1, -1.2);
+      \node at (-0.65, -0.15) {\tiny $3$};
+      \node at (-0.45, -0.15) {\tiny $4$};
+      \node at (-0.25, -0.15) {\tiny $5$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-1, -0.7) {$\bullet$};
+      % between P and C_2
+      \draw [>->] (0.6, -0.3) -- (1.5, -1.2);
+      \draw [<-<] (0.4, -0.3) -- (1.3, -1.2);
+      \draw [<-<] (0.2, -0.3) -- (1.1, -1.2);
+      \node at (0.65, -0.15) {\tiny $8$};
+      \node at (0.45, -0.15) {\tiny $7$};
+      \node at (0.25, -0.15) {\tiny $6$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rsI}}}] at (0.6, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rqI}}}] at (1, -0.7) {$\bullet$};
+      % C_1 external
+      \draw [<-<] (-1.6, -1.8) -- (-1.6, -2.3);
+      \draw [>->] (-1.4, -1.8) -- (-1.4, -2.3);
+      \node at (-1.6, -2.45) {\tiny $1$};
+      \node at (-1.4, -2.45) {\tiny $2$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rqM}}}] at (-1.6, -2.05) {$\bullet$};
+      % C_2 external
+      %% \draw [dotted] (1.6, -1.8) -- (1.6, -2.3);
+      %% \draw [dotted] (1.4, -1.8) -- (1.4, -2.3);
+      % Curves
+      \draw [->] (-2.4, -2.1) to[out=90,in=-135] node[left] {\small $r_1 \in \hobjrules{C_1}$} (-1.5, -0.3);
+      \draw [->] (-1.4, -0.2) to[out=45,in=135] node[above] {\small $r_2 \in \hobjrules{P}$} (1.6, -0.4);
+      \draw [->] (1.7, -0.5) to[out=-45,in=-60,distance=2cm] node[below] {\small $r_3 \in \hobjrules{C_2}$} (0, -0.8);
+
+    \end{tikzpicture}\\
+    \hline
+    \begin{math}
+      \small
+      \begin{array}{rl}
+        h \triangleq & [\lblInt{\idxOf{C_1}}{\idxOf{r_1}}{\listsingle{(1, \textsf{rqM})}}{\listsingle{(3, \textsf{rqM})}};\\
+        & \lblInt{\idxOf{P}}{\idxOf{r_2}}{\listsingle{(3, \textsf{rqM})}}{\listsingle{(8, \textsf{rqI})}};\\
+        & \lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, \textsf{rqI})}}{\listsingle{(6, \textsf{rsI})}}]\\
+      \end{array}
+    \end{math}
+  \end{tabular}
+  \caption{An example of an atomic history}
+  \vspace{-5pt}
+  \label{fig-ex-atomic-history}
+\end{figure}
+
+\autoref{fig-ex-atomic-history} presents an example of an atomic history.
+$h$ is generated by executions of three rules, $r_1 \in \hobjrules{C_1}$, $r_2 \in \hobjrules{P}$, and $r_3 \in \hobjrules{C_2}$.
+Rule $r_1$ takes an input message $\textsf{rqM}$ from the channel with index $1$, as a starting message of the history.
+Rule $r_2$ takes $\textsf{rqM}$ from channel $3$, which held the output message from $r_1$.
+Finally, $r_3$ takes $\textsf{rqI}$ from channel $8$, which is the output message from $r_2$.
+Summing up all the rule executions, by the definition of an atomic history we get the predicate $\atomic{\listsingle{(1,\textsf{rqM})}}{h}{\listsingle{(6,\textsf{rsI})}}$.
+This example shows that an atomic history intuitively captures a \emph{transaction flow} triggered by the starting messages.
+Note that an atomic history does not need to be a completed transaction.
+The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response to an external channel.
+
+We call a history \emph{externally atomic} (denoted as \extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}) if starting
+messages are external requests ($\listof{\amsgi{m}} \subseteq \hsysRqA{S}$).
+In other words, an externally atomic history records the way the system responded to some set of messages received from the outside world.
+
+\subsubsection{Transactions}
+Transactions are the next level of abstraction, defined by the final rules in \autoref{fig-hemiola-trs}.
+A transaction is either a single silent label ([TrsSilent]), a single external inputs label ([TrsIns]), a single external outputs label ([TrsOuts]), or an externally atomic history ([TrsAtomic]).
+In other words, the permitted atomic execution steps, in this transactional semantics, are arrival of new messages from the outside world, release of messages to the outside world, or uninterrupted execution of an atomic history.
+We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
+
+Note that an external-inputs label and an atomic history are regarded as separate transactions, thus the atomic history can start with inputs from multiple external-inputs labels.
+This relaxed design choice is due to our eventual goal, trace refinement.
+In order to prove trace refinement, we should preserve the \emph{order of external labels} while reasoning over histories.
+In particular, we do not want a serialized history having a different trace from the original history.
+A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
+
+\subsubsection{Sequential histories and serializability}
+With a clear notion of transactions, we can easily define sequential histories and serializability.
+
+\begin{definition}[Sequential Histories]
+  A history $h$ is \emph{sequential} iff the history is a concatenation of
+  transactions:
+  \begin{displaymath}
+    \hseq{S}{h} \triangleq \exists \listof{t}.\; (\forall t \in \listof{t}.\; \trsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
+  \end{displaymath}
+  \label{def-seq}
+\end{definition}
+
+\begin{definition}[Serializability]\mbox{}\\
+  \begin{enumerate}
+  \item A legal history $h$ is \emph{serializable} in the system $S$ iff there
+    exists a sequential history that reaches the same state:
+    \begin{displaymath}
+      \hsrzl{S}{h} \triangleq \forall s.\; \semsteps{S}{\sysInit{S}}{h}{s} \to \exists h_{\textrm{seq}}.\; \hseq{S}{h_{\textrm{seq}}} \wedge \semsteps{S}{\sysInit{S}}{h_{\textrm{seq}}}{s}.
+    \end{displaymath}
+  \item A system $S$ is \emph{serializable} iff every legal history is serializable:
+    \begin{displaymath}
+      \hsrz{S} \triangleq \forall h.\; \hsrzl{S}{h}.
+    \end{displaymath}
+  \end{enumerate}
+  \label{def-sz}
+\end{definition}
+
+Note that we are reasoning only about serializability of sequences of rule executions, taking for granted that rules can be executed atomically.
+Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serializability for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
+
+\subsection{The Payoff: Atomic Invariants}
+\label{sec-atomic-invariants}
+
+We have not yet discussed how to exploit our notion of serializability.
+How does it help prove trace refinement between an implementation and its spec?
+There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
+However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
+
+It is much easier to describe and prove invariants of a serializable system since 1) an invariant can be stated per-transaction, and 2) it does not need to take interleavings into account.
+The following notion of \emph{atomic invariants} reflects these two benefits:
+\begin{definition}[Atomic Invariants]
+  $(\mathcal{A}: \listtof{\hidmt{}} \to \hsyst{} \to \hsyst{} \to \listtof{\hidmt{}} \to \propt{})$ is called an \emph{atomic invariant} iff $(\mathcal{A}\ \listof{m_i}\; s_0\; s_1\; \listof{m_o})$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
+  \label{def-atomic-invariant}
+\end{definition}
+
+An atomic invariant takes starting messages, a prestate, a poststate, and live messages from an atomic history.
+Since it takes starting messages, we can specify which transaction we would like to deal with, via conditions on those messages.
+Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
+We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
+
+\subsection{Proving Serializability Using Reduction}
+
+We now introduce a general proof methodology that can prove serializability via commuting reductions~\cite{reduction}.
+Given a history where multiple transactions are interleaved, we can perform a finite number of reductions to get a sequential history that reaches the same state.
+Similar ideas have been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but no past work has adapted the technique for cache-coherence protocols, and we needed to design new conditions and prove that they ensure serializability.
+
+The core of the reduction technique is that we can \emph{commute two adjacent state transitions} when they satisfy certain conditions.
+Then we could intuitively claim that with a finite number of reductions we can make an interleaved history serialized.
+
+\tikzset{
+  ->-/.style={
+    decoration={
+      markings,
+      mark=at position #1 with {\arrow{>}}},
+    postaction={decorate}
+  }
+}
+\begin{figure}[h]
+  \begin{tikzpicture}
+    \node at (-1.2, 0) {$h_0 \triangleq$};
+    \draw[->-=0.5] (-0.7, 0) -- (-0.3, 0);
+    \draw[fill={rgb:black,1;white,5}] (0,0) circle [radius=0.3] node {$l_0$};
+    \draw[->-=0.5] (0.3, 0) -- (0.7, 0);
+    \draw (1,0) circle [radius=0.3] node {$l_1$};
+    \draw[->-=0.5] (1.3, 0) -- (1.7, 0);
+    \draw[fill={rgb:black,1;white,5}] (2,0) circle [radius=0.3] node {$l_2$};
+    \draw[->-=0.5] (2.3, 0) -- (2.7, 0);
+    \draw (3,0) circle [radius=0.3] node {$l_3$};
+    \draw[->-=0.5] (3.3, 0) -- (3.7, 0);
+    \draw[fill={rgb:black,1;white,5}] (4,0) circle [radius=0.3] node {$l_4$};
+    \draw[->-=0.5] (4.3, 0) -- (4.7, 0);
+    \draw[fill={rgb:black,1;white,5}] (5,0) circle [radius=0.3] node {$l_5$};
+    \draw[->-=0.5] (5.3, 0) -- (5.7, 0);
+
+    \node at (2.5, -0.6) {\small $\downarrow$ (after a reduction)};
+
+    \node at (-1.2, -1.2) {$h_1 \triangleq$};
+    \draw[->-=0.5] (-0.7, -1.2) -- (-0.3, -1.2);
+    \draw[fill={rgb:black,1;white,5}] (0,-1.2) circle [radius=0.3] node {$l_0$};
+    \draw[->-=0.5] (0.3, -1.2) -- (0.7, -1.2);
+    \draw[fill={rgb:black,1;white,5}] (1,-1.2) circle [radius=0.3] node {$l_2$};
+    \draw[->-=0.5] (1.3, -1.2) -- (1.7, -1.2);
+    \draw (2,-1.2) circle [radius=0.3] node {$l_1$};
+    \draw[->-=0.5] (2.3, -1.2) -- (2.7, -1.2);
+    \draw (3,-1.2) circle [radius=0.3] node {$l_3$};
+    \draw[->-=0.5] (3.3, -1.2) -- (3.7, -1.2);
+    \draw[fill={rgb:black,1;white,5}] (4,-1.2) circle [radius=0.3] node {$l_4$};
+    \draw[->-=0.5] (4.3, -1.2) -- (4.7, -1.2);
+    \draw[fill={rgb:black,1;white,5}] (5,-1.2) circle [radius=0.3] node {$l_5$};
+    \draw[->-=0.5] (5.3, -1.2) -- (5.7, -1.2);
+
+    \node at (2.5, -1.8) {\small $\downarrow^{\ast}$ (after some reductions)};
+
+    \node at (-1.2, -2.4) {$h_2 \triangleq$};
+    \draw[->-=0.5] (-0.7, -2.4) -- (-0.3, -2.4);
+    \draw[fill={rgb:black,1;white,5}] (0,-2.4) circle [radius=0.3] node {$l_0$};
+    \draw[->-=0.5] (0.3, -2.4) -- (0.7, -2.4);
+    \draw[fill={rgb:black,1;white,5}] (1,-2.4) circle [radius=0.3] node {$l_2$};
+    \draw[->-=0.5] (1.3, -2.4) -- (1.7, -2.4);
+    \draw[fill={rgb:black,1;white,5}] (2,-2.4) circle [radius=0.3] node {$l_4$};
+    \draw[->-=0.5] (2.3, -2.4) -- (2.7, -2.4);
+    \draw[fill={rgb:black,1;white,5}] (3,-2.4) circle [radius=0.3] node {$l_5$};
+    \draw[->-=0.5] (3.3, -2.4) -- (3.7, -2.4);
+    \draw (4,-2.4) circle [radius=0.3] node {$l_1$};
+    \draw[->-=0.5] (4.3, -2.4) -- (4.7, -2.4);
+    \draw (5,-2.4) circle [radius=0.3] node {$l_3$};
+    \draw[->-=0.5] (5.3, -2.4) -- (5.7, -2.4);
+  \end{tikzpicture}
+  \caption{Proving serializability using reduction}
+  \label{fig-reduction}
+\end{figure}
+
+\autoref{fig-reduction} elaborates more on this intuition: given an interleaved history ($h_0$ in the figure), we first try to find two atomic history fragments that belong to the same transaction ($l_0$ and $l_2$ in gray; the color indicates that they are in the same transaction).
+We \emph{merge} these fragments by performing reductions.
+After a number of iterations of merge (merging $[l_0; l_2]$ and $[l_4; l_5]$ in $h_1$), we eventually get a sequential history ($h_2$ in the figure).
+
+Even though \autoref{fig-reduction} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice,
+implying that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
+
+A possible deterministic choice -- which atomic fragments to merge -- is to try to find the \emph{first internally atomic history}.
+For example, in the history $h_1$ shown in \autoref{fig-reduction}, assuming $[l_0; l_2]$ is externally atomic, $[l_4; l_5]$ should be the first internally atomic history, and its starting messages would have been generated by $[l_0; l_2]$.
+\hemiola{} formalizes this intuition under the name \emph{mergeability}, providing a theorem that if any legal history is mergeable then the target system is serializable.
+See \autoref{sec-appx-proof-sz} for detailed formal definition of mergeability and the serializability proof.
+
+\section{The Hemiola Domain-Specific Language}
+\label{sec-hemiola-dsl}
+
+As introduced in \autoref{sec-example}, the main challenge when designing a cache-coherence protocol is to figure out correct topology, network, and locking mechanisms.
+It is also fair to say these aspects are orthogonal to the actual cache-coherence protocol descriptions, \ie{} we could design various protocols with the same network shape.
+
+At a more abstract level, we showed in the last section that serializability can be derived with a finite number of reductions.
+That being said, it can be quite tedious to prove such conditions per-protocol.
+Instead, we now develop a simple means to prove the conditions for useful families of networks and locking mechanisms.
+In fact, our new characterization will just require that the system is defined on a template provided by \hemiola{}.
+
+More particularly, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates} from the list of nine we have identified.
+The next three subsections explain these elements, and we show they apply to realistic protocols with case studies (\autoref{sec-case-study}) that also serve as additional motivating examples to explain our restrictions.
+
+\subsection{Topology and Network Requirements}
+
+In order to employ the serializability guarantee in \hemiola{}, the objects in a given system should form a tree topology.
+Most cache-coherent memory subsystems follow this topology, where leaf nodes correspond to L1 caches, and the root corresponds to the main memory.
+A child and its parent in the tree communicate using the three channels shown in \autoref{sec-example}, \eg{} whenever a child wants to send a request to the parent, it should use the upward-request channel.
+
+\hemiola{} as a Coq library generates the topology and network channels automatically from instances of a simple inductive type.
+For example, the following tree definition will generate topology and channels for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
+\begin{displaymath}
+  t : \textit{tree} \triangleq \small{\textsf{Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]]}}.
+\end{displaymath}
+
+\subsection{Locking Mechanism}
+\label{sec-locking-mechanism}
+
+We saw in \autoref{sec-example} how correctness requires a fine-grained locking mechanism for communication between a child and its parent.
+For example, revisiting the issue described in \autoref{fig-motive-2-b}, a child should be able to handle an invalidation request from the parent even if it is locked while waiting for a response to its own request.
+\hemiola{} supports a general locking mechanism that can deal with this situation.
+Instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more relaxed} locking, just by looking at whether the message is from the parent or one of its children.
+This relaxed locking mechanism is still sufficient to prove serializability.
+
+\tikzset{
+  uprightedge/.pic = {
+    \draw [>->] (0.2, 0.25) -- (0.5, 0.75);
+  },
+}
+\begin{figure}[h]
+  \begin{tikzpicture}
+    \node at (0, 0) {$C$};
+    \pic at (0, 0) {uprightedge};
+    \node[label={[label distance=-6pt]right:{\small {\sf rq1}}}] at (0.35, 0.5) {$\bullet$};
+    \node at (0.7, 1) {$P_1$};
+    \pic at (0.7, 1) {uprightedge};
+    \node[label={[label distance=-6pt]left:{\small {\sf rq2}}}] at (1.05, 1.5) {$\bullet$};
+    \node at (1.4, 2) {$P_2$};
+
+    \draw [>=stealth,double,->] (1.6, 1.75) -- (1.9, 1.25);
+    \node[label={[label distance=-6pt]right:{\small {\sf rqs}}}] at (1.75, 1.5) {$\bullet$};
+
+    \node[draw,align=left] at (2.9, 0.4) {$P_1$ sets an uplock\\ when sending $\textsf{rq2}$ to $P_2$};
+    \node[draw,align=left] at (4.8, 1.7) {$P_2$ sets a downlock\\ when sending $\textsf{rqs}$ to children};
+  \end{tikzpicture}
+  \caption{Locking mechanism in Hemiola}
+  \label{fig-locking}
+\end{figure}
+
+In particular, \hemiola{} provides two kinds of locks: \emph{uplocks and downlocks}.
+We say an object is uplocked (or downlocked) when it holds an uplock (or downlock), respectively.
+\autoref{fig-locking} depicts the locking mechanism in \hemiola{}.
+An uplock is set when an object makes an upward request to its parent ($P_1$ in the figure); it is released when the object gets a corresponding response from the parent.
+The object cannot make any further upward requests while uplocked, but \emph{it can handle requests from the parent}.
+On the contrary, a downlock is set when an object makes a downward request(s) to some of its children ($P_2$ in the figure); similarly it is released when the object gets corresponding response(s) from the child requestee(s).
+The object cannot make any further downward requests while downlocked.
+
+Semantically, each object has a holder for locks.
+A lock holder is a finite map from a lock type (uplock or downlock) to lock information: the original request message, the original requestor index, and requestee indices that are expected to get responses from.
+Note that an object can hold both an uplock and a downlock in some cases.
+In cache-coherence protocols, each lock corresponds to a miss status holding register (MSHR).
+An MSHR is set when a cache miss happens and the miss triggers further requests to obtain a proper status and up-to-date data.
+As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whether to handle certain requests and in storing information needed to handle them properly.
+
+\subsection{Rule Templates}
+\label{sec-rule-templates}
+
+\newcommand{\rtname}[1]{{\small\sf\bf #1}}
+
+\newcommand{\uled}{\ensuremath{\textsf{UL}}}
+\newcommand{\dled}{\ensuremath{\textsf{DL}}}
+\newcommand{\ulfree}{\ensuremath{\textsf{UL}_{\times}}}
+\newcommand{\dlfree}{\ensuremath{\textsf{DL}_{\times}}}
+
+\newcommand{\setul}{\ensuremath{\textsf{UL}\Uparrow}}
+\newcommand{\setdl}{\ensuremath{\textsf{DL}\Uparrow}}
+\newcommand{\relul}{\ensuremath{\textsf{UL}\Downarrow}}
+\newcommand{\reldl}{\ensuremath{\textsf{DL}\Downarrow}}
+\newcommand{\stsilent}{\ensuremath{\textsf{SLT}}}
+
+\newcommand{\ppo}[3]{\ensuremath{\{#1\}#2\lbrack#3\rbrack}}
+\newcommand*{\bfrac}[2]{\genfrac{}{}{0pt}{}{#1}{#2}}
+
+On top of the topology/network requirements and the locking mechanism, \hemiola{} provides rule templates to ensure that objects communicate within the topology and locks are properly set.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.1, 0.5) -- (-0.1, 0.8);
+      \draw [dotted] (0.1, 0.5) -- (0.1, 0.8);
+      \node at (0, 0.2) {$\ppo{\bfrac{\ulfree{}}{\dlfree{}}}{O}{\cdot}$};
+      \draw [<-<] (-0.1, -0.2) -- (-0.1, -0.8);
+      \draw [>->] (0.1, -0.2) -- (0.1, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.1, -0.5) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rs}}}] at (0.1, -0.5) {$\bullet$};
+      \node at (0, -0.5) {$(\qquad\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(a) immediate-down (\rtname{immd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [<-<] (-0.1, 0.1) -- (-0.1, 0.8);
+      \draw [>->] (0.1, 0.1) -- (0.1, 0.8);
+      \node at (0, -0.2) {$\ppo{\dlfree{}}{O}{\cdot}$};
+      \draw [dotted] (-0.1, -0.5) -- (-0.1, -0.8);
+      \draw [dotted] (0.1, -0.5) -- (0.1, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.1, 0.45) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf rs}}}] at (0.1, 0.45) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(b) immediate-up (\rtname{immu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [>->] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\ulfree{}}{O}{\bfrac{\setul{}}{\stsilent{}}}$};
+      \draw [<-<] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, -0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, 0.55) {$\bullet$};
+      \node at (-0.1, -0.55) {$(\qquad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(c) request-up-up (\rtname{rquu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \vspace{5pt}
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\bfrac{\uled{}}{\dlfree{}}}{O}{\relul{}}$};
+      \draw [>->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, -0.55) {$\bullet$};
+      \node at (-0.1, -0.55) {$(\qquad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(d) response-down-down (\rtname{rsdd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.2, 0.5) -- (-0.2, 0.8);
+      \draw [dotted] (0.2, 0.5) -- (0.2, 0.8);
+      \node at (0, 0.2) {$\ppo{\dlfree{}}{O}{\bfrac{\setdl{}}{\stsilent{}}}$};
+      \draw [<-<] (-0.2, -0.1) -- (-0.2, -0.8);
+      \draw [>=stealth,double,->] (0.2, -0.1) -- (0.2, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (-0.2, -0.45) {$\circ$};
+      \node[label={[label distance=-6pt]right:{\small {\sf {\bf rqs}}}}] at (0.2, -0.45) {$\bullet$};
+      \node at (-0.35, -0.45) {$(\enspace\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(e) request-up-down (\rtname{rqud})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [dotted] (-0.2, 0.5) -- (-0.2, 0.8);
+      \draw [dotted] (0.2, 0.5) -- (0.2, 0.8);
+      \node at (0, 0.2) {$\ppo{\dled{}}{O}{\reldl{}}$};
+      \draw [>->] (-0.2, -0.1) -- (-0.2, -0.8);
+      \draw [>=stealth,double,<-] (0.2, -0.1) -- (0.2, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (-0.2, -0.45) {$\bullet$};
+      \node[label={[label distance=-6pt]right:{\small {\sf {\bf rss}}}}] at (0.2, -0.45) {$\circ$};
+      \node at (-0.35, -0.45) {$(\enspace\quad)$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(f) response-up-down (\rtname{rsud})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \vspace{5pt}
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\dlfree{}}{O}{\bfrac{\setdl{}}{\stsilent{}}}$};
+      \draw [>=stealth,double,->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rq}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rqs}}}}] at (0, -0.55) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(g) request-down-down (\rtname{rqdd})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [>->] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\dled{}}{O}{\reldl{}}$};
+      \draw [>=stealth,double,<-] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\bullet$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rss}}}}] at (0, -0.55) {$\circ$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(h) response-up-up (\rtname{rsuu})}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \draw [<-<] (0, 0.3) -- (0, 0.8);
+      \node at (0, 0) {$\ppo{\bfrac{\uled{}}{\dlfree{}}}{O}{\bfrac{\relul{}}{\setdl{}}}$};
+      \draw [>=stealth,double,->] (0, -0.3) -- (0, -0.8);
+      \node[label={[label distance=-6pt]left:{\small {\sf rs}}}] at (0, 0.55) {$\circ$};
+      \node[label={[label distance=-6pt]left:{\small {\sf {\bf rqs}}}}] at (0, -0.55) {$\bullet$};
+    \end{tikzpicture}
+    \captionsetup{labelformat=empty}
+    \caption{(i) resp-down-req-down (\rtname{rsrq})}
+  \end{subfigure}
+  \caption{Rule templates in Hemiola}
+  \label{fig-rule-templates}
+\end{figure}
+
+\autoref{fig-rule-templates} presents the nine rule templates supported in \hemiola{}.
+Each diagram has the form $\ppo{P}{O}{Q}$ and arrows with $\circ$ and $\bullet$.
+It means that the rule template is for an object $O$, requires input messages ($\circ$) and a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
+
+$\uled$, $\dled$, $\ulfree$, and $\dlfree$ in a precondition indicate that the object is uplocked, downlocked, uplock-free, and downlock-free, respectively.
+$\setul$, $\setdl$, $\relul$, and $\reldl$ in a state transition indicate setting an uplock, setting a downlock, releasing an uplock, and releasing a downlock, respectively.
+$\stsilent{}$ annotates that the rule template forbids any state modification beside locking.
+Looking at the rules one-by-one:
+\begin{enumerate}[label=(\alph*)]
+\item \rtname{immd}: a rule responds immediately to an upward request. It can make a local state transition without any input/output messages as well (input/output messages marked with parentheses in \autoref{fig-rule-templates}).
+\item \rtname{immu}: a rule responds immediately to a downward request.
+\item \rtname{rquu}: a rule (possibly) takes an upward request and requests to its parent.
+\item \rtname{rsdd}: a rule takes a downward response and (possibly) responds to the original child requestor.
+\item \rtname{rqud}: a rule (possibly) takes an upward request and requests to some of its children.
+\item \rtname{rsud}: a rule takes upward responses and (possibly) responds to the original child requestor.
+\item \rtname{rqdd}: a rule takes a downward request and requests to some of its children.
+\item \rtname{rsuu}: a rule takes upward responses and responds to its parent.
+\item \rtname{rsrq}: a rule takes a downward response and requests to some of its children.
+\end{enumerate}
+
+The rule templates are carefully designed to perform any practical transactions \emph{safely} with serializable behavior.
+Considering an extreme case, in a cache-coherence protocol, if an L1 cache wants to obtain a write permission, all the other caches should be invalidated (changing each cache status to Invalid).
+In order to perform such a transaction, it must be able to traverse all the other caches.
+This transaction kind is one of the longest-running in cache-coherence protocols, and the rule templates are designed with proper locking ($\uled$ and $\dled$) and a state-change condition ($\stsilent$), not to create any incoherence while such a long transaction is interleaved with other transactions.
+
+Each rule in the templates sets/releases a lock properly, depending on which messages the rule takes and generates.
+While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we still see a number of interesting cases that are worth analyzing again in terms of correctness and liveness:
+\begin{itemize}
+\item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-hemiola-trs}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
+\item \rtname{\{immu, rqdd\}} show that an object can handle a request from the parent even when uplocked. These rules do not have a precondition that the object should be uplock-free. Note again that this relaxation is to avoid a deadlock.
+\item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure correctness (serializability).
+\item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
+\end{itemize}
+
+A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
+We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
+Looking at the rule template \rtname{rquu}, we see that the downlock-free ($\dlfree$) condition is \emph{not} required to make an upward request to the parent.
+This choice is safe since the upward request may introduce state changes outside the object until it takes a corresponding downward response (see \rtname{rsdd}, which checks downlock-freedom when taking the response).
+Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
+We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
+
+\subsection{Automated Proof of Serializability}
+
+\newcommand{\ontree}[2]{\ensuremath{\textit{OnTree}\ #1\ #2}}
+\newcommand{\goodrules}[2]{\ensuremath{\textit{GoodRules}\ #1\ #2}}
+
+Now we present the biggest contribution of the \hemiola{} framework, claiming that the use of good topology and the rule templates automatically guarantees serializability:
+\begin{theorem}[\hemiola{}'s serializability guarantee]
+  \begin{displaymath}
+    \forall S, t.\; \ontree{S}{t} \land \goodrules{S}{t} \to \hsrz{S},
+  \end{displaymath}
+  where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$ conforms to one of the rule templates.
+  \label{thm-sz-guarantee}
+\end{theorem}
+See \autoref{sec-appx-sz-guarantee} for the proof sketch of this theorem.
+The full mechanized proof is in the supplementary material.
+
+\section{Case Studies: Hierarchical MSI and MESI Protocols}
+\label{sec-case-study}
+
+In this section we specify, implement, and formally prove the correctness of hierarchical MSI and MESI protocols as case studies.
+They use directories to keep track of child statuses and use noninclusive caches that do not require the parent cache to contain all lines existing in children.
+We will see how \hemiola{} helps implement and prove these protocols, by taking full advantage of \autoref{thm-sz-guarantee}.
+
+\subsection{Design Principles}
+We start by summarizing the design principles we applied to both case studies.
+
+\subsubsection{Topology as a parameter}
+\label{sec-topo-param}
+Each design is parameterized by a tree $t$ that decides the topology of the memory subsystem.
+In other words, whenever we instantiate the tree parameter, we get a cache-coherence design and its correctness proof for free.
+(Contrast with much work on model-checking cache-coherence protocols, where a new analysis must be run for each tree shape.)
+
+There are three different kinds of caches in this topology-parameterized protocol.
+First of all, there are L1 caches (denoted as $L_1$) that correspond to leaf nodes in the tree.
+Symmetrically, each uses the same set of rules.
+The second kind is the last-level cache (LLC), which is the only one attached to the main memory, the root of the tree\footnote{It is possible to design multiple LLCs attached to the main memory in \hemiola{}, but our case studies follow standard practice in sticking to a single LLC.}.
+All the other caches between the L1 caches and the LLC are called intermediate caches (denoted as $L_i$), and they share a common set of rules as well.
+
+\subsubsection{Directory-based coherence}
+
+The protocol uses a well-known directory structure~\cite{Tang:1976} to ensure coherence.
+In our designs, each node with children has its own directory structure to track their statuses.
+The directory holds sound information about the status of each child \emph{subtree}.
+For example, for a certain cache line, if an L1 cache $L_1$ has M status for the line, then all the ancestors (including the main memory) of $L_1$ have the directory status M pointing to the child subtree that contains $L_1$.
+
+\subsubsection{Voluntary evictions}
+
+The protocol allows voluntary evictions, \ie{} there are rules in each cache that can be executed even without being triggered by input messages, to evict a cache line.
+This design itself is certainly not realistic, but it always has more behaviors than any design with specific eviction policies, thus in terms of correctness a refinement to a specific design is trivial.
+
+\subsubsection{Noninclusiveness}
+
+The protocol is noninclusive so the parent cache does not have to contain all the lines that children have, and back invalidations are not required to evict a line.
+In inclusive caches, in order to maintain the inclusion policy, it is required to invalidate each cache line of a child recursively before evicting the parent's line, which adds overhead.
+On the other hand, noninclusive caches do not need such a process, but it may take more time to read a clean line value, since the absence of a line in higher-level caches does not imply absence in lower-level caches, so we might have to search the lower-level caches.
+
+Measuring performance among various cache-inclusion policies is beyond the scope of this work.
+That said, we choose noninclusive caches as our case studies to demonstrate that \hemiola{} is general enough to design and prove various cache-coherence protocols, where specifically the noninclusive caches are the ones that most previous work had difficulty dealing with properly (see \autoref{sec-discussion} for more-detailed discussion).
+
+\subsubsection{Design and proof per-line}
+\label{sec-design-line}
+
+The protocol is defined just for a single cache line first, then naturally extended to all cache lines using a protocol compiler that will be introduced in \autoref{sec-synthesis}.
+This approach is reasonable in terms of correctness, since a transaction does not affect coherence for lines other than its own.
+Consider the ``duplicated'' protocol first, where each cache line, its status, a directory entry, communication channels, and a lock holder are all duplicated per-line.
+It is infeasible to extend the protocol literally in this way, since we cannot require physically distinct channels and lock holders for all cache lines.
+The protocol compiler restricts the resources (\eg{} channels, lock holders, etc.) to make the implementation hardware-synthesizable.
+Note that in this sense the duplicated protocol can be regarded as the most general multiline design, whose behaviors can cover all the behaviors of compiled implementations (see \autoref{sec-compiler} and \autoref{sec-multiline} for details).
+
+\subsection{The MSI Protocol}
+\label{sec-msi-protocol}
+
+\newcommand{\mesi}{\ensuremath{\textsf{MESI}}}
+\newcommand{\msi}{\ensuremath{\textsf{MSI}}}
+\newcommand{\stM}{\ensuremath{\textsf{M}}}
+\newcommand{\stE}{\ensuremath{\textsf{E}}}
+\newcommand{\stS}{\ensuremath{\textsf{S}}}
+\newcommand{\stI}{\ensuremath{\textsf{I}}}
+\newcommand{\dir}[2]{\ensuremath{#1_{\tuple{#2}}}}
+
+The MSI protocol is known as a base cache-coherence protocol that can be optimized to more sophisticated protocols like MESI, MOSI, etc.
+Even though it is a base protocol, there are a lot of nontrivial cases that require deep understanding of the protocol itself and the nature of distributed protocols, especially in hierarchical protocols.
+In this section we design a hierarchical, directory-based MSI protocol with design/verification tools supported by \hemiola{}.
+As explained in \autoref{sec-design-line}, the description and the correctness proof will be for a single cache line for now.
+
+\subsubsection{Protocol description}
+
+\paragraph{Object states.}
+An object state has the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$, consisting of a status, a value, a directory, and a Boolean called an \emph{ownership bit}.
+A status is either \stM{}, \stS{}, or \stI{}.
+A directory contains a status of its children called a \emph{directory status} and a list of child-object indices that logically have the directory status.
+We will denote the directory like $\dir{\stS{}}{1, 2}$, saying that the directory status is \stS{} and child subtrees with indices $1$ and $2$ may contain caches with \stS{} status.
+
+The ownership bit is to determine whether the object is responsible for writing the value back to the parent when invalidated.
+When an object has the \stM{} status, the ownership bit is always true.
+However, when the object has \stS{}, the ownership bit can be either true or false.
+Note that $L_1$ does not have a directory since it has no children.
+It also does not have an ownership bit, since it does not have a case where it has \stS{} status but is responsible for writing the value back.
+
+\tikzset{
+  pcc1/.pic = {
+    \node at (0, 0) {$P(\stI{}, \cdot, \dir{\stM{}}{1}, \bot)$};
+    \node at (-1.1, -1.1) {$C_1(\stM{}, v)$};
+    \node at (1.1, -1.1) {$C_2(\stI{}, \cdot)$};
+    % to the parent of P
+    \node at (0, 1) {$\vdots$};
+    \draw [>->] (-0.2, 0.3) -- (-0.2, 0.6);
+    \draw [>->] (0, 0.3) -- (0, 0.6);
+    \draw [<-<] (0.2, 0.3) -- (0.2, 0.6);
+    % between P and C_1
+    \draw [<-<] (-0.6, -0.3) -- (-1, -0.8);
+    \draw [<-<] (-0.4, -0.3) -- (-0.8, -0.8);
+    \draw [>->] (-0.2, -0.3) -- (-0.6, -0.8);
+    % between P and C_2
+    \draw [<-<] (0.6, -0.3) -- (1, -0.8);
+    \draw [<-<] (0.4, -0.3) -- (0.8, -0.8);
+    \draw [>->] (0.2, -0.3) -- (0.6, -0.8);
+    % message
+    \node[label={[label distance=-6pt]right:{\small {\sf rqS}}}] at (0.8, -0.55) {$\bullet$};
+  },
+  pcc2/.pic = {
+    \node at (0, 0) {$P(\stS{}, v, \dir{\stS{}}{1,2}, \top)$};
+    \node at (-1.1, -1.1) {$C_1(\stS{}, v)$};
+    \node at (1.1, -1.1) {$C_2(\stI{}, \cdot)$};
+    % to the parent of P
+    \node at (0, 1) {$\vdots$};
+    \draw [>->] (-0.2, 0.3) -- (-0.2, 0.6);
+    \draw [>->] (0, 0.3) -- (0, 0.6);
+    \draw [<-<] (0.2, 0.3) -- (0.2, 0.6);
+    % between P and C_1
+    \draw [<-<] (-0.6, -0.3) -- (-1, -0.8);
+    \draw [<-<] (-0.4, -0.3) -- (-0.8, -0.8);
+    \draw [>->] (-0.2, -0.3) -- (-0.6, -0.8);
+    % between P and C_2
+    \draw [<-<] (0.6, -0.3) -- (1, -0.8);
+    \draw [<-<] (0.4, -0.3) -- (0.8, -0.8);
+    \draw [>->] (0.2, -0.3) -- (0.6, -0.8);
+    % message
+    \node[label={[shift={(0.3,-0.2)}]left:{\small {\sf rsS}$(v)$}}] at (0.4, -0.55) {$\bullet$};
+  }
+}
+\begin{figure}[h]
+  \centering
+  \frame{
+    \begin{tikzpicture}
+      \pic at (-2.3, 0) {pcc1};
+      \node at (0, 0) {$\longrightarrow^{\ast}$};
+      \pic at (2.3, 0) {pcc2};
+    \end{tikzpicture}
+  }
+  \caption{An ownership bit set in a shared-state cache}
+  \label{fig-ownership-bit}
+\end{figure}
+
+\autoref{fig-ownership-bit} presents an example of a shared-state cache having its ownership bit set in a hierarchical memory subsystem.
+It could happen when an L1 cache $C_2$ wants to get \stS{} while another L1 cache $C_1$ has \stM{}.
+In this case, the value is pulled from $C_1$, and the parent $P$ gets the data as well, entering a shared state with ownership bit set.
+Here the bit says that the shared value might be dirty, so it should be written back.
+The ownership bit, by definition, also constrains which objects can have valid status.
+In the figure, all the other caches outside $P$, after pulling a value from $C_1$, are in the invalid status, since previously $C_1$ had the dirty value with \stM{}.
+
+\paragraph{Protocol description with rule templates.}
+
+We present a number of rule descriptions in the MSI protocol that employ the rule templates provided in \hemiola{}.
+Each rule template is defined in Coq, taking in several parameters and generating a rule.
+We exploited Coq's notation mechanism to have a compact definition for each rule template.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition l1GetSRqUpUp: Rule :=
+  rule.rquu
+  :accepts rqS
+  :from cidx
+  :me oidx
+  :requires (fun ost _ => ost#[status] = msiI)
+  :transition (fun ost msg => <| rqS; 0 |>).
+\end{lstlisting}
+  \caption{$L_1$ requesting \stS{} to the parent}
+  \label{fig-rule-l1-rqS}
+\end{figure}
+
+\autoref{fig-rule-l1-rqS} presents an actual rule definition, starting with an invocation of a particular rule template \slstinline{rule.rquu}, which takes a request from one of its children and sends a further request to the parent.
+An L1 cache does not have any children; in this case \slstinline{cidx} will be instantiated to an abstract node referring to the external interface (\ie{} processor core) for it.
+Each line starting with a colon (\slstinline{:}) provides more information about the rule.
+This rule \slstinline{accepts} a message with the ID \slstinline{rqS} \slstinline{from} the child with the index \slstinline{cidx}.
+Each rule template also requires to write down which object it belongs to (\slstinline{me}), the precondition (\slstinline{requires}), and the state-transition function (\slstinline{transition}).
+The output \slstinline{rqS} message that we generate carries no data value, so we pair it with a dummy zero value.
+
+Each rule template has different (Coq) types for a precondition and a state-transition function.
+In this example rule, the precondition takes the current object state and an input message from the child.
+It suffices to say that the current status is \stI{}, thus the object needs to request to the parent.
+Note that \slstinline{msiI}, \slstinline{msiS}, and \slstinline{msiM} are consecutive natural numbers, so we can use arithmetic operations inside the precondition.
+
+The transition function also takes the current object state and the input message, and it returns only the message to the parent.
+In this example the object forwards \slstinline{rqS} to the parent without any meaningful value.
+As explained in \autoref{sec-rule-templates}, when forwarding a request to the parent, no state transition should happen except locking.
+The rule template ensures this requirement by restricting the type of the transition function.
+Note that the rule does not mention locking at all.
+Each rule template automatically sets a proper lock; in this case an uplock is set right after sending a request to the parent.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liDownSRsUpDownM: Rule :=
+  rule.rsudo
+  :accepts downRsS
+  :holding rqS
+  :requires (fun _ _ _ => True)
+  :transition
+     (fun ost rsFrom rs rq rsbTo => (ost +#[status <- msiS]
+                                         +#[val <- rs.(msg_value)]
+                                         +#[dir <- setDirS [rsbTo; rsFrom]]
+                                         +#[owned <- true],
+                                     <| rsS; rs.(msg_value) |>)).
+\end{lstlisting}
+  \caption{$L_i$ responding to the child that requested \slstinline{rqS}}
+  \label{fig-rule-li-downRsS}
+\end{figure}
+
+\autoref{fig-rule-li-downRsS} presents another example rule that is fired at the last of the steps shown in \autoref{fig-ownership-bit}, which sends the response to the child who requested \slstinline{rqS}.
+Template \slstinline{rule.rsudo} says that the rule takes a single response and responds back to the original requestor.
+The rule takes the response message with the ID \slstinline{downRsS}.
+In order to execute this rule, it should \slstinline{hold} a downlock where the holder contains the original request message with the ID \slstinline{rqS}.
+While the rule does not require any additional precondition, it changes the object state, unlike rules that make requests.
+
+The transition function takes the current object state (\slstinline{ost}), the object index that sent a response (\slstinline{rsFrom}), the response message (\slstinline{rs}), the original request in a lock holder (\slstinline{rq}), and the index of the original requestor (\slstinline{rsbTo}).
+The transition returns a pair of the next state and an output message; this rule sets its status to \stS{}, stores the up-to-date value brought from the \slstinline{downRsS} message, sets the directory status to \stS{} by adding the two children -- one that was downgraded to \stS{} before and the other that originally requested \stS{} -- as sharers, and sets the ownership bit as true since the up-to-date value might be dirty in this case.
+It also sends a response (\slstinline{rsS}) to the requestor with the up-to-date value. Lastly, the rule automatically releases the downlock.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liDropImm: Rule :=
+  rule.imm
+  :requires (fun ost _ _ => ost#[status] <= msiS /\ ost#[owned] = false)
+  :transition (fun ost => ost +#[status <- msiNP]).
+\end{lstlisting}
+  \caption{$L_i$ immediately dropping a line}
+  \label{fig-rule-li-drop-imm}
+\end{figure}
+
+\autoref{fig-rule-li-drop-imm} is the last example, and it shows that the protocol is noninclusive.
+Template \slstinline{rule.imm} is for making an immediate state transition that neither takes any input messages nor generates any output messages.
+Its precondition just says that the line is possibly shared but needs not be written back (the ownership bit is false).
+In this case, we can \emph{silently} drop the line by setting the status to \slstinline{msiNP} (not present), to denote explicitly that the line is removed.
+Note that there is no precondition about the directory status at all; a line can be dropped even when the directory status is \stS{} or \stM{}, which is not allowed in inclusive caches.
+
+It is worth recalling that thanks to the rule templates, rule descriptions in the protocol never mention anything about how to set/release locks to deal with interleavings safely; they are rather designed as if only a single transaction is being processed when executing a rule.
+
+\subsubsection{Correctness proof}
+\label{sec-msi-proof}
+
+Now we present the correctness proof of the MSI protocol, claiming that the implementation refines to a single-line memory as a spec.
+Most of the time, a refinement proof requires two steps: 1) to prove \emph{invariants} of the implementation that help relating it to the spec and 2) to define and prove a \emph{simulation} relation between an implementation and the spec that directly implies a refinement.
+In this section, we provide necessary invariants to prove the correctness of the MSI protocol, and we demonstrate how \hemiola{} helps
+proving such invariants.
+
+\paragraph{Logical status of an object.}
+The MSI protocol largely has three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}.
+For instance, we want to claim that whenever a cache has \stM{} status, all the other objects have \stI{} status.
+Unfortunately, this invariant is not true, since there might be another cache that has not handled an invalidation response yet, thus retaining a valid status.
+
+In order to deal with this subtlety, we introduce a notion called \emph{logical status} to obtain an abstract status of each object.
+In the above example, even if the cache has not handled the invalidation response yet, the logical status is \stI{}.
+Logical statuses are defined formally as follows:
+\begin{itemize}
+\item An object has logical status \stM{} if the object has \stM{} and there is no invalidation response to the object.
+\item It has logical status \stS{} if either 1) the object has \stS{} and there is no invalidation response to the object or 2) there is a response \slstinline{rsS} to the object.
+\item It has logical status \stI{} if either 1) the object has \stI{} and there is no \slstinline{rsM} or \slstinline{rsS} to the object or 2) there is an invalidation response \slstinline{rsI} to the object.
+\end{itemize}
+Note that the logical status of an object is \emph{not} \stM{} when there is a response \slstinline{rsM} to the object, since the response could imply an ongoing invalidation process.
+
+\paragraph{Invariants.}
+Using the logical status of each object, we can state the invariant for each status:
+\begin{itemize}
+\item The \emph{exclusiveness} invariant claims an expected property regarding \stM{} status. It says that whenever a cache (or the main memory) has logical status \stM{}, then all the other caches are in logical \stI{} status.
+\item The \emph{sharing} invariant claims that all objects in logical \stS{} status have the same value.
+\item The \emph{invalidness} invariant claims that a certain set of objects are all in logical \stI{} status. Such a set may refer to the objects inside (or outside) a subtree of the system, determined by looking at the directory status or the ownership bit. For example, if an object $O$ has an ownership bit true, then all the objects outside $O$ have logical \stI{} status.
+\end{itemize}
+
+The sharing invariant is the easiest one to prove, since the rules involved with sharing the coherent value employ just simple value forwarding.
+For example, the rule in \autoref{fig-rule-li-downRsS} just takes a message \slstinline{downRsS} that contains the coherent value and stores/sends the value.
+Proving the preservation of the invariant for this rule should be very trivial.
+
+\paragraph{Invariant proofs using predicate messages.}
+
+\newcommand{\subtree}[1]{\ensuremath{\textrm{tr}(#1)}}
+\newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}(#1)}}
+\newcommand{\objsinv}[1]{\ensuremath{\textsf{Invalid}(#1)}}
+
+While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness invariant and the invalidness invariant.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node at (0, 0) {$O$};
+    \node at (-0.6, 1) {$P$};
+    \draw [>->] (-0.5, 0.8) -- (-0.1, 0.2);
+    \node[label={[label distance=-6pt]right:{\small $\textsf{rsM}\{\objsinv{\subtreec{O}}\}$}}] at (-0.3, 0.5) {$\bullet$};
+    %% tr(O)
+    \draw [thick,loosely dotted] (-0.2, -0.3) -- (-0.4, -0.6);
+    \draw [thick,loosely dotted] (0, -0.3) -- (0, -0.7);
+    \draw [thick,loosely dotted] (0.2, -0.3) -- (0.4, -0.6);
+    %% tr-1(P)
+    \draw [thick,loosely dotted] (-0.8, 0.7) -- (-1, 0.3);
+    \draw [thick,loosely dotted] (-0.6, 0.7) -- (-0.6, 0.3);
+    \draw [thick,loosely dotted] (-0.8, 1.2) -- (-1, 1.5);
+  \end{tikzpicture}
+  \caption{Predicate messages over \slstinline{rsM}}
+  \label{fig-predicate-msg}
+\end{figure}
+
+The common underlying difficulty comes from stating invariants for certain types of messages.
+For instance, \autoref{fig-predicate-msg} depicts what the desired invariant is when a message with the ID \slstinline{rsM} exists in the system.
+Defining $\subtree{O}$ ($\subtreec{O}$) as a set of objects inside (outside) the subtree rooted at $O$, the desired invariant is that each object in $\subtreec{O}$ is in logically invalid state, denoted as $\objsinv{\subtreec{O}}$.
+This invariant is indeed required at the moment when an L1 cache takes \slstinline{rsM} and changes its status to \stM{}.
+
+We call this invariant over a specific message a \emph{predicate message}, since it is like a message carrying a predicate over the target system.
+How could we prove the correctness of predicate messages?
+A naive but typical approach is to strengthen the invariant repeatedly by manually considering possible states.
+In the case of \slstinline{rsM}:
+\begin{itemize}
+\item We should strengthen the invariant by claiming that each object in $\subtreec{O}$ cannot take \slstinline{rsS} as well; if there is an object that can take it, then its state becomes \stS{}, which violates the invariant.
+\item Following the above case, we also should claim that an object in $\subtreec{O}$ cannot take \slstinline{downRsS}, otherwise it may take the message and release \slstinline{rsS}, which violates the invariant.
+\item $\cdots$ we should repeat this process until the invariant is provable by induction, which checks each state transition by a rule.
+\end{itemize}
+Such a process represents a typical burden in stating and proving an invariant, especially in distributed systems.
+
+Thanks to \hemiola{}'s serializability support, we need not strengthen the invariant at all.
+Instead, we can employ \emph{atomic invariants} defined in \autoref{def-atomic-invariant}, restricting the proof to the predicates for live messages in a current atomic history.
+
+Revisiting the case of \slstinline{rsM}, in the middle of an atomic history, \slstinline{rsM} is the only live message.
+Now if we state the atomic invariant that provides a predicate for each live message, we do not need to worry about whether the predicates for the other live messages still hold when making a state transition with \slstinline{rsM}.
+
+\paragraph{Refinement proof.}
+
+%% We just need minimum spacing to detach `Coh` and `Spec` from the left parenthesis `(`
+\newcommand{\implcoh}[3]{\ensuremath{\textit{Coh}\,(#1, #2, #3)}}
+\newcommand{\speccoh}[1]{\ensuremath{\textit{Spec}\,(v)}}
+
+Once equipped with sufficient invariants, it is straightforward to prove the refinement between the implementation and the spec.
+The only work is to define a correct simulation that relates all the coherent values in the implementation and the single value in the spec.
+The coherent values are collected by looking at the logical status of each object; if the logical status is \stS{} or \stM{} then values either in the object or in some messages (\eg{} \slstinline{rsS}) are coherent.
+
+Denoting by $\implcoh{s}{o}{v}$ that an object state in a system state $s$ contains a coherent value $v$, the simulation can be stated as follows:
+\begin{theorem}[Correctness of the MSI protocol]
+  The following simulation relation holds between the implementation system state $s^I$ and the spec system state $s^S$.
+  \begin{displaymath}
+    s^I \sim s^S \triangleq \exists v.\; \forall o.\; \implcoh{s^I}{o}{v} \wedge s^S = \speccoh{v}.
+  \end{displaymath}
+  where $\speccoh{v}$ represents a single-value state for the spec.
+  \label{thm-msi-correct}
+\end{theorem}
+
+\subsection{The MESI Protocol}
+\label{sec-mesi-protocol}
+
+The MESI protocol~\cite{Papamarcos:1984} applies further optimizations to the MSI protocol, by adding a status called Exclusive-Unmodified.
+As the name of the status says, if a cache line has \stE{} status, then the line is exclusive to the cache but also clean.
+In this section we present a hierarchical MESI protocol and demonstrate that the design and the correctness proof are easily extended from the ones for the MSI protocol with the support of \hemiola{}.
+
+\subsubsection{Protocol description}
+
+\paragraph{Object states.}
+Object state in the MESI protocol is the same as in the MSI protocol, taking the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$.
+The only difference is that the status may be \stE{}.
+
+\paragraph{New rules added beyond the MSI protocol.}
+There are several rules added in order to deal with the \stE{} status.
+Like the previous rule examples, proper preconditions and transitions are automatically set in terms of locking.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition l1GetMImmE: Rule :=
+  rule.immd
+  :accepts rqM
+  :from cidx
+  :requires (fun ost _ _ => ost#[status] = mesiE)
+  :transition
+     (fun ost msg => (ost +#[status <- mesiM]
+                          +#[val <- msg.(msg_value)],
+                      <| rsM; 0 |>)).
+\end{lstlisting}
+  \caption{$L_1$ silently upgraded to \stM{}}
+  \label{fig-rule-l1-silent-upgrade}
+\end{figure}
+
+\autoref{fig-rule-l1-silent-upgrade} shows a basic case, where an L1 cache is silently upgraded from \stE{} to \stM{} to write data.
+Template \slstinline{rule.immd} says that it takes a request from the external world (similar to \autoref{fig-rule-l1-rqS}) and immediately sends an external response.
+As defined in the state \slstinline{transition} function, the cache silently changes its status to \stM{}, stores the new value from the input message, and responds with \slstinline{rsM}.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liGetSImmME: Rule :=
+  rule.immd
+  :accepts rqS
+  :from cidx
+  :requires (fun ost _ _ => mesiE <= ost#[status] /\
+                            ost#[dir].(dir_st) = mesiI)
+  :transition (fun ost _ => (ost +#[status <- mesiI]
+                                 +#[dir <- setDirE cidx],
+                             <| rsE; ost#[val] |>)).
+\end{lstlisting}
+  \caption{$L_i$ responding with \slstinline{rsE}}
+  \label{fig-rule-li-rsE}
+\end{figure}
+
+Another case, shown in \autoref{fig-rule-li-rsE}, happens when an intermediate cache gets a request from a child to read the data, while it has status \stE{} or \stM{}.
+In this case, instead of responding with \slstinline{rsS}, the cache sends \slstinline{rsE} to provide \stE{}.
+Once the original requestor obtains \stE{} status, it can both read and write the data.
+
+\subsubsection{Correctness proof}
+\label{sec-mesi-proof}
+
+\paragraph{Logical status and new invariants for \stE{}.}
+We extend the notion of logical status from the MSI protocol, declaring that an object in MESI is \stE{} if either 1) the object has \stE{} and there is no invalidation response to the object or 2) there is a response \slstinline{rsE} to the object.
+We should extend the invariants as well to cover objects with \stE{} status.
+\begin{itemize}
+\item The exclusiveness invariant also applies to \stE{}; whenever a cache has logical status \stE{}, all the other objects are in \stI{}.
+\item The sharing and invalidness invariants remain the same.
+\item A new invariant for \stE{} claims that if an object takes an invalidation request without writeback from a child, and the directory status pointing to the child is \stE{}, then the object has a coherent value.
+\end{itemize}
+
+\paragraph{Invariant and refinement proof.}
+Unlike the exclusiveness and the invalidness invariants, the invariant for \stE{} does not involve a large chunk of objects; it is rather an invariant that just relates a child and the parent state.
+Therefore, we did not employ predicate messages in this invariant proof, instead using a normal induction on state-transition steps.
+
+The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover objects with \stE{} status and messages with ID \slstinline{rsE}.
+
+\section{Compilation and Synthesis to Hardware}
+\label{sec-synthesis}
+
+As mentioned in \autoref{sec-design-line}, so far we have dealt with cache-coherence protocols for a single line, where the specification has a single line as well.
+In order to build a hardware-synthesizable multiline implementation, we developed a simple compiler that takes a single-line \hemiola{} protocol as a source program and generates a multiline implementation described in Kami~\cite{kami}.
+Kami is a hardware formal-verification framework, where its own HDL and proof tools are defined in Coq, allowing users to design, specify, verify, and synthesize their hardware components.
+
+The protocol transition system and the rule templates given in the \hemiola{} DSL match well rule-based HDLs like Kami; a rule in \hemiola{} naturally maps to an equivalent rule in Kami, which describes atomic state transitions in hardware modules.
+Instead of directly compiling \hemiola{} protocols to a register-transfer language (RTL), we chose to build a compiler from \hemiola{} to Kami as a first step toward using the protocols and their correctness proofs within larger Kami proofs including processors -- though our experiments here do not include those composition proofs.
+Since Kami already has a hardware-synthesis toolchain, we can just compile a \hemiola{} program to Kami and use the toolchain to run it on FPGAs.
+
+In this section, we will explore how a single-line \hemiola{} protocol is compiled to a multiline cache-coherence protocol implementation in Kami and demonstrate its synthesis to hardware (FPGA).
+We will further discuss the desired specification of the multiline implementations, which is naturally derived from the source \hemiola{} protocol.
+
+\subsection{Compilation of a \hemiola{} Protocol}
+\label{sec-compiler}
+
+\begin{figure}
+  \centering
+  \tikzstyle{arg} = [inner sep=1pt]
+  \tikzstyle{component} = [rectangle, draw=black, inner sep=5pt, outer sep=2pt]
+  \tikzstyle{libcomp} = [rectangle, draw=black, inner sep=3pt, outer sep=1pt, minimum width=2cm]
+  \tikzstyle{arrow}=[-{stealth}]
+  \tikzstyle{dataflow}=[-{latex}]
+  \begin{tikzpicture}
+    \node[arg] (hemiolaSource) at (0, 1.2) {\small\sf{(Single-line) \hemiola{} protocol}};
+    \node[component] (compiler) at (0, 0) {\small\sf{Protocol Compiler}};
+    \node[arg, fill=white] (kamiTarget) at (0, -1.2) {\small\sf{(Multiline) Kami implementation}};
+    \node[anchor=east, arg] (extComp) at (-2, 0.4) {\scriptsize\sf{Custom data structure reifier/compiler}};
+    \node[anchor=east, arg] (infoEnc) at (-2, 0) {\scriptsize\sf{Tag/Information encoder/decoder}};
+    \node[anchor=east, arg] (cacheConfig) at (-2, -0.4) {\scriptsize\sf{Cache/MSHR configuration}};
+
+    \node[anchor=west,
+      rectangle, draw=black,
+      minimum width=2.2cm,
+      minimum height=1.5cm] (lib) at (2.5, 0) {};
+    \node[above right] at (lib.north west) {\scriptsize\sf{Prebuilt Kami library}};
+    \node[anchor=west, libcomp] (bitvector) at (2.6, 0.5) {\scriptsize\tt{Bitvector}};
+    \node[anchor=west, libcomp] (cache) at (2.6, 0) {\scriptsize\tt{Cache}};
+    \node[anchor=west, libcomp] (mshrs) at (2.6, -0.5) {\scriptsize\tt{MSHRs}};
+
+    \draw [dataflow] (hemiolaSource) to
+    node[left, inner sep=1pt] (reifyArrow) {}
+    node[right] {\scriptsize\sf\it{after reification}} (compiler);
+    \draw [dataflow] (compiler) to (kamiTarget);
+    \draw [arrow] (extComp) to[out=0,in=180] (reifyArrow);
+    \draw [arrow] (extComp) to[out=0,in=180] (compiler);
+    \draw [arrow] (infoEnc) to (compiler);
+    \draw [arrow] (cacheConfig) to[out=0,in=180] (compiler);
+    \draw [arrow] (lib) to[out=180,in=0] (compiler);
+
+    \node[anchor=west, arg] (bsvTarget) at (0.5, -1.7) {\small\sf{Bluespec implementation}};
+    \node[anchor=west, arg] (fpga) at (2.7, -2.2) {\small\sf{Circuit on FPGA}};
+
+    \draw [dataflow] (kamiTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
+    \draw [dataflow] (bsvTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Bluespec synthesis}} (fpga);
+
+    \begin{pgfonlayer}{bg}
+      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1) {\scriptsize\sf\it{compilation}};
+      \draw[dashed] (-6.5, -1.2) -- (5.5, -1.2);
+      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1.4) {\scriptsize\sf\it{synthesis}};
+    \end{pgfonlayer}
+  \end{tikzpicture}
+  \caption{Compilation and Synthesis of \hemiola{} protocols}
+  \label{fig-compiler}
+\end{figure}
+
+\autoref{fig-compiler} depicts a compilation/synthesis flow from a given \hemiola{} protocol to an FPGA-ready circuit.
+A source program of the protocol compiler is a single-line protocol described in \hemiola{} with the rule templates.
+
+\paragraph{Preprocessing: reification}
+
+Before feeding a \hemiola{} source program to the compiler, a preprocessing step is required, which is to reify the program into an AST we can hand off to the compiler.
+\hemiola{} supports automated, correct-by-construction reification driven by a series of tactics in Coq.
+For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \hemiola{} rule to the corresponding rule AST, where \slstinline{HRule} is a Coq \slstinline{Record} containing the AST and its correctness, \ie{} denotation of the AST matches the denotation of the original rule:
+\begin{lstlisting}[numbers=none, frame=none, xleftmargin=10pt]
+Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
+\end{lstlisting}
+
+\paragraph{Compiling asynchronous line accesses}
+
+One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
+In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
+
+In order to implement asynchronous line accesses, the protocol compiler transforms a \hemiola{} rule into multiple Kami rules, each of which takes part of the source-rule execution.
+For example, a \hemiola{} rule \slstinline{l1GetMImmE} (described in \autoref{fig-rule-l1-silent-upgrade}) 1) accepts an input message, 2) reads a MESI status and checks the precondition (\slstinline{ost#[status] = mesiE}), 3) writes the new status (\slstinline{+#[status <- mesiM]}) and value (\slstinline{+#[val <- msg.(msg_value)]}), and 4) releases a new message.
+In this case, the compiler emits multiple rules, where one of them just accepts a message and makes a read request to get the MESI status, another rule takes a read response and checks the precondition, and so on.
+In order to make the execution of these rules correct, the compiler sets local flags (locks) in the target object to make partial executions in-order.
+
+Currently, such asynchronous line accesses are not optimized enough; for example, we may want to have more sophisticated flags to make the partial executions \emph{pipelined}, so that a status read and a value write for different addresses are executed in parallel.
+This optimization is nontrivial but ubiquitous in real cache controllers.
+See \autoref{sec-synthesis-protocol} for more detailed discussion.
+
+\paragraph{Prebuilt hardware components}
+The compiler uses prebuilt hardware components described in Kami.
+One of them is a cache, whose interface includes making read/write requests and getting the responses.
+The cache normally uses a BRAM (block RAM), which is defined as a primitive in Kami.
+The Kami BRAM is later synthesized to a BRAM on an FPGA.
+The cache module also manages \emph{victim lines} that should be evicted eventually.
+Optimization opportunities remain in the cache itself, especially for noninclusive caches.
+To improve space efficiency, various techniques have been used in industry~\cite{Zhao:2010,Yan:2019}; the cache used in the compiler is currently implemented without such nontrivial optimizations.
+
+Another prebuilt component holds a finite number of MSHRs, whose abstract interface includes registering, updating, and releasing MSHRs with respect to their types (uplock or downlock) and locking addresses.
+Recall that ideally (as a spec) MSHRs are assigned per-line, but the actual design can contain only a finite number of them.
+The compiler takes several counts as configuration parameters to determine the sizes of caches (\eg{} \#lines, \#ways) and MSHRs (\eg{} \#uplocks, \#downlocks).
+
+\paragraph{Compiling custom data structures}
+Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for it.
+This task is straightforward for the user, since both reification and compilation work at the level of expressions, not rules.
+For instance, a field access \slstinline{dir.(dir_sharers)} for a Coq record \slstinline{dir} is reified to an expression AST node \slstinline{(HDirGetSh hdir)}, where \slstinline{hdir} is the reified directory structure, and compiled to \slstinline{cdir@."dir_sharers"} in Kami, which uses a field-access expression.
+
+\subsection{Synthesis of a \hemiola{} Protocol}
+\label{sec-synthesis-protocol}
+
+\newcommand{\bhemh}{{\sf Hem\textsubscript{3}}}
+\newcommand{\bhemt}{{\sf Hem\textsubscript{2}}}
+\newcommand{\briscy}{{\sf Riscy}}
+
+Once we have obtained a multiline cache-coherence protocol implementation from the compiler, as shown in \autoref{fig-compiler}, we can make use of Kami's synthesis toolchain to synthesize the implementation to load on an FPGA.
+To demonstrate protocols designed in \hemiola{} are indeed hardware-synthesizable, we synthesized two \hemiola{} protocols, \bhemt{} and \bhemh{}, instantiated from our hierarchical noninclusive MESI protocol described in \autoref{sec-mesi-protocol}.
+\bhemh{} implements a 3-level hierarchical noninclusive cache-coherence protocol, consisting of four 32KB 4-way set-associative L1 caches, two 128KB 8-way L2 caches (two L1 caches attached to each L2 cache), and a 512KB 16-way last-level (LL) cache.
+\bhemt{} implements a 2-level protocol, consisting of four L1 caches and the last-level cache.
+Each line holds 32 bytes in all the protocols.
+
+\begin{figure}[h]
+  \centering\footnotesize
+  \begin{tabular}{|c|c|c|c|c|c|c|}
+    %% In VC707: #LUTs: 303,600 / #FFs: 607,200 / #BRAM36: 1,030
+    \hline
+    & clock\;(ns) & freq\;(MHz) & critical path\;(ns) & \#LUTs & \#FFs & \#BRAMs\;(36Kb/18Kb) \\
+    \hline
+    %% New numbers from the one with tandem verifier.
+    \bhemh{} & 24 & 41.67 & 21.30 & 104,192 & 44,279 & 276/6 \\
+    \bhemt{} & 40 & 25 & 33.49 & 96,576 & 33,762 & 204/4 \\
+    %% \hline
+    %% \briscy{} & 40 & 25 & 32.18 & 53,140 & 40,667 & 204/8 \\
+    \hline
+  \end{tabular}
+  \caption{Synthesis of \hemiola{} protocols}
+  \label{fig-synthesis}
+\end{figure}
+
+%% It also presents the result of an existing implementation, \briscy{}~\cite{Zhang:2019,thesis:Zhang:2019}, which has the same cache sizes as \bhemt{}.
+%% Both \bhemt{} and \briscy{} use the same clock length, and \briscy{} has slightly a better critical path length.
+%% The overall utilized resources are comparable; \bhemt{} used 1.82x more lookup tables (LUTs), an FPGA unit for combinational circuits, and 1.20x less flip-flops (FFs), a unit for states.
+%% Since the cache sizes are same, \bhemt{} and \briscy{} use almost the same number of BRAMs.
+
+We used Xilinx's Virtex-7 VC707 FPGA and its toolkit for synthesis.
+\autoref{fig-synthesis} shows the synthesis result of \bhemh{} and \bhemt{}.
+Each protocol uses a minimal clock length that can safely cover its critical path.
+Both \bhemh{} and \bhemt{} used less than 34.4\% ($\approx 104192/303600$) of lookup tables (LUTs), an FPGA unit for combinational circuits, and 7.3\% ($\approx 44294/607200$) of flip-flops (FFs), a unit for state~\cite{vc707}.
+Each protocol used just a right amount of BRAMs for data caches and information caches that contain status, directory bits, etc.
+
+In order to confirm that the implementations run on the FPGA correctly, we performed tandem verification covering over $10^9$ memory requests for each protocol, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
+As mentioned in \autoref{sec-compiler}, the protocol compiler currently generates an implementation that lacks pipelining within a cache controller, thus we do not expect our synthesized protocols to yet be performant for real-world applications.
+Optimization and verification of the cache-controller design are nontrivial; since the pipelining involves value bypassing between line reads and writes, it is as sophisticated as the one in pipelined processors~\cite{comarch}.
+Development of an optimized cache controller is one of our future-work directions, though we see it as orthogonal to the verification of cache-coherence protocols, \hemiola{}'s focus.
+
+\subsection{Deriving a Multiline Specification by Compositionality}
+\label{sec-multiline}
+
+%% As explained in the previous sections, the protocol compiler compiles a \emph{single-line} \hemiola{} protocol to a \emph{multiline} cache-coherent Kami implementation.
+%% The Kami implementation has finite, limited \emph{resources}; a cache only contains a finite number of line values, and a small number of lock holders (MSHRs) are assigned to each cache.
+As explained in \autoref{sec-compiler}, the protocol compiler takes a cache configuration as an argument, thus we can have several different implementations by providing different configurations.
+Then what would be the specification for all possible implementations from a given source protocol?
+In this section we naturally extend a single-line \hemiola{} protocol to a multiline one and argue its role as the specification for multiline implementations.
+
+The core idea comes from the fact that \emph{the coherence of each line is orthogonal to coherence of others}.
+In this case, a single-line \hemiola{} protocol is naturally extended to a multiline one by using the notion of compositionality.
+Compositionality claims that if two systems are index-disjoint (\ie{} objects and channel indices are disjoint) thus not communicating with each other, then refinement of the composed system is obtained for free just by composing the specs:
+\begin{theorem}[Compositionality]
+  \begin{displaymath}
+    \forall I_1, I_2, S_1, S_2.\ \refines{I_1}{S_1} \land \refines{I_2}{S_2} \to
+    \refines{I_1 \oplus I_2}{S_1 \oplus S_2},
+  \end{displaymath}
+  where $I_1 \oplus I_2$ implicitly assumes that the indices used in $I_1$ and $I_2$ are disjoint.
+\end{theorem}
+
+\hemiola{} additionally supports an \emph{index-extension} mechanism, which takes a system $S$ and a \emph{prefix index} $i$, generating a new system $S^{(i)}$ where every object or channel index in the system is extended by attaching $i$.
+Note that an index in \hemiola{} is a list of numbers, so it is easy to extend an index just by concatenating another one.
+\hemiola{} also provides a lemma that $S^{(i)}$ and $S^{(j)}$ are index-disjoint when $i \neq j$.
+
+Composing these elements, we obtain a replication theorem that is used directly to convert a single-line cache-coherence protocol to an ideal multiline protocol:
+\begin{theorem}[Replication]
+  $\forall I, S.\ \refines{I}{S} \to \forall n.\ \refines{\bigoplus^{n}_{i=0} I^{(i)}}{\bigoplus^{n}_{i=0} S^{(i)}}$.
+  \label{thm-replication}
+\end{theorem}
+
+The multiline protocol derived from the replication theorem is indeed ideal; it has line values, lock holders, and communication channels per cache line.
+Thus the protocol can serve as a spec for all the multiline implementations generated by the protocol compiler, since they have limited resources, which implies that the behavior of the multiline protocol covers their behaviors.
+
+%% \begin{wrapfigure}{L}{0.4\columnwidth}
+%% \end{wrapfigure}
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node (ih0) at (0, 0) {$I^{h}_{0}$};
+    \node (rh0) at (0.6, 0) {$\sqsubseteq_{h}$};
+    \node (sh0) at (1.2, 0) {$S^{h}_{0}$};
+
+    \node (ihM) at (0, -1.2) {$I^{h}_{M}$};
+    \node (rhM) at (0.6, -1.2) {$\sqsubseteq_{h}$};
+    \node (shM) at (1.2, -1.2) {$S^{h}_{M}$};
+
+    \node (ikm) at (-1.2, -2.4) {$I^{k}_{m}$};
+    \node (rkm) at (-0.6, -2.4) {$\sqsubseteq_{k}$};
+    \node (ikM) at (0, -2.4) {$I^{k}_{M}$};
+    \node (rkM) at (0.6, -2.4) {$\sqsubseteq_{k}$};
+    \node (skM) at (1.2, -2.4) {$S^{k}_{M}$};
+
+    \draw (-1.4, -2.75) to (0.2, -2.75);
+    \node (compCorrect) at (-0.6, -3.0) {\small\sf{(compiler correctness)}};
+
+    \draw[|-{latex}] (ih0) to[out=180,in=90] node[left] {
+      \small\sf\begin{tabular}{r}
+      compiles-to\\
+      (\autoref{sec-compiler})
+      \end{tabular}} (ikm);
+    \draw[->] (rh0) to node[right] {\small\sf{replication (\autoref{thm-replication})}} (rhM);
+    \draw[->] (rhM) to node[right] {\small\sf{(transliteration)}} (rkM);
+  \end{tikzpicture}
+  \caption{A single-line protocol, a multiline spec, and multiline implementations}
+  \label{fig-multiline-spec}
+\end{figure}
+
+\autoref{fig-multiline-spec} elaborates more on the role of the multiline specification.
+For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
+Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
+After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
+Proving compiler correctness in this manner is on our list of valuable future work.
+As already mentioned in \autoref{sec-compiler}, while the compiler may use nontrivial optimizations, they are all within the internal cache design, thus irrelevant to cache-coherence protocol verification.
+
+\section{Discussion and Related Work}
+\label{sec-discussion}
+
+\paragraph{Development effort.}
+It took 22 person-months to design, prove, and synthesize the framework and case-study protocols.
+Our major time-consuming task was finding a general set of requirements that ensures serializability, plus proving that assertion in Coq.
+After building the framework, it took just 6 person-months to design and prove both case-study protocols.
+It took an additional 3 person-months to build the entire toolchain for hardware synthesis, including the implementation of the protocol compiler (with its several remaining opportunities for worthwhile optimization).
+The framework itself is built with 38k LoC in total; the code/proof consists of a utility library (7k LoC), language definitions and facts (7k LoC), and the serializability proof (24k LoC).
+Among the case studies, the MSI protocol has 13k LoC, and the MESI protocol has 15k LoC.
+The \hemiola{} language reifier and the protocol compiler (including the prebuilt hardware components) constitute 3k LoC.
+
+\paragraph{Model-checking cache-coherence protocols.}
+
+%% Model checking (in short):
+%% - TLA(tla:Lamport:2002), Murphi(murphi:Dill:1996)
+%% - State-explosion concerns: Joshi:2003, Komuravelli:2014
+%% - Symmetry reduction: Banks:2017
+%% - Not hierarchical, but highly optimized 2-level: Oswald:2018
+%% - Modularity: Chen:2008, Chen:2010, Oswald:2020, Opeoluwa:2016, Opeoluwa:2017
+
+Model checking has long been widely used to verify cache-coherence protocols.
+Various model checkers like TLA+~\cite{tla:Lamport:2002}, SMV, and Murphi~\cite{murphi:Dill:1996} have been used, but due to conventional state-explosion issues, applicability has been limited to finite numbers of caches or specific protocols~\cite{Joshi:2003,Komuravelli:2014}.
+A two-level cache-coherence protocol was verified with an arbitrary number of cores using symmetry reduction -- a well-known verification technique to avoid state explosion in model checking -- in Murphi~\cite{Banks:2017}, but it was only for a specific protocol called TSO-CC and did not verify hierarchical protocols.
+
+In order to increase scalability, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
+However, these approaches face a common obstacle: because of the modularity requirement, it became hard to design and verify noninclusive protocols.
+\cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
+%% \footnote{The protocol is still hierarchical even with two-level; it does not have the LLC but the global directory for abstract L2 clusters.}
+\cite{Opeoluwa:2016,Opeoluwa:2017} have developed the Neo theory as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
+They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} \cite{Zhao:2010}) but did not provide the actual design and proof.
+On the other hand, we fully proved hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
+
+Another notable success of cache-coherence verification employed program synthesis to generate a protocol for a given atomic specification~\cite{Oswald:2018,Oswald:2020}.
+The synthesizer can generate various hierarchical protocols, each of which is nontrivial and fairly optimized.
+The atomic specification is similar to \hemiola{}'s rule templates in the sense that a user can describe the protocol just with stable states.
+They used Murphi to verify synthesized protocols, but in a two-level protocol~\cite{Oswald:2018} they only succeeded up to three caches without exhausting memory, and for hierarchical protocols~\cite{Oswald:2020} they succeeded only with the root, two cache-H, and two cache-L nodes.
+They also mentioned that this extension to hierarchical protocols cannot cover noninclusive protocols.
+
+\paragraph{Theorem proving for cache-coherence protocols.}
+
+%% Theorem Proving
+%% - Specific (not general): Park:1996, Moore:1998
+%% - For an arbitrary tree topology: Murali:2015
+%% - TileLink verification: ivy:Padon:2016, McMillan:2016
+%% - No final refinement proof: Li:2018,
+
+Theorem proving also has been used to verify cache-coherence protocols.
+There are a number of works that proved the correctness with specific protocols~\cite{Park:1996,Moore:1998}.
+A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}, but it was not structured to promote streamlined reuse of results for other protocols.
+It also included rather complex invariants that needed to characterize transitory states that are unreachable in a serialized semantics.
+
+Another notable project designed a modular-specification approach for cache coherence, verifying each module (\ie{} cache) against the spec while automatically generating (and proving) invariants, using the Ivy verification tool~\cite{ivy:Padon:2016, McMillan:2016}.
+The modular spec is specialized to the TileLink protocol~\cite{tilelink}, whose interface is similar to the rule templates in \hemiola{}.
+That being said, this project targeted only the specific TileLink protocol, thus not clearly distinguishing which invariants can be reused for other protocols (like serializability) and which are for the actual protocol.
+We demonstrated a generic proof of serializability and used it to show the full correctness proofs of case-study protocols.
+
+In order to avoid tedious invariant searching, a toolchain was built to generate invariants and their proofs automatically for the FLASH cache-coherence protocol~\cite{Li:2018}.
+However, it did not provide the final refinement proof between the implementation and the spec.
+
+\section{Conclusion and Future Work}
+\label{sec-conclusion}
+
+We have developed a framework called \hemiola{} for simplified design and formal proof of cache-coherence protocols.
+A domain-specific language, based on concepts like rule templates, ensures that the only protocols that can be expressed are those that admit a form of per-memory-access serializability.
+On top of the framework, we proved the correctness of hierarchical noninclusive MSI and MESI protocols as case studies, demonstrating that \hemiola{} indeed eases proof burden.
+We also built a protocol compiler and demonstrated these protocol implementations running on FPGAs.
+
+As discussed in \autoref{sec-synthesis}, we plan to develop the protocol compiler further to generate optimized cache controllers and to prove compiler correctness.
+Another important future direction is to prove liveness of the protocols designed in \hemiola{}; even though we designed the rule templates carefully to avoid deadlocks, we think a formal proof should be supported by the framework as well.
+
+%% Acknowledgments
+%% \begin{acks}
+%% \end{acks}
+
+%% Bibliography
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{bib}
+
+%% Appendix
+\clearpage
+\appendix
+
+\section{Proving Serializability Using Reduction}
+\label{sec-appx-proof-sz}
+
+\subsection{Semi-Sequential Histories}
+\label{sec-appx-semi-sequential}
+
+While \autoref{fig-reduction} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice.
+This implies that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
+
+\begin{figure}[h]
+  \centering
+  \frame{
+  \begin{math}
+    \begin{array}{cc}
+      \mbox{}\vspace{-8pt} \\ %% padding
+      \inference[STrsSilent:]{}{\strsn{S}{\listsingle{\lblEmpty{}}}} &
+      \inference[STrsIns:]{}{\strsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
+      \mbox{}\vspace{-5pt} \\ %% padding
+      \inference[STrsOuts:]{}{\strsn{S}{\listsingle{\lblOuts{\listof{m}}}}} &
+      \inference[STrsAtomic:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\strsn{S}{\listof{l}}} \\
+      \mbox{}\vspace{-5pt} \\ %% padding
+    \end{array}
+  \end{math}
+  }
+  \caption{Semi-transactions}
+  \label{fig-semi-trs}
+\end{figure}
+
+Semi-transactions are defined in order to have a quantitative progress measure for reductions.
+The definition, given in \autoref{fig-semi-trs}, is almost the same as for (ordinary) transactions, except that an atomic history does not need to be external.
+Semi-sequential histories are also defined in a similar way:
+\begin{definition}[Semi-Sequential Histories]
+  A history $h$ is \emph{semi-sequential} with \emph{degree} $n$ iff the history
+  is a concatenation of $n$ semi-transactions.
+  \begin{displaymath}
+    \hsseq{S}{h}{n} \triangleq \exists \listof{t}.\; \sizeof{\listof{t}} = n \wedge (\forall t \in \listof{t}.\; \strsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
+  \end{displaymath}
+\end{definition}
+
+The only difference from sequential histories is that we \emph{count} the number of semi-transactions.
+The definition indicates that in order to obtain a serialized history, we should perform reductions to decrease the count as much as possible.
+\hemiola{} provides a theorem that reflects this intuition:
+\begin{theorem}[Semi-sequentiality and serializability]\label{thm-sseq-sz}\mbox{}\\
+  \begin{enumerate}
+  \item Given a system $S$, a legal history is always semi-sequential:
+    \begin{displaymath}
+      \forall h.\; \semleg{S}{h} \to \exists n.\; \hsseq{S}{h}{n}.
+    \end{displaymath}
+  \item If $S$ satisfies the following property, then $S$ is serializable:
+    \begin{align*}
+      \forall h, n, s.\; & \semsteps{S}{\sysInit{S}}{h}{s} \land \hsseq{S}{h}{n} \to \\
+      & \hseq{S}{h} \vee \exists h_r, m.\; \semsteps{S}{\sysInit{S}}{h_r}{s}
+      \wedge \hsseq{S}{h_r}{m} \wedge m < n.
+    \end{align*}
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+  The proof of (1) is straightforward, since by definition any single-label history is a semi-transaction.
+  The proof of (2) employs strong induction on natural numbers.
+  For a given history $h$ in a system $S$, we can find an initial number $n$ that satisfies $\hsseq{S}{h}{n}$ (by (1)).
+  Now by (2), the history is either already sequential or reduces to $h_r$ that is related to a smaller number $m$.
+  Finite iteration of (2) will eventually reduce the history to a sequential history.
+\end{proof}
+
+\subsection{Pushing All External Input/Output Labels}
+\label{sec-appx-sz-ext-labels}
+
+For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively, while preserving the order among external input labels (or external output labels) themselves.
+
+\begin{figure}[h]
+  \begin{tikzpicture}
+    \draw[->-=0.5] (-0.7, 0) -- (-0.3, 0);
+    \draw[fill={rgb:black,1;white,8}] (0,0) circle [radius=0.3] node {$l^0_{\textrm{in}}$};
+    \draw[->-=0.5] (0.3, 0) -- (0.7, 0);
+    \draw (1,0) circle [radius=0.3] node {$l^0_{\textrm{int}}$};
+    \draw[->-=0.5] (1.3, 0) -- (1.7, 0);
+    \draw[fill={rgb:black,1;white,2}] (2,0) circle [radius=0.3] node {$l^0_{\textrm{out}}$};
+    \draw[->-=0.5] (2.3, 0) -- (2.7, 0);
+    \draw[fill={rgb:black,1;white,8}] (3,0) circle [radius=0.3] node {$l^1_{\textrm{in}}$};
+    \draw[->-=0.5] (3.3, 0) -- (3.7, 0);
+    \draw (4,0) circle [radius=0.3] node {$l^1_{\textrm{int}}$};
+    \draw[->-=0.5] (4.3, 0) -- (4.7, 0);
+    \draw[fill={rgb:black,1;white,2}] (5,0) circle [radius=0.3] node {$l^1_{\textrm{out}}$};
+    \draw[->-=0.5] (5.3, 0) -- (5.7, 0);
+
+    \node at (2.5, -0.6) {\small $\downarrow^{\ast}$ (after some reductions)};
+
+    \draw[->-=0.5] (-0.7, -1.2) -- (-0.3, -1.2);
+    \draw[fill={rgb:black,1;white,8}] (0,-1.2) circle [radius=0.3] node {$l^0_{\textrm{in}}$};
+    \draw[->-=0.5] (0.3, -1.2) -- (0.7, -1.2);
+    \draw[fill={rgb:black,1;white,8}] (1,-1.2) circle [radius=0.3] node {$l^1_{\textrm{in}}$};
+    \draw[->-=0.5] (1.3, -1.2) -- (1.7, -1.2);
+    \draw (2,-1.2) circle [radius=0.3] node {$l^0_{\textrm{int}}$};
+    \draw[->-=0.5] (2.3, -1.2) -- (2.7, -1.2);
+    \draw (3,-1.2) circle [radius=0.3] node {$l^1_{\textrm{int}}$};
+    \draw[->-=0.5] (3.3, -1.2) -- (3.7, -1.2);
+    \draw[fill={rgb:black,1;white,2}] (4,-1.2) circle [radius=0.3] node {$l^0_{\textrm{out}}$};
+    \draw[->-=0.5] (4.3, -1.2) -- (4.7, -1.2);
+    \draw[fill={rgb:black,1;white,2}] (5,-1.2) circle [radius=0.3] node {$l^1_{\textrm{out}}$};
+    \draw[->-=0.5] (5.3, -1.2) -- (5.7, -1.2);
+  \end{tikzpicture}
+  \caption{Pushing all external input/output labels}
+  \label{fig-reducing-exts}
+\end{figure}
+
+\autoref{fig-reducing-exts} shows the resulting history after pushing all the external input and output labels in the original history.
+We can generate such a history by performing reductions:
+\begin{itemize}
+\item Try to pick the first external input label that is not in the leftmost region of the history yet. If it exists, it can always be pushed to the left of the history, since the label semantically stands for adding input messages to the system.
+\item Try to pick the last external output label that is not at the rightmost region of the history yet. If it exists, it can always be pushed to the right of the history, since the label semantically stands for releasing output messages from the system.
+\end{itemize}
+
+\subsubsection{Interleaving and nonconfluent histories}
+
+\newcommand{\hcont}[2]{\ensuremath{#1 \leadsto #2}}
+\newcommand{\hextcont}[3]{\ensuremath{#1 \vdash #2 \leadsto_{\textsf{ext}} #3}}
+\newcommand{\hdiscont}[2]{\ensuremath{#1 \not\leadsto #2}}
+\newcommand{\hitlv}[2]{\ensuremath{\mathit{Interleaved}\ #1\ #2}}
+
+Throughout this section, we will just deal with histories only consisting of internal labels, to focus on how to serialize atomic histories, assuming external labels are already pushed to the edges by the method described in \autoref{sec-appx-sz-ext-labels}.
+
+In order to use \autoref{thm-sseq-sz}, we need a clear way to choose which semi-transactions to merge, to produce a smaller-degree semi-sequential history.
+The notion of continuity lets us figure out whether two histories are related as adjacent parts of a transaction:
+\begin{definition}[Continuity]\mbox{}\\
+  \begin{enumerate}
+  \item Two atomic histories $h_1$ and $h_2$ are \emph{continuous} iff the
+    starting messages of $h_2$ are in the live messages of $h_1$:
+    \begin{displaymath}
+      \hcont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listof{\amsgi{m_2}} \subseteq \listof{\amsge{m_1}}.
+    \end{displaymath}
+  \item We say $h_1$ and $h_2$ are \emph{externally continuous} (denoted
+    $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally
+    atomic.
+  \item Two atomic histories $h_1$ and $h_2$ are \emph{discontinuous} iff the live messages of
+    $h_1$ are \emph{disjoint} from the starting messages of $h_2$:
+    \begin{displaymath}
+      \hdiscont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listdisj{\listof{\amsge{m_1}}}{\listof{\amsgi{m_2}}}.
+    \end{displaymath}
+  \end{enumerate}
+\end{definition}
+
+Using the notion of continuity, we can also decide formally whether a given history is interleaved or not:
+\begin{definition}[Interleaved Histories]
+  In a given system $S$, a sequence of histories $\listof{h}$ is \emph{interleaved} iff there exist two histories $h_1$ and $h_2$ in the sequence that are externally continuous and any history between the two is discontinuous to $h_1$:
+  \begin{displaymath}
+    \begin{array}{rl}
+      \hitlv{S}{\listof{h}} \triangleq & \exists h_1, h_2, \listof{h_1}, \listof{h_2}, \listof{h_3}. \\
+      & \listof{h} = \listof{h_3} + h_2 : \listof{h_2} + h_1 : \listof{h_1} \wedge \\
+      & \hextcont{S}{h_1}{h_2} \wedge \forall h' \in \listof{h_2}.\; \hdiscont{h_1}{h'}.
+    \end{array}
+  \end{displaymath}
+  We also say a history $h$ is interleaved if we can find an interleaved sequence of histories $\listof{h}$ that satisfies $h = \listconcat{\listof{h}}$.
+\end{definition}
+
+So far we have defined sequential histories and interleaved histories.
+Recalling the intuition again, we will perform a number of reductions to change a given interleaved history to a sequential one.
+That said, this strategy implicitly assumes any history is either interleaved or sequential, a fact we should prove.
+
+Unfortunately, an additional condition is required just to reason with interleaved and sequential histories.
+In other words, there is a third type of a history, happening when two different externally atomic histories come together via a local state transition consuming live messages of the two.
+This case does not happen in any practical cache-coherence protocols, but we still need a system-level predicate to ensure that the target system never generates such cases.
+The \emph{nonconfluence} predicate removes this case, by claiming that any intermediate atomic history is either the start of a new transaction or a continuation of a previous transaction:
+\newcommand{\sncf}[1]{\ensuremath{\mathit{Nonconfluent}\ #1}}
+\begin{definition}[Nonconfluence]
+  A system $S$ is nonconfluent iff any first internal history, if exists, is
+  interleaved with an external atomic history:
+  \begin{align*}
+    \sncf{S} \triangleq\ & \forall \listof{h}, h_0, s.\; \semsteps{S}{\sysInit{S}}{\listapp{h_0}{\listconcat{\listof{h}}}}{s} \; \land \\
+    & (\forall h \in \listof{h}.\; \extatomicshort{S}{h}) \; \land \\
+    & (\intatomicshort{S}{h_0}) \to \hitlv{S}{(\listcons{h_0}{\listof{h}})}.
+  \end{align*}
+\end{definition}
+
+\subsubsection{Merging atomic histories by pushes}
+
+\newcommand{\hmgb}[3]{\ensuremath{#1 \vdash #2 \hookrightarrow #3}}
+\newcommand{\smgb}[1]{\ensuremath{\mathit{Mergeable}\ #1}}
+
+Now we provide a formal definition that reflects the intuition about the order of reductions, \autoref{fig-reduction}, called \emph{mergeability}.
+
+\begin{definition}
+  For a given system $S$, two histories $h_1$ and $h_2$ are \emph{mergeable} iff
+  they can be merged by pushing history fragments between the two either to the
+  left or the right:
+  \begin{align*}
+    \hmgb{S}{h_1}{h_2} \triangleq\ & \forall s_1.\; \semrch{S}{s_1} \to \\
+    & \forall \listof{h}, s_2.\; \semsteps{S}{s_1}{\listapp{h_2}{\listapp{\listconcat{\listof{h}}}{h_1}}}{s_2} \to \\
+    & \exists \listof{h}_{\textrm{l}}, \listof{h}_{\textrm{r}}.\; \semsteps{S}{s_1}{\listapp{\listconcat{\listof{h}_{\textrm{r}}}}{\listapp{h_2}{\listapp{h_1}{\listconcat{\listof{h}_{\textrm{l}}}}}}}{s_2} \wedge \sizeof{\listof{h}} = \sizeof{\listof{h}_{\textrm{l}}} + \sizeof{\listof{h}_{\textrm{r}}}.
+  \end{align*}
+  We say the system $S$ is mergeable if any externally continuous histories in a
+  legal history are mergeable:
+  \begin{displaymath}
+    \smgb{S} \triangleq \forall h_1, h_2.\; \hextcont{S}{h_1}{h_2} \to \hmgb{S}{h_1}{h_2}.
+  \end{displaymath}
+\end{definition}
+
+We are finally equipped with enough definitions to introduce a convenient general way to prove serializability.
+
+\begin{theorem}
+  If a system $S$ is nonconfluent and mergeable, then it is serializable.
+  \begin{displaymath}
+    \forall S.\; \sncf{S} \land \smgb{S} \to \hsrz{S}.
+  \end{displaymath}
+  \label{thm-sz-when}
+\end{theorem}
+\begin{proof}
+  For a given history $h$, by \autoref{thm-sseq-sz} there exists a sequence of atomic histories $\listof{h}$ such that $\listconcat{\listof{h}} = h$.
+  In the sequence we try to find the first internal atomic history fragment.
+  If we cannot find the internal atomic history, then by definition $h$ is already sequential.
+  If there exists such a fragment $h^i \in \listof{h}$, by nonconfluence there should exist an external atomic history $h^e \in \listof{h}$ that satisfies $\hextcont{S}{h^e}{h^i}$.
+  Now by mergeability we can find a new sequence of histories $\listof{h}_r$ that reaches the same state, where $h^e$ and $h^i$ are merged, thus $\sizeof{\listof{h}_r} < \sizeof{\listof{h}}$.
+  According to \autoref{thm-sseq-sz}, we will eventually obtain a sequential history reaching the same state by repeating this process.
+\end{proof}
+
+\section{Hemiola's Serializability Guarantee}
+\label{sec-appx-sz-guarantee}
+
+\renewcommand*{\proofname}{Proof Sketch}
+\begin{theorem}[\hemiola{}'s serializability guarantee]
+  \begin{displaymath}
+    \forall S, t.\; \ontree{S}{t} \land \goodrules{S}{t} \to \hsrz{S},
+  \end{displaymath}
+  where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the
+  topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$
+  conforms to one of the rule templates.
+\end{theorem}
+\begin{proof}
+  According to \autoref{thm-sz-when}, it suffices to prove nonconfluence and mergeability of $S$. We briefly sketch each proof here.
+
+  \emph{Nonconfluence}: when the system $S$ satisfies $(\goodrules{S}{t})$, input messages of each internal label always belong to one of four categories:
+  1) single request to the parent, 2) single response to a child, 3) single request to a child, or 4) multiple responses from children.
+  Now considering the first internal atomic history in the definition of nonconfluence, the starting messages are internal and thus belong to one of the four categories.
+  For the first three, nonconfluence trivially holds since the input message is a singleton.
+  For the last category, we can prove that no two external atomic histories can have live responses to the same parent, which directly implies nonconfluence.
+
+  \emph{Mergeability}: for given externally continuous histories $h_1$ and $h_2$, the core challenge is where to push each intermediate atomic history between the two.
+  The push direction can be determined by looking at the starting messages of $h_2$ as well.
+  For example, we can prove that if $h_2$ starts with a single request to the parent, then all the intermediate histories can be pushed after $h_2$.
+  The intuition here is that for each category, the starting messages imply a certain locking state, which restricts the types of possible intermediate histories.
+\end{proof}
+\renewcommand*{\proofname}{Proof}
+
+\end{document}
