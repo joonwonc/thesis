@@ -214,13 +214,13 @@
 
 %% Visualization of transactions
 
-\newcommand*\rdcircsm[1]{
+\newcommand*\rdrecsm[1]{
   \adjustbox{raise=.1ex, outer=8.5pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=mordantred19]
       (char) {\scriptsize\sffamily\bf #1};}}
 }
-\newcommand*\blcircsm[1]{
+\newcommand*\blrecsm[1]{
   \adjustbox{raise=.1ex, outer=8.5pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=mediumtealblue]
@@ -228,11 +228,17 @@
 }
 
 \newcommand*\rdcircf[1]{
-  \tikz[baseline=(char.base)]{
-    \node[shape=circle, draw, inner sep=0pt, minimum size=8pt, fill=mordantred19, text=white] (char) {\tiny\sffamily #1};}}
+  \adjustbox{raise=.2ex, outer=8.5pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=circle, draw, inner sep=0pt, minimum size=8pt, fill=mordantred19, text=white]
+      (char) {\tiny\sffamily #1};}}
+}
 \newcommand*\blcircf[1]{
-  \tikz[baseline=(char.base)]{
-    \node[shape=circle, draw, inner sep=0pt, minimum size=8pt, fill=mediumtealblue, text=white] (char) {\tiny\sffamily #1};}}
+  \adjustbox{raise=.2ex, outer=8.5pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=circle, draw, inner sep=0pt, minimum size=8pt, fill=mediumtealblue, text=white]
+      (char) {\tiny\sffamily #1};}}
+}
 
 %% -- End of Commands
 
@@ -430,31 +436,48 @@ It is natural to wonder why two separate channels are required from a child to a
 
 \newcommand{\blackdiamond}{\raisebox{.4ex}{\ensuremath{\scriptscriptstyle\blacklozenge}}}
 
+\newcommand{\rdmsg}[2]{{\color{mordantred19}\rdrecsm{#1}{\sf #2}}}
+\newcommand{\rdmsgsm}[2]{\rdmsg{#1}{\small #2}}
+\newcommand{\blmsg}[2]{{\color{mediumtealblue}\blrecsm{#1}{\sf #2}}}
+\newcommand{\blmsgsm}[2]{\blmsg{#1}{\small #2}}
+
 \begin{figure}[h]
   \centering
-  \begin{tikzpicture}
-    \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
-    % C_1 external
-    \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,mordantred19]left:{\rdcircsm{a}{\small\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
-    % C_2 external
-    \pic at (0, 0) {skeleton-midx-e2};
-    \node[label={[label distance=-6pt,mediumtealblue]left:{\blcircsm{e}{\small\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
-    % Between P and C_1
-    \pic at (0, 0) {skeleton-midx-pc1};
-    \node[label={[label distance=-6pt,mordantred19]left:{\rdcircsm{b}{\small\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
-    % Between P and C_2
-    \pic at (0, 0) {skeleton-midx-pc2};
-    \node[label={[label distance=-9pt,mordantred19]below right:{\rdcircsm{d}{\small\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-    \node[label={[label distance=-9pt,mordantred19]above right:{\rdcircsm{c}{\small\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
-    \node[label={[label distance=-9pt,mediumtealblue]below left:{\blcircsm{f}{\small\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
+  \begin{tabular}{c}
+    \begin{tikzpicture}
+      \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
+      % C_1 external
+      \pic at (0, 0) {skeleton-midx-e1};
+      \node[label={[label distance=-6pt,mordantred19]left:{\rdmsgsm{a}{rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+      % C_2 external
+      \pic at (0, 0) {skeleton-midx-e2};
+      \node[label={[label distance=-6pt,mediumtealblue]left:{\blmsgsm{e}{rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
+      % Between P and C_1
+      \pic at (0, 0) {skeleton-midx-pc1};
+      \node[label={[label distance=-6pt,mordantred19]left:{\rdmsgsm{b}{rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+      % Between P and C_2
+      \pic at (0, 0) {skeleton-midx-pc2};
+      \node[label={[label distance=-9pt,mordantred19]below right:{\rdmsgsm{d}{rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,mordantred19]above right:{\rdmsgsm{c}{rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,mediumtealblue]below left:{\blmsgsm{f}{rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
 
-    % Curves
-    \draw [->,color=mordantred19] (-2.8, -2.1) to[out=90,in=-110] node[left] {\rdcircf{1}} (-2.2, -0.7);
-    \draw [->,color=mordantred19] (-2.2, -0.6) to[out=70,in=120,distance=1.8cm] node[above] {\rdcircf{3}} (2.1, -0.5);
-    \draw [->,color=mordantred19] (2.1, -0.6) to[out=-60,in=-60,distance=1.2cm] node[right] {\rdcircf{4}} (1.9, -1);
-    \draw [->,color=mediumtealblue] (0.9, -1.9) to[out=90,in=-45] node[outer sep=-3pt, below left] {\blcircf{2}} (0.3, -1.2);
-  \end{tikzpicture}
+      % Curves
+      \draw [->,color=mordantred19] (-2.8, -2.1) to[out=90,in=-110] node[left] {\rdcircf{1}} (-2.2, -0.7);
+      \draw [->,color=mordantred19] (-2.2, -0.6) to[out=70,in=120,distance=1.8cm] node[above] {\rdcircf{3}} (2.1, -0.5);
+      \draw [->,color=mordantred19] (2.1, -0.6) to[out=-60,in=-60,distance=1.2cm] node[right] {\rdcircf{4}} (1.9, -1);
+      \draw [->,color=mediumtealblue] (0.9, -1.9) to[out=90,in=-45] node[outer sep=-3pt, below left] {\blcircf{1}} (0.3, -1.2);
+    \end{tikzpicture}\\
+    %% \footnotesize
+    %% \begin{tabular}{|c|c|c|c|}
+    %%   \hline
+    %%   & Inputs & Status change & Outputs \\
+    %%   \hline
+    %%   \rdcircf{1} & \rdmsg{a}{rqM} & $C_1: S \rightarrow S_2M$ & \rdmsg{b}{rqM} \\
+    %%   \blcircf{1} & \blmsg{e}{rqM} & $C_2: S \rightarrow S_2M$ & \blmsg{f}{rqM} \\
+    %%   \rdcircf{3} & \rdmsg{b}{rqM} & $P: S \rightarrow S  & \rdmsg{c}{rqI} \\
+    %%   \rdcircf{4} & \rdmsg{c}{rqI} & & \rdmsg{d}{rsI} \\
+    %% \end{tabular}
+  \end{tabular}
   \caption{Rule-execution cases in the simple MSI protocol}
   \vspace{-5pt}
   \label{fig-motive-2}
@@ -464,33 +487,35 @@ All the caches run concurrently, repeatedly executing \emph{rules} that define l
 A rule may take some messages from input channels, perform a state transition, and put messages in output channels.
 A rule may also have a precondition, blocking use of that rule when the precondition does not hold.
 \autoref{fig-motive-2} shows some example rule-execution cases depending on statuses of the objects.
-\todo{Fix all the explanations along with the new figure.}
-\autoref{fig-motive-2-a} is the case where a child $C_1$ takes an external request ($\textsf{rqM}\circ$) to write data, but it does not have M status and thus forwards the request to the parent ($\textsf{rqM}\bullet$).
-At this moment the child \emph{sets a lock} not to allow any further external requests for the value.
-The following pseudocode describes the rule:
-\begin{lstlisting}
-Rule c1RqMToP :=
-  assert !C1.locked();
-  assert (C1.status != M);
-  assert (C1.extRq.first == rqM);
-  C1.extRq.deq();
-  C1.rqToP.enq(rqM);
-  C1.lock();
-Endrule
-\end{lstlisting}
-The rule checks whether $C_1$ is not locked so it can handle $\textsf{rqM}\circ$, confirms it does not have a write permission, dequeues an external request from \slstinline{extRq}, sends a request to $P$ by using a channel \slstinline{rqToP}, and sets a lock.
+\rdcircf{1} is the case where a child $C_1$ takes an external request (\rdmsgsm{a}{rqM}) to write data, but it does not have M status and thus forwards the request to the parent (\rdmsgsm{b}{rqM}).
+At this moment the child changes its status to a \emph{transient state} SM to record that it just forwarded the message to get the M status.
+The transient state also acts like a \emph{lock} not to allow any further external requests for the value.
 
-As a next rule-execution step, $\textsf{rqM}\circ$ (previously outputted from \autoref{fig-motive-2-a}) is handled by the parent $P$, as shown in \autoref{fig-motive-2-b}.
-It makes \emph{invalidation} requests ($\textsf{rqI}$) to the other children ($C_2$ is the only other child in this system) to change their statuses to I, since when a child has M the others should not be able to read/write the data.
-After making invalidation requests, the parent also sets a lock to disallow requests from the children.
+%% The following pseudocode describes the rule:
+%% \begin{lstlisting}
+%% Rule c1RqMToP :=
+%%   assert !C1.locked();
+%%   assert (C1.status != M);
+%%   assert (C1.extRq.first == rqM);
+%%   C1.extRq.deq();
+%%   C1.rqToP.enq(rqM);
+%%   C1.lock();
+%% Endrule
+%% \end{lstlisting}
+%% The rule checks whether $C_1$ is not locked so it can handle $\textsf{rqM}\circ$, confirms it does not have a write permission, dequeues an external request from \slstinline{extRq}, sends a request to $P$ by using a channel \slstinline{rqToP}, and sets a lock.
 
-Now imagine a scenario where two children $C_1$ and $C_2$ requested $\textsf{rqM}$ to the parent (to obtain M) at the same time, and the parent decided to deal with the request from $C_1$ first.
-Proper locking is indeed required here, since otherwise the parent will handle two $\textsf{rqM}$s simultaneously, which might lead to an incoherent state -- two M statuses in the system.
-\autoref{fig-motive-2-c} presents this case, where an invalidation request was made to $C_2$ ($\textsf{rqI}\circ$) and even before this, $C_2$ requested $\textsf{rqM}\blackdiamond$ to the parent.
-In order to handle all the requests correctly, we should carefully consider some corner cases:
-\begin{itemize}
-\item Since $C_2$ requested $\textsf{rqM}\blackdiamond$, it is locked when the $\textsf{rqI}\circ$ message arrives. It should still be able to handle this invalidation request even if it is locked. We see that \emph{locking should be fine-grained enough to distinguish message kinds} while handling a request.
-\item Due to the existence of $\textsf{rqM}\blackdiamond$, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take $\textsf{rqM}\blackdiamond$ since it was locked after making an invalidation request. It cannot take $\textsf{rsI}\bullet$ as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
+As a next rule-execution step, \rdmsgsm{b}{rqM} (previously outputted by \rdcircf{1}) is handled by the parent $P$.
+\rdcircf{3} shows the transition, making \emph{invalidation} requests (\rdmsgsm{c}{rqI}) to the other children ($C_2$ is the only other child in this system) to change their statuses to I, since when a child has M the others should not be able to read/write the data.
+After making invalidation requests, the parent also changes its status to a transient state (sets a lock) to disallow any other requests from the children.
+
+Now imagine a scenario where two children $C_1$ and $C_2$ requested \rdmsgsm{b}{rqM} and \blmsgsm{f}{rqM} to the parent (to obtain M) at the same time, respectively, and the parent decided to deal with the request from $C_1$ first.
+Proper locking is indeed required here, since otherwise the parent will handle two {\sf\small rqM}s simultaneously, which might lead to an incoherent state -- two M statuses in the system.
+
+\rdcircf{3} presents this case, where an invalidation request was made to $C_2$ (\rdmsgsm{c}{rqI}) and even before this, $C_2$ requested \blmsgsm{f}{rqM} to the parent.
+In order to handle both requests correctly, we should carefully consider some corner cases:
+\begin{itemize}[leftmargin=*]
+\item Since $C_2$ requested \blmsgsm{f}{rqM}, it has a transient state SM when \rdmsgsm{c}{rqI} arrives. It should still be able to handle this invalidation request even if it requested the status change to M. We see that locking (by the transient states) should be fine-grained enough to distinguish message kinds while handling a request.
+\item Due to the existence of \blmsgsm{f}{rqM}, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take \blmsgsm{f}{rqM} since it was locked after making an invalidation request. It cannot take \rdmsgsm{d}{rsI} as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
 \end{itemize}
 
 A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
