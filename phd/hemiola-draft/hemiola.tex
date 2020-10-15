@@ -415,23 +415,23 @@ We will see it is still nontrivial to design a correct protocol.
     % C_1 external
     \draw [<-<] (-0.4, -0.3) -- (-0.5, -0.8);
     \draw [>->] (-0.2, -0.3) -- (-0.3, -0.8);
-    \node at (-0.5, -0.95) {\tiny $1$};
-    \node at (-0.3, -0.95) {\tiny $2$};
+    %% \node at (-0.5, -0.95) {\tiny $1$};
+    %% \node at (-0.3, -0.95) {\tiny $2$};
     % C_2 external
     \draw [>->] (0.4, -0.3) -- (0.5, -0.8);
     \draw [<-<] (0.2, -0.3) -- (0.3, -0.8);
-    \node at (0.5, -0.95) {\tiny $10$};
-    \node at (0.3, -0.95) {\tiny $9$};
+    %% \node at (0.5, -0.95) {\tiny $10$};
+    %% \node at (0.3, -0.95) {\tiny $9$};
   }
 }
 
 \begin{figure}[h]
   \begin{tikzpicture}
     \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
-    \pic at (0, 0) {skeleton-midx-e1};
-    \pic at (0, 0) {skeleton-midx-e2};
-    \pic at (0, 0) {skeleton-midx-pc1};
-    \pic at (0, 0) {skeleton-midx-pc2};
+    %% \pic at (0, 0) {skeleton-midx-e1};
+    %% \pic at (0, 0) {skeleton-midx-e2};
+    %% \pic at (0, 0) {skeleton-midx-pc1};
+    %% \pic at (0, 0) {skeleton-midx-pc2};
     \node at (2.5, -1) {$\sqsubseteq$};
     \pic at (3.7, -0.7) {spec};
   \end{tikzpicture}
@@ -442,7 +442,7 @@ We will see it is still nontrivial to design a correct protocol.
 
 The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
 In other words, if the system is coherent, then it should behave like an atomic memory.
-\autoref{fig-motive-1} shows caches and channels for a simple directory-based MSI protocol.
+\autoref{fig-motive-1} shows caches and communication channels for a simple directory-based MSI protocol.
 Since we deal with only a single memory location, the specification (RHS of $\sqsubseteq$) is a single-value ($v$) container with atomic read and write.
 
 Looking at the implementation (LHS of $\sqsubseteq$), there are three caches $P$, $C_1$, and $C_2$, and each of them has its own status (M, S, or I) and data ($v$).
@@ -451,7 +451,8 @@ In this MSI protocol, an object can read/write the data with the M (``modified''
 The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
 For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
 
-Objects communicate through ordered channels (shown as $\rightarrowtail$ in the figure), where each of it has a unique index (shown as a natural number in the figure).
+Objects communicate through ordered channels, shown as $\rightarrowtail$ in the figure.
+%% where each of it has a unique index (shown as a natural number in the figure).
 $C_1$ and $C_2$ have channels to receive and respond to external requests (from processor cores).
 There are three types of channels between a parent and a child: a single channel for parent-to-child messages and two channels for child-to-parent requests and responses, respectively.
 It is natural to wonder why two separate channels are required from a child to a parent; we will see the reason very soon.
@@ -464,16 +465,16 @@ It is natural to wonder why two separate channels are required from a child to a
   \begin{tikzpicture}
     \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
     % C_1 external
-    \pic at (0, 0) {skeleton-midx-e1};
+    %% \pic at (0, 0) {skeleton-midx-e1};
     \node[label={[label distance=-6pt,mordantred19]left:{\rdmsgsm{a}{rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
     % C_2 external
-    \pic at (0, 0) {skeleton-midx-e2};
+    %% \pic at (0, 0) {skeleton-midx-e2};
     \node[label={[label distance=-6pt,mediumtealblue]left:{\blmsgsm{e}{rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
     % Between P and C_1
-    \pic at (0, 0) {skeleton-midx-pc1};
+    %% \pic at (0, 0) {skeleton-midx-pc1};
     \node[label={[label distance=-6pt,mordantred19]left:{\rdmsgsm{b}{rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
     % Between P and C_2
-    \pic at (0, 0) {skeleton-midx-pc2};
+    %% \pic at (0, 0) {skeleton-midx-pc2};
     \node[label={[label distance=-9pt,mordantred19]below right:{\rdmsgsm{d}{rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
     \node[label={[label distance=-9pt,mordantred19]above right:{\rdmsgsm{c}{rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
     \node[label={[label distance=-9pt,mediumtealblue]below left:{\blmsgsm{f}{rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
@@ -523,25 +524,17 @@ A number of corner cases should be handled carefully in this case:
 A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
-\todo{How to claim that Hemiola extracts some information from transient states, only to guarantee serializability?}
-If proper topology and locking are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
-That is exactly what we did with \hemiola{}, where, for instance, instead of the above pseudocode, rules are written more like the following one:
-\begin{lstlisting}
-Rule c1RqMToP :=
-  using template RqToP;
-  accepts rqM;
-  assert (me.status != M);
-  release rqM;
-Endrule
-\end{lstlisting}
-Note that this pseudocode does not mention specific channels or locking at all.
-Instead, it just says that the rule is for making a request to the parent (\slstinline{RqToP}), and it gives various associated assertions and actions, fitting slots associated with this kind of rule.
+\todo{Avoid repeatedly using ``network channels.''}
+Transient states and network channels play a crucial role in making \emph{interleavings} correct.
+Regarding the sequence of rule executions $[\rdcircf{1}\ ;\rdcircf{3}\ ;\rdcircf{4}\;]$ as an execution flow -- we will call it a \emph{transaction} in later technical sections -- to handle the original external request \rdmsgsm{a}{rqM}, we see that no further executions happen after \blcircf{2}, which is for the other request \blmsgsm{e}{rqM}.
+As explained above case-by-case, transient states and network channels are the ones that block \blcircf{2} to be further proceeded.
 
-\hemiola{} provides \emph{rule templates} that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
+In this sense, we would like to find a minimal conditions that ensures safe interleavings, extracted and abstracted from the transient states and network channels.
+Furthermore, we want to formalize the meaning of the ``safe'' interleavings and to show how this formalization ease the verification of cache-coherence protocols.
 
-We further discovered that if a system is defined by using these rule templates, global invariants can be proven without explicit consideration of interference by concurrently executing memory accesses.
-The key is the notion of \emph{serializability} coming originally from the database-transactions literature.
-Before explaining more about the relation between the rule templates and serializability (\autoref{sec-hemiola-dsl}), we introduce an appropriate class of semantic models for protocols (\autoref{sec-trs}) and a formal notion of serializability within it (\autoref{sec-sz-in-hemiola}).
+That is exactly what we did with \hemiola{}.
+In later sections, we will first introduce an appropriate class of semantic models for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
+We will also explain how the serializability ease the burden of verification in \autoref{sec-sz-in-hemiola} and demonstrate its meaningful use cases in verifying our case-study protocols (\autoref{sec-case-study}).
 
 \section{Protocol Transition Systems}
 \label{sec-trs}
@@ -562,6 +555,7 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
 
 \begin{figure}[t]
   \centering\small
+  \def\arraystretch{1.1}
   \begin{tabular}{|c|}
     \hline
     \begin{math}
@@ -573,10 +567,12 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
         \textrm{Rule precondition} & p \in
         \hprect \triangleq \hostt \to \listtof{\hidmt} \to \propt \\
         \textrm{Rule transition} & t \in
-        \htrst \triangleq \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt} \\
+        \htrst \triangleq \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt}\\
       \end{array}
     \end{math}\\
+    \mbox{}\vspace{-10pt} \\ %% padding
     \hline
+    \mbox{}\vspace{-10pt} \\ %% padding
     \begin{math}
       \begin{array}{rl}
         \textrm{Rule} & r ::= \tuple{i, p, t} \\
@@ -590,7 +586,94 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
   \label{fig-trs-system}
 \end{figure}
 
-\hemiola{} uses formal protocol transition systems as an underlying basis for the domain-specific language.
+\begin{figure*}[t]
+  \centering
+  \def\arraystretch{1.1}
+  \arraycolsep=1pt
+  \begin{tabular}{|c|c|}
+    \hline
+    \begin{tabular}{c}
+      \multicolumn{1}{l}{\textbf{(a) Step:}} \\
+      \begin{math}
+        \begin{array}{c}
+          \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}} \\
+          \mbox{}\vspace{-5pt} \\ %% padding
+          \inference[StepIns:]{\listof{m} \neq \listnil
+            & \listof{\idxOf{m}} \subseteq \hsysRqA{S}}{\semstep{S}
+            {\hst{\listof{o}}{M}}
+            {\lblIns{\listof{m}}}
+            {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
+          \mbox{}\vspace{-5pt} \\ %% padding
+          \inference[StepOuts:]{\listof{m} \neq \listnil
+            & \listof{\idxOf{m}} \subseteq \hsysRsA{S}}{\semstep{S}
+            {\hst{\listof{o}}{M}}
+            {\lblOuts{\listof{m}}}
+            {\hst{\listof{o}}{\deqMsgs{M}{\listof{m}}}}} \\
+          \mbox{}\vspace{-5pt} \\ %% padding
+          \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
+            & O \in S.\listof{O}
+            & r \in O.\listof{r} \\
+            \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
+            & \listof{o}\ \idxOf{O} = o_0 \\
+            r.p\ o_0\ \msgIns{m}
+            & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
+            \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
+            & \disj{\midxIns{m}}{\midxOuts{m}}}{\semstep{S}
+            {\hst{\listof{o}}{M}}
+            {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}}
+            {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_1}}{\enqMsgs{\deqMsgs{M}{\msgIns{m}}}{\msgOuts{m}}}}} \\
+          \mbox{}\vspace{-5pt} \\ %% padding
+        \end{array}
+      \end{math}
+    \end{tabular} &
+    \begin{tabular}{c}
+      \multicolumn{1}{l}{\textbf{(b) Steps and behaviors:}} \\
+      \begin{math}
+        \arraycolsep=5pt
+        \begin{array}{cc}
+          \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}}
+          & \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
+            & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{l_1}{\listof{l}}}{s_2}} \\
+          \multicolumn{2}{c}{\inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}}} \\
+          \mbox{}\vspace{-5pt} \\ %% padding
+        \end{array}
+      \end{math}\\
+      \hline
+      \multicolumn{1}{l}{\textbf{(c) Atomic histories:}} \\
+      \begin{math}
+        \begin{array}{c}
+          \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{m}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{m}}}{\listof{\amsge{m}}}}}{28}{\listof{\amsge{m}}}} \\
+          \inference[AtomicCont:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}
+            & \msgIns{n} \neq \listnil
+            & \msgIns{n} \subseteq \listof{\amsge{m}}}{\atomicLong{\listof{m_0}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{28}{(\listapp{\listsub{\listof{\amsge{m}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+          \mbox{}\vspace{-5pt} %% padding
+        \end{array}
+      \end{math}\\
+      \hline
+      \multicolumn{1}{l}{\textbf{(d) Transactions:}} \\
+      \begin{math}
+        \arraycolsep=5pt
+        \begin{array}{cc}
+          \begin{array}{c}
+            \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\
+            \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
+            \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{m}}}}} \\
+            \mbox{}\vspace{-5pt} %% padding
+          \end{array} &
+          \begin{array}{l}
+            \textrm{\footnotesize TrsAtomic:} \\
+            \inference[]{\extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\trsn{S}{\listof{l}}}
+          \end{array} \\
+        \end{array}
+      \end{math}\\
+    \end{tabular}\\
+    \hline
+  \end{tabular}
+  \caption{Steps, behaviors, atomic histories, and transactions in protocol transition systems}
+  \label{fig-trs-semantics}
+\end{figure*}
+
+\hemiola{} uses formal protocol transition systems as an underlying basis for reasoning cache-coherence protocols.
 \autoref{fig-trs-system} explains what such systems are, in the style of automata theory.
 Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
 A struct (a rule, an object, etc.)  sometimes has an \emph{index} to distinguish it from the other components.
@@ -614,62 +697,7 @@ The rule templates, which were briefly mentioned in \autoref{sec-example}, will 
 \subsection{Semantics}
 \label{sec-semantics}
 
-\begin{figure*}[t]
-  \centering
-  \begin{tabular}{|c|}
-    \hline
-    \begin{math}
-      \begin{array}{c}
-        \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}} \\
-        \mbox{}\vspace{-5pt} \\ %% padding
-        \inference[StepIns:]{\listof{m} \neq \listnil
-          & \listof{\idxOf{m}} \subseteq \hsysRqA{S}
-          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
-          {\hst{\listof{o}}{M}}
-          {\lblIns{\listof{m}}}
-          {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
-        \mbox{}\vspace{-5pt} \\ %% padding
-        \inference[StepOuts:]{\listof{m} \neq \listnil
-          & \listof{\idxOf{m}} \subseteq \hsysRsA{S}
-          & \nodup{\listof{\idxOf{m}}}}{\semstep{S}
-          {\hst{\listof{o}}{M}}
-          {\lblOuts{\listof{m}}}
-          {\hst{\listof{o}}{\deqMsgs{M}{\listof{m}}}}} \\
-        \mbox{}\vspace{-5pt} \\ %% padding
-        \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
-          & O \in S.\listof{O}
-          & r \in O.\listof{r} \\
-          \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
-          & \nodup{\midxIns{m}} \\
-          \listof{o}\ \idxOf{O} = o_0
-          & r.p\ o_0\ \msgIns{m}
-          & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
-          \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
-          & \nodup{\midxOuts{m}}
-          & \disj{\midxIns{m}}{\midxOuts{m}}}{\semstep{S}
-          {\hst{\listof{o}}{M}}
-          {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}}
-          {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_1}}{\enqMsgs{\deqMsgs{M}{\msgIns{m}}}{\msgOuts{m}}}}} \\
-        \mbox{}\vspace{-5pt} \\ %% padding
-      \end{array}
-    \end{math}\\
-    \hline
-    \begin{math}
-      \begin{array}{ccc}
-        \mbox{}\vspace{-5pt} \\ %% padding
-        \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}} &
-        \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
-          & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{l_1}{\listof{l}}}{s_2}} &
-        \inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}} \\
-        \mbox{}\vspace{-5pt} \\ %% padding
-      \end{array}
-    \end{math}\\
-    \hline
-  \end{tabular}
-  \caption{Semantics of protocol transition systems}
-  \vspace{-10pt}
-  \label{fig-trs-semantics}
-\end{figure*}
+\todo{Really need to think about the notations for ``messages'' and the pair of message and its channel index, mostly used in the semantics.}
 
 \paragraph{Steps.}
 \autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
@@ -720,8 +748,9 @@ Finally we define a notion of correctness in \hemiola{}.
 \label{sec-sz-in-hemiola}
 
 Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness that originated with databases and distributed systems.
-While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} atomically in some order with no interleaving.
+While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} \emph{atomically in some order with no interleaving}.
 Our notion of protocol transition systems follows standard ideas of message-passing systems, thus it is natural to define and reason about serializability.
+\todo{}
 In this section, we introduce the notion and present a general and structural way to prove it, by using commuting reductions.
 
 It is worth recalling that we build the framework to prove cache-coherence protocols more easily.
@@ -729,45 +758,9 @@ In later sections we will explore which conditions in cache-coherence protocols 
 
 \subsection{From Atomic Histories to Serializability}
 
-\begin{figure}[t]
-  \centering
-  \begin{tabular}{|c|}
-    \hline
-    \begin{math}
-      \arraycolsep=-2pt
-      \begin{array}{c}
-        \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{m}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{m}}}{\listof{\amsge{m}}}}}{28}{\listof{\amsge{m}}}} \\
-        \inference[AtomicCont:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}
-          & \msgIns{n} \neq \listnil
-          & \msgIns{n} \subseteq \listof{\amsge{m}}}{\atomicLong{\listof{m_0}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{28}{(\listapp{\listsub{\listof{\amsge{m}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
-        \mbox{}\vspace{-5pt} %% padding
-      \end{array}
-    \end{math}\\
-    \hline
-    \begin{math}
-      \begin{array}{cc}
-        \begin{array}{c}
-          \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\
-          \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
-          \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{m}}}}} \\
-          \mbox{}\vspace{-5pt} %% padding
-        \end{array} &
-        \begin{array}{l}
-          \textrm{\footnotesize TrsAtomic:} \\
-          \inference[]{\extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\trsn{S}{\listof{l}}}
-        \end{array} \\
-      \end{array}
-    \end{math}\\
-    \hline
-  \end{tabular}
-  \caption{Atomic histories and transactions}
-  \vspace{-5pt}
-  \label{fig-hemiola-trs}
-\end{figure}
-
 \subsubsection{Atomic histories}
-In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, in \autoref{fig-hemiola-trs}.
-A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{m}}}{h}{\listof{\amsge{m}}})$ with \emph{starting messages} $\listof{\amsgi{m}}$ and \emph{live messages} $\listof{\amsge{m}}$.
+In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, in \autoref{fig-trs-semantics}.
+A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{m}}}{h}{\listof{\amsge{m}}})$ with \emph{initial messages} $\listof{\amsgi{m}}$ and \emph{live messages} $\listof{\amsge{m}}$.
 [AtomicStart] initializes a history with an internal label for its first step.
 [AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label should be from live messages of the previous atomic history.
 
@@ -777,18 +770,18 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
       \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
       % C_1 external
       \pic at (0, 0) {skeleton-midx-e1};
-      \node[label={[label distance=-6pt,mordantred19]left:{\sf rqM}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+      \node[label={[label distance=-6pt,mordantred19]left:{\sf\small rqM}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
       % Between P and C_1
       \pic at (0, 0) {skeleton-midx-pc1};
-      \node[label={[label distance=-6pt,mordantred19]left:{\sf rqM}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,mordantred19]left:{\sf\small rqM}},color=mordantred19] at (-1, -0.7) {$\bullet$};
       % Between P and C_2
       \pic at (0, 0) {skeleton-midx-pc2};
-      \node[label={[label distance=-9pt,mordantred19]below left:{\sf rsI}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-      \node[label={[label distance=-9pt,mordantred19]above right:{\sf rqI}},color=mordantred19] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,mordantred19]below left:{\sf\small rsI}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,mordantred19]above right:{\sf\small rqI}},color=mordantred19] at (1, -0.7) {$\bullet$};
 
       % Curves
       \draw [->,color=mordantred19] (-2.2, -1.85) to[out=90,in=-110] node[left] {$r_1$} (-1.6, -0.95);
-      \draw [->,color=mordantred19] (-1.6, -0.4) to[out=70,in=120,distance=1.3cm] node[above] {$r_2$} (1.3, -0.2);
+      \draw [->,color=mordantred19] (-1.6, -0.45) to[out=70,in=120,distance=1.3cm] node[above] {$r_2$} (1.3, -0.2);
       \draw [->,color=mordantred19] (1.45, -0.7) to[out=-50,in=-50,distance=1.7cm] node[below] {$r_3$} (0.5, -1.2);
     \end{tikzpicture}\\
     \hline
@@ -808,33 +801,30 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
 
 \autoref{fig-ex-atomic-history} presents an example of an atomic history.
 $h$ is generated by executions of three rules, $r_1 \in \hobjrules{C_1}$, $r_2 \in \hobjrules{P}$, and $r_3 \in \hobjrules{C_2}$.
-Rule $r_1$ takes an input message $\textsf{rqM}$ from the channel with index $1$, as a starting message of the history.
+Rule $r_1$ takes an input message $\textsf{rqM}$ from the channel with index $1$, as an initial message of the history.
 Rule $r_2$ takes $\textsf{rqM}$ from channel $3$, which held the output message from $r_1$.
 Finally, $r_3$ takes $\textsf{rqI}$ from channel $8$, which is the output message from $r_2$.
 Summing up all the rule executions, by the definition of an atomic history we get the predicate $\atomic{\listsingle{(1,\textsf{rqM})}}{h}{\listsingle{(7,\textsf{rsI})}}$.
-This example shows that an atomic history intuitively captures a \emph{transaction flow} triggered by the starting messages.
+This example shows that an atomic history intuitively captures a \emph{transaction flow} triggered by the initial messages.
 Note that an atomic history does not need to be a completed transaction.
 The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response to an external channel.
 
-We call a history \emph{externally atomic} (denoted as \extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}) if starting
-messages are external requests ($\listof{\amsgi{m}} \subseteq \hsysRqA{S}$).
+We call a history \emph{externally atomic} (denoted as \extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}) if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$).
 In other words, an externally atomic history records the way the system responded to some set of messages received from the outside world.
 
 \subsubsection{Transactions}
-Transactions are the next level of abstraction, defined by the final rules in \autoref{fig-hemiola-trs}.
+Transactions are the next level of abstraction, defined by the final rules in \autoref{fig-trs-semantics}.
 A transaction is either a single silent label ([TrsSilent]), a single external inputs label ([TrsIns]), a single external outputs label ([TrsOuts]), or an externally atomic history ([TrsAtomic]).
 In other words, the permitted atomic execution steps, in this transactional semantics, are arrival of new messages from the outside world, release of messages to the outside world, or uninterrupted execution of an atomic history.
 We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
 
-Note that an external-inputs label and an atomic history are regarded as separate transactions, thus the atomic history can start with inputs from multiple external-inputs labels.
-This relaxed design choice is due to our eventual goal, trace refinement.
+Note that an external-inputs label and an atomic history are regarded as separate transactions; this relaxed design choice is due to our eventual goal, trace refinement.
 In order to prove trace refinement, we should preserve the \emph{order of external labels} while reasoning over histories.
 In particular, we do not want a serialized history having a different trace from the original history.
 A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
 
 \subsubsection{Sequential histories and serializability}
 With a clear notion of transactions, we can easily define sequential histories and serializability.
-
 \begin{definition}[Sequential Histories]
   A history $h$ is \emph{sequential} iff the history is a concatenation of
   transactions:
@@ -843,8 +833,7 @@ With a clear notion of transactions, we can easily define sequential histories a
   \end{displaymath}
   \label{def-seq}
 \end{definition}
-
-\begin{definition}[Serializability]\mbox{}\\
+\begin{definition}[Serializability]\mbox{}\vspace{-8pt}\\
   \begin{enumerate}[leftmargin=*]
   \item A legal history $h$ is \emph{serializable} in the system $S$ iff there
     exists a sequential history that reaches the same state:
@@ -865,7 +854,97 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
 \subsection{The Payoff: Atomic Invariants}
 \label{sec-atomic-invariants}
 
-\todo{1) Provide more intuitions on atomic invariants by giving an actual, minimal example.}
+\begin{figure*}[t]
+  \begin{subfigure}[b]{0.3\textwidth}
+    \centering
+    \begin{tabular}{c}
+      \begin{tikzpicture}
+        \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
+        % C_1 external
+        \pic at (0, 0) {skeleton-midx-e1};
+        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
+        % Between P and C_1
+        \pic at (0, 0) {skeleton-midx-pc1};
+        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
+        % Between P and C_2
+        \pic at (0, 0) {skeleton-midx-pc2};
+        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
+
+        % Curves
+        \draw [->,color=mordantred19] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
+        \draw [->,color=mordantred19] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
+        \draw [->,color=mordantred19] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
+        \draw [->,color=mordantred19] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
+        \draw [->,color=mordantred19] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
+      \end{tikzpicture}\\
+      \begin{tikzpicture}
+        \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
+        % C_2 external
+        \pic at (0, 0) {skeleton-midx-e2};
+        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
+        % Between P and C_1
+        \pic at (0, 0) {skeleton-midx-pc1};
+        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,mediumtealblue]below right:{\small {\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
+        % Between P and C_2
+        \pic at (0, 0) {skeleton-midx-pc2};
+        \node[label={[label distance=-9pt,mediumtealblue]below left:{\small {\sf rqI}}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rsI}}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+
+        % Curves
+        \draw [<-,color=mediumtealblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
+        \draw [<-,color=mediumtealblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
+        \draw [<-,color=mediumtealblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
+        \draw [<-,color=mediumtealblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
+        \draw [<-,color=mediumtealblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
+      \end{tikzpicture}
+    \end{tabular}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.6\textwidth}
+    \renewcommand{\arraystretch}{1.5}
+    \centering
+    \begin{tabular}{c}
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & & & \rdcircf{$7$} & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & \blcircf{$6$} & & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}\\
+      $\downarrow$ (after a reduction between \blcircf{$6$} and \rdcircf{$7$})\\
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & & \rdcircf{$7$} & & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & & \blcircf{$6$} & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}\\
+      $\downarrow^\ast$ (after some reductions between \blcircf{$2$} and \rdcircf{$3$}\rdcircf{$4$}\rdcircf{$5$}\rdcircf{$7$})\\
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & \rdcircf{$7$} & & & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & \rdcircf{$3$} & & \rdcircf{$5$} & & & \blcircf{$6$} & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & & \rdcircf{$4$} & & & \blcircf{$2$} & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}
+    \end{tabular}
+    \renewcommand{\arraystretch}{1.0}
+  \end{subfigure}
+  \caption{An example of interleaving transactions and their serialization \todo{this single figure should be able to account for atomic histories, commuting reductions, and serializability. Additionally, it could be used to provide an intuition how serialization works on top of the tree topology and the rule templates.}}
+  \label{fig-ex-sz}
+\end{figure*}
+
+\todo{1) Provide more intuitions on atomic invariants, using \autoref{fig-ex-sz}}
 \todo{2) Maybe it's better to introduce the notion of predicate messages here?}
 
 We have not yet discussed how to exploit our notion of serializability.
@@ -880,8 +959,8 @@ The following notion of \emph{atomic invariants} reflects these two benefits:
   \label{def-atomic-invariant}
 \end{definition}
 
-An atomic invariant takes starting messages, a prestate, a poststate, and live messages from an atomic history.
-Since it takes starting messages, we can specify which transaction we would like to deal with, via conditions on those messages.
+An atomic invariant takes initial messages, a prestate, a poststate, and live messages from an atomic history.
+Since it takes initial messages, we can specify which transaction we would like to deal with, via conditions on those messages.
 Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
 We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
 
@@ -898,79 +977,16 @@ Similar ideas have been used before to prove correctness of concurrent software~
 The core of the reduction technique is that we can \emph{commute two adjacent state transitions} when they satisfy certain conditions.
 Then we could intuitively claim that with a finite number of reductions we can make an interleaved history serialized.
 
-\tikzset{
-  ->-/.style={
-    decoration={
-      markings,
-      mark=at position #1 with {\arrow{>}}},
-    postaction={decorate}
-  }
-}
-\begin{figure}[h]
-  \begin{tikzpicture}
-    \node at (-1.2, 0) {$h_0 \triangleq$};
-    \draw[->-=0.5] (-0.7, 0) -- (-0.3, 0);
-    \draw[fill={rgb:black,1;white,5}] (0,0) circle [radius=0.3] node {$l_0$};
-    \draw[->-=0.5] (0.3, 0) -- (0.7, 0);
-    \draw (1,0) circle [radius=0.3] node {$l_1$};
-    \draw[->-=0.5] (1.3, 0) -- (1.7, 0);
-    \draw[fill={rgb:black,1;white,5}] (2,0) circle [radius=0.3] node {$l_2$};
-    \draw[->-=0.5] (2.3, 0) -- (2.7, 0);
-    \draw (3,0) circle [radius=0.3] node {$l_3$};
-    \draw[->-=0.5] (3.3, 0) -- (3.7, 0);
-    \draw[fill={rgb:black,1;white,5}] (4,0) circle [radius=0.3] node {$l_4$};
-    \draw[->-=0.5] (4.3, 0) -- (4.7, 0);
-    \draw[fill={rgb:black,1;white,5}] (5,0) circle [radius=0.3] node {$l_5$};
-    \draw[->-=0.5] (5.3, 0) -- (5.7, 0);
-
-    \node at (2.5, -0.6) {\small $\downarrow$ (after a reduction)};
-
-    \node at (-1.2, -1.2) {$h_1 \triangleq$};
-    \draw[->-=0.5] (-0.7, -1.2) -- (-0.3, -1.2);
-    \draw[fill={rgb:black,1;white,5}] (0,-1.2) circle [radius=0.3] node {$l_0$};
-    \draw[->-=0.5] (0.3, -1.2) -- (0.7, -1.2);
-    \draw[fill={rgb:black,1;white,5}] (1,-1.2) circle [radius=0.3] node {$l_2$};
-    \draw[->-=0.5] (1.3, -1.2) -- (1.7, -1.2);
-    \draw (2,-1.2) circle [radius=0.3] node {$l_1$};
-    \draw[->-=0.5] (2.3, -1.2) -- (2.7, -1.2);
-    \draw (3,-1.2) circle [radius=0.3] node {$l_3$};
-    \draw[->-=0.5] (3.3, -1.2) -- (3.7, -1.2);
-    \draw[fill={rgb:black,1;white,5}] (4,-1.2) circle [radius=0.3] node {$l_4$};
-    \draw[->-=0.5] (4.3, -1.2) -- (4.7, -1.2);
-    \draw[fill={rgb:black,1;white,5}] (5,-1.2) circle [radius=0.3] node {$l_5$};
-    \draw[->-=0.5] (5.3, -1.2) -- (5.7, -1.2);
-
-    \node at (2.5, -1.8) {\small $\downarrow^{\ast}$ (after some reductions)};
-
-    \node at (-1.2, -2.4) {$h_2 \triangleq$};
-    \draw[->-=0.5] (-0.7, -2.4) -- (-0.3, -2.4);
-    \draw[fill={rgb:black,1;white,5}] (0,-2.4) circle [radius=0.3] node {$l_0$};
-    \draw[->-=0.5] (0.3, -2.4) -- (0.7, -2.4);
-    \draw[fill={rgb:black,1;white,5}] (1,-2.4) circle [radius=0.3] node {$l_2$};
-    \draw[->-=0.5] (1.3, -2.4) -- (1.7, -2.4);
-    \draw[fill={rgb:black,1;white,5}] (2,-2.4) circle [radius=0.3] node {$l_4$};
-    \draw[->-=0.5] (2.3, -2.4) -- (2.7, -2.4);
-    \draw[fill={rgb:black,1;white,5}] (3,-2.4) circle [radius=0.3] node {$l_5$};
-    \draw[->-=0.5] (3.3, -2.4) -- (3.7, -2.4);
-    \draw (4,-2.4) circle [radius=0.3] node {$l_1$};
-    \draw[->-=0.5] (4.3, -2.4) -- (4.7, -2.4);
-    \draw (5,-2.4) circle [radius=0.3] node {$l_3$};
-    \draw[->-=0.5] (5.3, -2.4) -- (5.7, -2.4);
-  \end{tikzpicture}
-  \caption{Proving serializability using reduction}
-  \label{fig-reduction}
-\end{figure}
-
-\autoref{fig-reduction} elaborates more on this intuition: given an interleaved history ($h_0$ in the figure), we first try to find two atomic history fragments that belong to the same transaction ($l_0$ and $l_2$ in gray; the color indicates that they are in the same transaction).
+\autoref{fig-ex-sz} elaborates more on this intuition: given an interleaved history ($h_0$ in the figure), we first try to find two atomic history fragments that belong to the same transaction ($l_0$ and $l_2$ in gray; the color indicates that they are in the same transaction).
 We \emph{merge} these fragments by performing reductions.
 After a number of iterations of merge (merging $[l_0; l_2]$ and $[l_4; l_5]$ in $h_1$), we eventually get a sequential history ($h_2$ in the figure).
 
-Even though \autoref{fig-reduction} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice,
+Even though \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice,
 implying that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
 
-\todo{Haven't defined ``internally'' atomic histories yet.}
+\todo{Haven't defined ``internally'' atomic histories yet, but I think this paragraph will not be used..}
 A possible deterministic choice -- which atomic fragments to merge -- is to try to find the \emph{first internally atomic history}.
-For example, in the history $h_1$ shown in \autoref{fig-reduction}, assuming $[l_0; l_2]$ is externally atomic, $[l_4; l_5]$ should be the first internally atomic history, and its starting messages would have been generated by $[l_0; l_2]$.
+For example, in the history $h_1$ shown in \autoref{fig-ex-sz}, assuming $[l_0; l_2]$ is externally atomic, $[l_4; l_5]$ should be the first internally atomic history, and its initial messages would have been generated by $[l_0; l_2]$.
 \hemiola{} formalizes this intuition under the name \emph{mergeability}, providing a theorem that if any legal history is mergeable then the target system is serializable.
 See \autoref{sec-appx-proof-sz} for detailed formal definition of mergeability and the serializability proof.
 
@@ -1228,7 +1244,7 @@ This transaction kind is one of the longest-running in cache-coherence protocols
 Each rule in the templates sets/releases a lock properly, depending on which messages the rule takes and generates.
 While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we still see a number of interesting cases that are worth analyzing again in terms of correctness and liveness:
 \begin{itemize}
-\item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-hemiola-trs}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
+\item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-trs-semantics}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
 \item \rtname{\{immu, rqdd\}} show that an object can handle a request from the parent even when uplocked. These rules do not have a precondition that the object should be uplock-free. Note again that this relaxation is to avoid a deadlock.
 \item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure correctness (serializability).
 \item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
@@ -2001,109 +2017,13 @@ Another important future direction is to prove liveness of the protocols designe
 \clearpage
 \appendix
 
-\section{WIP: an example of interleaving transactions and their serialization}
-
-%% WIP
-%% WIP
-\begin{figure*}[t]
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \begin{tabular}{c}
-      \begin{tikzpicture}
-        \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
-        % C_1 external
-        \pic at (0, 0) {skeleton-midx-e1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
-        % Between P and C_1
-        \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
-        % Between P and C_2
-        \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
-
-        % Curves
-        \draw [->,color=mordantred19] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
-        \draw [->,color=mordantred19] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
-        \draw [->,color=mordantred19] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
-        \draw [->,color=mordantred19] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
-        \draw [->,color=mordantred19] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
-      \end{tikzpicture}\\
-      \begin{tikzpicture}
-        \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
-        % C_2 external
-        \pic at (0, 0) {skeleton-midx-e2};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
-        % Between P and C_1
-        \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mediumtealblue]below right:{\small {\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
-        % Between P and C_2
-        \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mediumtealblue]below left:{\small {\sf rqI}}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rsI}}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
-
-        % Curves
-        \draw [<-,color=mediumtealblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
-        \draw [<-,color=mediumtealblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
-        \draw [<-,color=mediumtealblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
-        \draw [<-,color=mediumtealblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
-        \draw [<-,color=mediumtealblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
-      \end{tikzpicture}
-    \end{tabular}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.6\textwidth}
-    \renewcommand{\arraystretch}{1.5}
-    \centering
-    \begin{tabular}{c}
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & & & \rdcircf{$7$} & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & \blcircf{$6$} & & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}\\
-      $\downarrow$ (after a reduction between \blcircf{$6$} and \rdcircf{$7$})\\
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & & \rdcircf{$7$} & & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & & \blcircf{$6$} & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}\\
-      $\downarrow^\ast$ (after some reductions between \blcircf{$2$} and \rdcircf{$3$}\rdcircf{$4$}\rdcircf{$5$}\rdcircf{$7$})\\
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & \rdcircf{$7$} & & & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & \rdcircf{$3$} & & \rdcircf{$5$} & & & \blcircf{$6$} & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & & \rdcircf{$4$} & & & \blcircf{$2$} & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}
-    \end{tabular}
-    \renewcommand{\arraystretch}{1.0}
-  \end{subfigure}
-  \caption{WIP: an example of interleaving transactions and their serialization \todo{this single figure should be able to account for atomic histories, commuting reductions, and serializability. Additionally, it could be used to provide an intuition how serialization works on top of the tree topology and the rule templates.}}
-  \label{fig-ex-interleaving}
-\end{figure*}
-%% WIP
-%% WIP
-
 \section{Proving Serializability Using Reduction}
 \label{sec-appx-proof-sz}
 
 \subsection{Semi-Sequential Histories}
 \label{sec-appx-semi-sequential}
 
-While \autoref{fig-reduction} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice.
+While \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice.
 This implies that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
 
 \begin{figure}[h]
@@ -2166,6 +2086,14 @@ The definition indicates that in order to obtain a serialized history, we should
 
 For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively, while preserving the order among external input labels (or external output labels) themselves.
 
+\tikzset{
+  ->-/.style={
+    decoration={
+      markings,
+      mark=at position #1 with {\arrow{>}}},
+    postaction={decorate}
+  }
+}
 \begin{figure}[h]
   \begin{tikzpicture}
     \draw[->-=0.5] (-0.7, 0) -- (-0.3, 0);
@@ -2223,7 +2151,7 @@ The notion of continuity lets us figure out whether two histories are related as
 \begin{definition}[Continuity]\mbox{}\\
   \begin{enumerate}
   \item Two atomic histories $h_1$ and $h_2$ are \emph{continuous} iff the
-    starting messages of $h_2$ are in the live messages of $h_1$:
+    initial messages of $h_2$ are in the live messages of $h_1$:
     \begin{displaymath}
       \hcont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listof{\amsgi{m_2}} \subseteq \listof{\amsge{m_1}}.
     \end{displaymath}
@@ -2231,7 +2159,7 @@ The notion of continuity lets us figure out whether two histories are related as
     $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally
     atomic.
   \item Two atomic histories $h_1$ and $h_2$ are \emph{discontinuous} iff the live messages of
-    $h_1$ are \emph{disjoint} from the starting messages of $h_2$:
+    $h_1$ are \emph{disjoint} from the initial messages of $h_2$:
     \begin{displaymath}
       \hdiscont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listdisj{\listof{\amsge{m_1}}}{\listof{\amsgi{m_2}}}.
     \end{displaymath}
@@ -2275,7 +2203,7 @@ The \emph{nonconfluence} predicate removes this case, by claiming that any inter
 \newcommand{\hmgb}[3]{\ensuremath{#1 \vdash #2 \hookrightarrow #3}}
 \newcommand{\smgb}[1]{\ensuremath{\mathit{Mergeable}\ #1}}
 
-Now we provide a formal definition that reflects the intuition about the order of reductions, \autoref{fig-reduction}, called \emph{mergeability}.
+Now we provide a formal definition that reflects the intuition about the order of reductions, \autoref{fig-ex-sz}, called \emph{mergeability}.
 
 \begin{definition}
   For a given system $S$, two histories $h_1$ and $h_2$ are \emph{mergeable} iff
@@ -2328,14 +2256,14 @@ We are finally equipped with enough definitions to introduce a convenient genera
 
   \emph{Nonconfluence}: when the system $S$ satisfies $(\goodrules{S}{t})$, input messages of each internal label always belong to one of four categories:
   1) single request to the parent, 2) single response to a child, 3) single request to a child, or 4) multiple responses from children.
-  Now considering the first internal atomic history in the definition of nonconfluence, the starting messages are internal and thus belong to one of the four categories.
+  Now considering the first internal atomic history in the definition of nonconfluence, the initial messages are internal and thus belong to one of the four categories.
   For the first three, nonconfluence trivially holds since the input message is a singleton.
   For the last category, we can prove that no two external atomic histories can have live responses to the same parent, which directly implies nonconfluence.
 
   \emph{Mergeability}: for given externally continuous histories $h_1$ and $h_2$, the core challenge is where to push each intermediate atomic history between the two.
-  The push direction can be determined by looking at the starting messages of $h_2$ as well.
+  The push direction can be determined by looking at the initial messages of $h_2$ as well.
   For example, we can prove that if $h_2$ starts with a single request to the parent, then all the intermediate histories can be pushed after $h_2$.
-  The intuition here is that for each category, the starting messages imply a certain locking state, which restricts the types of possible intermediate histories.
+  The intuition here is that for each category, the initial messages imply a certain locking state, which restricts the types of possible intermediate histories.
 \end{proof}
 \renewcommand*{\proofname}{Proof}
 
