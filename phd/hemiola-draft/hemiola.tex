@@ -734,15 +734,23 @@ A system $S$ has a behavior $\behOf{\listof{l}}$ if there exists an execution of
 Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
 We call such a sequence of labels a \emph{trace}.
 Finally we define a notion of correctness in \hemiola{}.
-
 \begin{definition}[Trace Refinement]
-  A system $I$ (``implementation'') is said to trace-refine another system $S$
-  (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is
-  also a trace of $S$:
+  A system $I$ (``implementation'') is said to trace-refine another system $S$ (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is also a trace of $S$:
   \begin{displaymath}
     \refines{I}{S} \triangleq \forall \listof{t}.\; \sembeh{I}{\listof{t}} \to \sembeh{S}{\listof{t}}.
   \end{displaymath}
 \end{definition}
+
+Trace refinement is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states.
+\begin{definition}[Simulation]
+  We call $(\sim): \hsyst{} \to \hsyst{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
+  \begin{displaymath}
+    \forall s_0, s_1, l.\; \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
+  \end{displaymath}
+\end{definition}
+\begin{theorem}[Simulation implies trace refinement]
+  For given systems $I$ and $S$, if there is a simulation $(\sim)$, then \refines{I}{S}.
+\end{theorem}
 
 \section{Serializability in Protocol Transition Systems}
 \label{sec-sz-in-hemiola}
@@ -851,11 +859,85 @@ With a clear notion of transactions, we can easily define sequential histories a
 Note that we are reasoning only about serializability of sequences of rule executions, taking for granted that rules can be executed atomically.
 Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serializability for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
 
-\subsection{The Payoff: Atomic Invariants}
+\subsection{The Payoff: Atomic Invariants and Predicate Messages}
 \label{sec-atomic-invariants}
 
+\todo{1) Provide more intuitions on atomic invariants, using \autoref{fig-ex-sz}}
+\todo{2) Maybe it's better to introduce the notion of predicate messages here?}
+\todo{3) Need to introduce the very basic notion of invariants}
+\todo{4) Atomic invariants: can state and prove invariants without any interference by the other transactions}
+\todo{5) Draw a diagram; what would be the predicate message if not over an atomic history?}
+
+We call $\mathcal{I}: \hsyst{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
+    % C_2 external
+    \pic at (0, 0) {skeleton-midx-e2};
+    \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
+    % Between P and C_1
+    \pic at (0, 0) {skeleton-midx-pc1};
+    \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+    % Between P and C_2
+    \pic at (0, 0) {skeleton-midx-pc2};
+    \node[label={[label distance=-9pt,mediumtealblue]below right:{\small $\textsf{rqI}\{\top\}$}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
+    \node[label={[label distance=-6pt,mediumtealblue]left:{\small $\textsf{rsI}\{C_1.\textrm{st} = I\}$}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+
+    % Curves
+    \draw [->,color=mediumtealblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blcircf{$8$}} (-1.8, -1.0);
+    \draw [->,color=mediumtealblue] (-1.6, -0.4) to[out=65,in=110,distance=1.3cm] node[above] {\blcircf{$9$}} (1.4, -0.4);
+    \draw [->,color=mediumtealblue] (1.7, -1.0) to[out=-45,in=90] node[right] {\blcircf{$10$}} (2.4, -2.1);
+  \end{tikzpicture}
+  \caption{Predicate messages over an atomic history}
+  \vspace{-5pt}
+  \label{fig-ex-atomic-invariants}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
+    % C_1 external
+    \pic at (0, 0) {skeleton-midx-e1};
+    \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
+    % Between P and C_1
+    \pic at (0, 0) {skeleton-midx-pc1};
+    \node[label={[label distance=-9pt,mordantred19]below right:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
+    % Between P and C_2
+    \pic at (0, 0) {skeleton-midx-pc2};
+    \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$??}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+
+    % Curves
+    \draw [->,color=mordantred19] (-0.5, -1.15) to[out=225,in=90] node[below right] {\rdcircf{$7$}\,{\small\color{mordantred19} ($C_1.\textrm{st} := M$)}} (-1.1, -1.85);
+  \end{tikzpicture}
+  \caption{A predicate message gets broken when interleaved}
+  \vspace{-5pt}
+  \label{fig-ex-pred-msg-fail}
+\end{figure}
+
+We have not yet discussed how to exploit our notion of serializability.
+How does it help prove trace refinement between an implementation and its spec?
+There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
+However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
+
+It is much easier to describe and prove invariants of a serializable system since 1) an invariant can be stated per-transaction, and 2) it does not need to take interleavings into account.
+The following notion of \emph{atomic invariants} reflects these two benefits:
+\begin{definition}[Atomic Invariants]
+  $(\mathcal{A}: \listtof{\hidmt{}} \to \hsyst{} \to \hsyst{} \to \listtof{\hidmt{}} \to \propt{})$ is called an \emph{atomic invariant} iff $(\mathcal{A}\ \listof{m_i}\; s_0\; s_1\; \listof{m_o})$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
+  \label{def-atomic-invariant}
+\end{definition}
+
+An atomic invariant takes initial messages, a prestate, a poststate, and live messages from an atomic history.
+Since it takes initial messages, we can specify which transaction we would like to deal with, via conditions on those messages.
+Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
+We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
+
+\subsection{Proving Serializability Using Reduction}
+
 \begin{figure*}[t]
-  \begin{subfigure}[b]{0.3\textwidth}
+  \begin{subfigure}[b]{0.4\textwidth}
     \centering
     \begin{tabular}{c}
       \begin{tikzpicture}
@@ -904,7 +986,7 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
       \end{tikzpicture}
     \end{tabular}
   \end{subfigure}
-  \begin{subfigure}[b]{0.6\textwidth}
+  \begin{subfigure}[b]{0.58\textwidth}
     \renewcommand{\arraystretch}{1.5}
     \centering
     \begin{tabular}{c}
@@ -943,28 +1025,6 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
   \caption{An example of interleaving transactions and their serialization \todo{this single figure should be able to account for atomic histories, commuting reductions, and serializability. Additionally, it could be used to provide an intuition how serialization works on top of the tree topology and the rule templates.}}
   \label{fig-ex-sz}
 \end{figure*}
-
-\todo{1) Provide more intuitions on atomic invariants, using \autoref{fig-ex-sz}}
-\todo{2) Maybe it's better to introduce the notion of predicate messages here?}
-
-We have not yet discussed how to exploit our notion of serializability.
-How does it help prove trace refinement between an implementation and its spec?
-There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
-However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
-
-It is much easier to describe and prove invariants of a serializable system since 1) an invariant can be stated per-transaction, and 2) it does not need to take interleavings into account.
-The following notion of \emph{atomic invariants} reflects these two benefits:
-\begin{definition}[Atomic Invariants]
-  $(\mathcal{A}: \listtof{\hidmt{}} \to \hsyst{} \to \hsyst{} \to \listtof{\hidmt{}} \to \propt{})$ is called an \emph{atomic invariant} iff $(\mathcal{A}\ \listof{m_i}\; s_0\; s_1\; \listof{m_o})$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
-  \label{def-atomic-invariant}
-\end{definition}
-
-An atomic invariant takes initial messages, a prestate, a poststate, and live messages from an atomic history.
-Since it takes initial messages, we can specify which transaction we would like to deal with, via conditions on those messages.
-Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
-We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
-
-\subsection{Proving Serializability Using Reduction}
 
 \todo{1) Forget about justifying the reduction orders.}
 \todo{2) Instead of the orders, it should be better to explain what the ``certain'' conditions are.}
