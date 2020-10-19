@@ -605,6 +605,7 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
             {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
           \inference[StepOuts:]{\listof{m} \neq \listnil
+            & \listof{m} \subseteq M
             & \listof{\idxOf{m}} \subseteq \hsysRsA{S}}{\semstep{S}
             {\hst{\listof{o}}{M}}
             {\lblOuts{\listof{m}}}
@@ -614,7 +615,8 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
             & O \in S.\listof{O}
             & r \in O.\listof{r} \\
             \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
-            & \listof{o}\ \idxOf{O} = o_0 \\
+            & \listof{o}\ \idxOf{O} = o_0
+            & \msgIns{m} \subseteq M \\
             r.p\ o_0\ \msgIns{m}
             & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
             \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
@@ -697,7 +699,7 @@ The rule templates, which were briefly mentioned in \autoref{sec-example}, will 
 \subsection{Semantics}
 \label{sec-semantics}
 
-\todo{Really need to think about the notations for ``messages'' and the pair of message and its channel index, mostly used in the semantics.}
+\todo{Really need to think about the notations for ``messages'' and the pair of message and its channel index, mostly used in the semantics. Also need to say implicitly every pair in the inference rules satisfies nodup(index).}
 
 \paragraph{Steps.}
 \autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
@@ -862,38 +864,21 @@ Here we appeal to a tradition of hardware-description approaches that guarantee 
 \subsection{The Payoff: Atomic Invariants and Predicate Messages}
 \label{sec-atomic-invariants}
 
-\todo{1) Provide more intuitions on atomic invariants, using \autoref{fig-ex-sz}}
-\todo{2) Maybe it's better to introduce the notion of predicate messages here?}
-\todo{3) Need to introduce the very basic notion of invariants}
-\todo{4) Atomic invariants: can state and prove invariants without any interference by the other transactions}
-\todo{5) Draw a diagram; what would be the predicate message if not over an atomic history?}
+\newcommand{\spredmsg}[3]{\ensuremath{#1 \vdash #2\{#3\}}}
+\newcommand{\predmsg}[2]{\ensuremath{#1\{#2\}}}
+
+We have not yet discussed how to exploit our notion of serializability.
+How does it help prove trace refinement between an implementation and its spec?
+There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
+However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
 
 We call $\mathcal{I}: \hsyst{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
-
-\begin{figure}[h]
-  \centering
-  \begin{tikzpicture}
-    \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
-    % C_2 external
-    \pic at (0, 0) {skeleton-midx-e2};
-    \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
-    % Between P and C_1
-    \pic at (0, 0) {skeleton-midx-pc1};
-    \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
-    % Between P and C_2
-    \pic at (0, 0) {skeleton-midx-pc2};
-    \node[label={[label distance=-9pt,mediumtealblue]below right:{\small $\textsf{rqI}\{\top\}$}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
-    \node[label={[label distance=-6pt,mediumtealblue]left:{\small $\textsf{rsI}\{C_1.\textrm{st} = I\}$}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
-
-    % Curves
-    \draw [->,color=mediumtealblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blcircf{$8$}} (-1.8, -1.0);
-    \draw [->,color=mediumtealblue] (-1.6, -0.4) to[out=65,in=110,distance=1.3cm] node[above] {\blcircf{$9$}} (1.4, -0.4);
-    \draw [->,color=mediumtealblue] (1.7, -1.0) to[out=-45,in=90] node[right] {\blcircf{$10$}} (2.4, -2.1);
-  \end{tikzpicture}
-  \caption{Predicate messages over an atomic history}
-  \vspace{-5pt}
-  \label{fig-ex-atomic-invariants}
-\end{figure}
+In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``what is the desired property if the system has a certain message in a certain queue?''
+We call such an invariant a \emph{predicate message}, denoted as \spredmsg{S}{m}{\lambda s.P}, whose formal definition is as following:
+\begin{displaymath}
+  \spredmsg{S}{m}{\lambda s.P} \triangleq \forall s.\; \semrch{S}{s} \to m \in s.M \to P\; s.
+\end{displaymath}
+We will just use \predmsg{m}{\lambda s.P} when the system $S$ is easily inferred by the context.
 
 \begin{figure}[h]
   \centering
@@ -910,29 +895,81 @@ We call $\mathcal{I}: \hsyst{} \to \propt{}$ an \emph{invariant} over a system $
     \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$??}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
 
     % Curves
-    \draw [->,color=mordantred19] (-0.5, -1.15) to[out=225,in=90] node[below right] {\rdcircf{$7$}\,{\small\color{mordantred19} ($C_1.\textrm{st} := M$)}} (-1.1, -1.85);
+    \draw [->,color=mordantred19] (-0.5, -1.15) to[out=225,in=90] node[below right] {{\small\color{mordantred19} ($C_1.\textrm{st} \leftarrow M$)}} (-1.1, -1.85);
+
+    % Legends
+    \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
+          {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
-  \caption{A predicate message gets broken when interleaved}
+  \caption{A predicate message becomes broken when interleaving comes}
   \vspace{-5pt}
   \label{fig-ex-pred-msg-fail}
 \end{figure}
 
-We have not yet discussed how to exploit our notion of serializability.
-How does it help prove trace refinement between an implementation and its spec?
-There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
-However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
+\autoref{fig-ex-pred-msg-fail} presents an example of a predicate message.
+Recalling our motivating example from \autoref{sec-example}, when the system has a message of a kind {\sf\color{mediumtealblue} rsM}, we expect the parent and the other child (not the requestor) has the I status ({\color{mediumtealblue} $C_1.\textrm{st} = I \wedge P.\textrm{st} = I$}).
+However, this predicate message becomes broken when a state transition happens \emph{by another transaction}; for instance, the predicate for {\sf\color{mediumtealblue} rsM} no longer holds if a state transition happens by another {\sf\color{mordantred19} rsM}, which updates the status of $C_1$ to M.
+Considering this case carefully, we become to find that the two different {\sf rsM} messages should not be in the system at the same time.
+It implies that now the predicate message for {\sf rsM} should have a much more complicated form, which at least includes that no other {\sf rsM} messages reside in the system.
+The complete desired predicate message for {\sf\color{mediumtealblue} rsM} is then as following:
+\begin{displaymath}
+  \predmsg{(8, \textsf{rsM})}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I \wedge (7, \textsf{rsI}) \notin s.M \wedge (5, \textsf{rsM}) \notin s.M}.
+\end{displaymath}
 
-It is much easier to describe and prove invariants of a serializable system since 1) an invariant can be stated per-transaction, and 2) it does not need to take interleavings into account.
-The following notion of \emph{atomic invariants} reflects these two benefits:
+It is indeed a burden to consider all possible interference cases when designing each predicate message.
+We would not have faced such a complication if we could ensure that no other transactions interfere while handling a transaction.
+It is exactly what serializability guarantees; \hemiola{} provides the way of designing and proving predicate messages in the simpler form, not taking any interleavings into account.
+
+The following notion of \emph{atomic invariants} formally reflects the use of predicate messages in atomic histories:
 \begin{definition}[Atomic Invariants]
-  $(\mathcal{A}: \listtof{\hidmt{}} \to \hsyst{} \to \hsyst{} \to \listtof{\hidmt{}} \to \propt{})$ is called an \emph{atomic invariant} iff $(\mathcal{A}\ \listof{m_i}\; s_0\; s_1\; \listof{m_o})$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
+  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hsyst{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{m_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
   \label{def-atomic-invariant}
 \end{definition}
+Note that an atomic invariant takes the live messages ($\listof{m_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
 
-An atomic invariant takes initial messages, a prestate, a poststate, and live messages from an atomic history.
-Since it takes initial messages, we can specify which transaction we would like to deal with, via conditions on those messages.
-Also, the invariant does not need to be stated considering interleavings, since the poststate is derived from the atomic history.
-We will see the actual use of atomic invariants in our case studies (\autoref{sec-case-study}), via a technique called ``predicate messages.''
+\newcommand{\rdrulelbl}[2]{#1:\;{\small\color{mordantred19}#2}}
+\newcommand{\blrulelbl}[2]{#1:\;{\small\color{mediumtealblue}#2}}
+\newcommand{\rdcircflbl}[2]{\rulelbl{\rdcircf{#1}}{#2}}
+\newcommand{\blcircflbl}[2]{\rulelbl{\blcircf{#1}}{#2}}
+
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{c}
+    \begin{tikzpicture}
+      \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
+      % C_2 external
+      \pic at (0, 0) {skeleton-midx-e2};
+      \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
+      % Between P and C_1
+      \pic at (0, 0) {skeleton-midx-pc1};
+      \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+      % Between P and C_2
+      \pic at (0, 0) {skeleton-midx-pc2};
+      \node[label={[label distance=-9pt,mediumtealblue]below right:{\small\sf rqI}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,mediumtealblue]left:{\small $\textsf{rsI}\{C_1.\textrm{st} = I\}$}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+
+      % Curves
+      \draw [->,color=mediumtealblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blrulelbl{$r_1$}{$(C_1.\textrm{st} \leftarrow I)$}} (-1.8, -1.0);
+      \draw [->,color=mediumtealblue] (-1.6, -0.4) to[out=65,in=110,distance=1.3cm] node[above] {\blrulelbl{$r_p$}{$(P.\textrm{st} \leftarrow I)$}} (1.4, -0.4);
+      \draw [->,color=mediumtealblue] (1.7, -1.0) to[out=-45,in=90] node[right] {\blrulelbl{$r_2$}{$(C_2.\textrm{st} \leftarrow M)$}} (2.4, -2.1);
+    \end{tikzpicture}\\
+    \begin{math}
+      \begin{array}{rcrcl}
+        \mathcal{I}_a\; s\; \listof{m} & \triangleq & ((4, \textsf{rsI}) \in s.M & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I)\; \wedge\\
+        & & ((8, \textsf{rsM}) \in s.M & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I\\
+        & & & & \wedge\; (s.\listof{o})[\idxOf{P}].\textrm{st} = I)\\
+      \end{array}
+    \end{math}
+  \end{tabular}
+  \caption{Predicate messages defined as an atomic invariant}
+  \vspace{-5pt}
+  \label{fig-ex-atomic-invariants}
+\end{figure}
+
+\autoref{fig-ex-atomic-invariants} shows an example of an atomic history and how predicate messages are stated and used in the history.
+\todo{Fill the paragraph.}
+
+We will see more concrete uses of predicate messages in our case studies (\autoref{sec-case-study}).
 
 \subsection{Proving Serializability Using Reduction}
 
