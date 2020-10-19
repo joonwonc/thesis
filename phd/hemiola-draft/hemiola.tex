@@ -162,7 +162,6 @@
 \newcommand{\hvaluet}{\ensuremath{\mathbb{V}}}
 \newcommand{\hmsgt}{\ensuremath{\mathbb{M}}}
 \newcommand{\hostt}{\ensuremath{\mathbb{O}}}
-\newcommand{\hsyst}{\ensuremath{\mathbb{S}}}
 \newcommand{\hidmt}{\ensuremath{\mathbb{IM}}}
 %% \newcommand{\hprect}{\ensuremath{\mathcal{P}}}
 %% \newcommand{\htrst}{\ensuremath{\mathcal{T}}}
@@ -178,6 +177,20 @@
 
 \newcommand{\hsysobjs}[1]{\ensuremath{#1.\listof{O}}}
 \newcommand{\hobjrules}[1]{\ensuremath{#1.\listof{r}}}
+
+\newcommand{\msgbuild}[3]{\tuple{#1, #2, #3}}
+\newcommand{\msgty}{\ensuremath{\textsf{ty}}}
+\newcommand{\msgid}{\ensuremath{\textsf{id}}}
+\newcommand{\msgval}{\ensuremath{\textsf{val}}}
+\newcommand{\mtypeOf}[1]{#1.\msgty{}}
+\newcommand{\midOf}[1]{#1.\msgid{}}
+\newcommand{\mvalOf}[1]{#1.\msgval{}}
+\newcommand{\idmbuild}[2]{\tuple{#1, #2}}
+
+\newcommand{\ruleprec}{\ensuremath{\textsf{prec}}}
+\newcommand{\ruletrs}{\ensuremath{\textsf{trs}}}
+\newcommand{\rprecOf}[1]{#1.\ruleprec{}}
+\newcommand{\rtrsOf}[1]{#1.\ruletrs{}}
 
 \newcommand{\msgIns}[1]{\listof{#1^{\textrm{ins}}}}
 \newcommand{\msgOuts}[1]{\listof{#1^{\textrm{outs}}}}
@@ -200,6 +213,7 @@
 
 \newcommand{\disj}[2]{\ensuremath{#1 \; \# \; #2}}
 \newcommand{\nodup}[1]{\ensuremath{\textsf{nodup}\: #1}}
+\newcommand{\heads}[1]{\ensuremath{#1.\textsf{hds}}}
 
 \newcommand{\semstep}[4]{\ensuremath{#2 \xrightarrow[#1]{#3} #4}}
 \newcommand{\semsteps}[4]{\ensuremath{#2 \xRightarrow[#1]{#3} #4}}
@@ -557,20 +571,6 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
 \subsection{Syntax}
 \label{sec-syntax}
 
-\newcommand{\msgbuild}[3]{\tuple{#1, #2, #3}}
-\newcommand{\msgty}{\ensuremath{\textsf{ty}}}
-\newcommand{\msgid}{\ensuremath{\textsf{id}}}
-\newcommand{\msgval}{\ensuremath{\textsf{val}}}
-\newcommand{\mtypeOf}[1]{#1.\msgty{}}
-\newcommand{\midOf}[1]{#1.\msgid{}}
-\newcommand{\mvalOf}[1]{#1.\msgval{}}
-\newcommand{\idmbuild}[2]{\tuple{#1, #2}}
-
-\newcommand{\ruleprec}{\ensuremath{\textsf{prec}}}
-\newcommand{\ruletrs}{\ensuremath{\textsf{trs}}}
-\newcommand{\rprecOf}[1]{#1.\ruleprec{}}
-\newcommand{\rtrsOf}[1]{#1.\ruletrs{}}
-
 \begin{figure}[t]
   \centering\small
   \setlength{\tabcolsep}{0pt}
@@ -583,7 +583,7 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
         \textrm{Value} & \msgval{} \in \hvaluet{} \\
         \textrm{Message} & m ::= \msgbuild{\msgty}{\msgid}{\msgval} \in \hmsgt{} \triangleq \boolt \ast \hidxt \ast \hvaluet \\
         \textrm{Index} & i \in \hidxt{}\ \textrm{(for channels, objects, etc.)} \\
-        \textrm{Channel Index \& Message} & \idmbuild{i}{m} \in \hidmt \triangleq \hidxt \ast \hmsgt \\
+        \textrm{Channel Index \& Message} & im ::= \idmbuild{i}{m} \in \hidmt \triangleq \hidxt \ast \hmsgt \\
         \textrm{Object state} & o \in \hostt{} \\
         \textrm{Rule precondition} & \ruleprec{} \in \hostt \to \listtof{\hidmt} \to \propt \\
         \textrm{Rule transition} & \ruletrs{} \in \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt}\\
@@ -606,43 +606,49 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
 \end{figure}
 
 \begin{figure*}[t]
-  \centering
+  \small\centering
   \def\arraystretch{1.1}
   \arraycolsep=1pt
   \begin{tabular}{|c|c|}
     \hline
     \begin{tabular}{c}
+      \multicolumn{1}{l}{\textbf{* Types}} \\
+      \begin{tabular}{ll}
+        $\textrm{Message States}\ \ M \in \hidxt{} \to \listtof{\hmsgt}$ &
+        $\textrm{State}\ \ s \in \hstt{} ::= \tuple{\listof{o}, M}$ \\
+        \multicolumn{2}{l}{$\textrm{Label}\ \ l ::= \lblEmpty{}\; |\; \lblIns{\listof{im}}\; |\; \lblOuts{\listof{im}}\; |\; \lblInt{\idxOf{O}}{\idxOf{r}}{\listof{im}}{\listof{im}}$} \\
+      \end{tabular}\\
       \multicolumn{1}{l}{\textbf{(a) Step:}} \\
       \begin{math}
         \begin{array}{c}
           \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
-          \inference[StepIns:]{\listof{m} \neq \listnil
-            & \listof{\idxOf{m}} \subseteq \hsysRqA{S}}{\semstep{S}
+          \inference[StepIns:]{\listof{im} \neq \listnil
+            & \listof{\idxOf{im}} \subseteq \hsysRqA{S}}{\semstep{S}
             {\hst{\listof{o}}{M}}
-            {\lblIns{\listof{m}}}
-            {\hst{\listof{o}}{\enqMsgs{M}{\listof{m}}}}} \\
+            {\lblIns{\listof{im}}}
+            {\hst{\listof{o}}{\enqMsgs{M}{\listof{im}}}}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
-          \inference[StepOuts:]{\listof{m} \neq \listnil
-            & \listof{m} \subseteq M
-            & \listof{\idxOf{m}} \subseteq \hsysRsA{S}}{\semstep{S}
+          \inference[StepOuts:]{\listof{im} \neq \listnil
+            & \listof{im} \subseteq \heads{M}
+            & \listof{\idxOf{im}} \subseteq \hsysRsA{S}}{\semstep{S}
             {\hst{\listof{o}}{M}}
-            {\lblOuts{\listof{m}}}
-            {\hst{\listof{o}}{\deqMsgs{M}{\listof{m}}}}} \\
+            {\lblOuts{\listof{im}}}
+            {\hst{\listof{o}}{\deqMsgs{M}{\listof{im}}}}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
           \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
             & O \in S.\listof{O}
             & r \in O.\listof{r} \\
-            \midxIns{m} \subseteq \hsysInA{S} \cup \hsysRqA{S}
-            & \listof{o}\ \idxOf{O} = o_0
-            & \msgIns{m} \subseteq M \\
-            r.p\ o_0\ \msgIns{m}
-            & r.t\ o_0\ \msgIns{m} = (o_1, \msgOuts{m}) \\
-            \midxOuts{m} \subseteq \hsysInA{S} \cup \hsysRsA{S}
-            & \disj{\midxIns{m}}{\midxOuts{m}}}{\semstep{S}
+            \midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}
+            & \listof{o}[\idxOf{O}] = o_1
+            & \msgIns{im} \subseteq \heads{M} \\
+            r.p\enspace o_1\ \msgIns{im}
+            & r.t\ o_1\ \msgIns{im} = (o_2, \msgOuts{im}) \\
+            \midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}
+            & \disj{\midxIns{im}}{\midxOuts{im}}}{\semstep{S}
             {\hst{\listof{o}}{M}}
-            {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}}
-            {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_1}}{\enqMsgs{\deqMsgs{M}{\msgIns{m}}}{\msgOuts{m}}}}} \\
+            {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{im}}{\msgOuts{im}}}
+            {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_2}}{\enqMsgs{\deqMsgs{M}{\msgIns{im}}}{\msgOuts{im}}}}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
         \end{array}
       \end{math}
@@ -663,10 +669,10 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
       \multicolumn{1}{l}{\textbf{(c) Atomic histories:}} \\
       \begin{math}
         \begin{array}{c}
-          \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{m}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{m}}}{\listof{\amsge{m}}}}}{28}{\listof{\amsge{m}}}} \\
-          \inference[AtomicCont:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}
+          \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{im}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{im}}}{\listof{\amsge{im}}}}}{28}{\listof{\amsge{im}}}} \\
+          \inference[AtomicCont:]{\atomic{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}
             & \msgIns{n} \neq \listnil
-            & \msgIns{n} \subseteq \listof{\amsge{m}}}{\atomicLong{\listof{m_0}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{28}{(\listapp{\listsub{\listof{\amsge{m}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+            & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
           \mbox{}\vspace{-5pt} %% padding
         \end{array}
       \end{math}\\
@@ -677,13 +683,13 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
         \begin{array}{cc}
           \begin{array}{c}
             \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\
-            \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\
-            \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{m}}}}} \\
+            \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{im}}}}} \\
+            \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{im}}}}} \\
             \mbox{}\vspace{-5pt} %% padding
           \end{array} &
           \begin{array}{l}
             \textrm{\footnotesize TrsAtomic:} \\
-            \inference[]{\extatomic{S}{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\trsn{S}{\listof{l}}}
+            \inference[]{\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}}{\trsn{S}{\listof{l}}}
           \end{array} \\
         \end{array}
       \end{math}\\
@@ -719,19 +725,21 @@ It is necessary to distinguish between internal and external channels, in order 
 \autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
 A state transition (step) happens by a rule that takes input messages and generates output messages.
 The semantics for a step is presented as a judgment $\semstep{S}{s_0}{l}{s_1}$, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $l$ is a label generated by the state transition.
-The state of a system (in domain $\hsyst{}$) is a pair, consisting of object states and message states.
-Object states are represented in finite maps from object indices to object states, and message states are represented in finite maps from channel indices to queues of messages.
+The state of a system (in domain $\hstt{}$) is a pair, consisting of object states and message states.
+Object states are represented in a finite map from object indices to object states, and message states are represented in a finite map from channel indices to ordered queues of messages.
 
 Rule [StepSilent] represents the case where no state transition happens in the current step; an empty label (\lblEmpty{}) is generated in this case.
-A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{m}) should not be empty, channels of the messages are valid, and none of them share the same channel ($\nodup{\listof{\idxOf{m}}}$); an external inputs label $(\lblIns{\listof{m}})$ is generated in this case.
+From now on, we assume that all the input/output messages used in the step definitions do not share the same channel, \ie{} $(\nodup{\listof{\idxOf{im}}})$.
+A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{im}) should not be empty, channels of the messages are valid; an external inputs label $(\lblIns{\listof{im}})$ is generated in this case.
 [StepOuts] describes the opposite case, for output messages being released to the external world.
+In this case, each output message should be in the head of its residing channel ($\listof{im} \subseteq \heads{M}$).
 
 Lastly, [StepInt] deals with a state transition by a rule ($r$) in an object ($O$).
-It nondeterministically chooses an object and a rule in the object, checks that the precondition holds, and applies the transition to update the state of the system; an internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{m}}{\msgOuts{m}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
+It nondeterministically chooses an object and a rule in the object, checks that the precondition holds, and applies the transition to update the state of the system; an internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{im}}{\msgOuts{im}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
 
 Note that the semantics is based on ordered channels, so messages are \emph{enqueued} and \emph{dequeued} in each state-transition case.
-We use notations $\enqMsgs{M}{\listof{m}}$ and $\deqMsgs{M}{\listof{m}}$ for such operations, and especially when messages are dequeued we implicitly assume that each element in $\listof{m}$ is at the front of its queue.
-It is also required that any state transition does not both dequeue and enqueue an element from the same queue; $\disj{\midxIns{m}}{\midxOuts{m}}$ in [StepInt] exactly describes this condition.
+We use notations $\enqMsgs{M}{\listof{im}}$ and $\deqMsgs{M}{\listof{im}}$ for such operations.
+It is also required that any state transition does not both dequeue and enqueue an element from the same queue; $\disj{\midxIns{im}}{\midxOuts{im}}$ in [StepInt] exactly describes this condition.
 
 The step semantics is naturally lifted to one for multiple steps, presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$, $s_0$, and $s_1$ are similar to ones in the step semantics, and $\listof{l}$ is a sequence of labels generated by executions of the steps.
 [StepsNil] serves the case where no state transitions happen at all.
@@ -740,18 +748,18 @@ Note that the latest label is added to the head, thus the last label in the sequ
 (We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
 
 We will sometimes call a sequence of labels a \emph{history}.
-We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds, where $\sysInit{S}$ is the initial state of the system $S$, constructed by composing all initial object states.
 We use a simpler notation $\semrch{S}{s}$ for reachable states.
-We also apply the symmetrical notion that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We also say that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
 We write $\semleg{S}{\listof{l}}$ to assert that a history is legal.
 
 \paragraph{Behaviors and correctness.}
-A system $S$ has a behavior $\behOf{\listof{l}}$ if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior]).
+A system $S$ has a behavior $\behOf{\listof{l}}$ (denoted as \sembeh{S}{\behOf{\listof{l}}}) if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior]).
 Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
 We call such a sequence of labels a \emph{trace}.
 Finally we define a notion of correctness in \hemiola{}.
 \begin{definition}[Trace Refinement]
-  A system $I$ (``implementation'') is said to trace-refine another system $S$ (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is also a trace of $S$:
+  A system $I$ (``implementation'') trace-refines another system $S$ (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is also a trace of $S$:
   \begin{displaymath}
     \refines{I}{S} \triangleq \forall \listof{t}.\; \sembeh{I}{\listof{t}} \to \sembeh{S}{\listof{t}}.
   \end{displaymath}
@@ -759,32 +767,36 @@ Finally we define a notion of correctness in \hemiola{}.
 
 Trace refinement is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states.
 \begin{definition}[Simulation]
-  We call $(\sim): \hsyst{} \to \hsyst{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
-  \begin{displaymath}
-    \forall s_0, s_1, l.\; \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
-  \end{displaymath}
+  We call $(\sim): \hstt{} \to \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
+  \begin{align*}
+    \forall s_0, s_1, l.\; & \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to\\
+    & \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
+  \end{align*}
 \end{definition}
 \begin{theorem}[Simulation implies trace refinement]
-  For given systems $I$ and $S$, if there is a simulation $(\sim)$, then \refines{I}{S}.
+  If there is a simulation $(\sim)$ between two given systems $I$ and $S$, then \refines{I}{S}.
 \end{theorem}
+\begin{proof}
+  By the induction on state-transition steps.
+\end{proof}
 
 \section{Serializability in Protocol Transition Systems}
 \label{sec-sz-in-hemiola}
 
 Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness that originated with databases and distributed systems.
 While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} \emph{atomically in some order with no interleaving}.
-Our notion of protocol transition systems follows standard ideas of message-passing systems, thus it is natural to define and reason about serializability.
-\todo{}
-In this section, we introduce the notion and present a general and structural way to prove it, by using commuting reductions.
 
-It is worth recalling that we build the framework to prove cache-coherence protocols more easily.
-In later sections we will explore which conditions in cache-coherence protocols ensure serializability and how a serializability guarantee eases correctness proofs.
+In this section, we provide the formal definition of serializability and explain how it eases the burden of designing and proving conventional invariants.
+It is worth recalling at this moment that we build the framework to prove cache-coherence protocols more easily.
+In the next section we will explore which conditions in cache-coherence protocols ensure serializability and how to prove it with the conditions.
 
 \subsection{From Atomic Histories to Serializability}
 
+\todo{Polish from here!}
+
 \subsubsection{Atomic histories}
-In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, in \autoref{fig-trs-semantics}.
-A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{m}}}{h}{\listof{\amsge{m}}})$ with \emph{initial messages} $\listof{\amsgi{m}}$ and \emph{live messages} $\listof{\amsge{m}}$.
+In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, presented in \autoref{fig-trs-semantics}.
+A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$ with \emph{initial messages} $\listof{\amsgi{im}}$ and \emph{live messages} $\listof{\amsge{im}}$.
 [AtomicStart] initializes a history with an internal label for its first step.
 [AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label should be from live messages of the previous atomic history.
 
@@ -886,7 +898,7 @@ How does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
 However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a trace-refinement proof usually requires a number of invariants of the implementation.
 
-We call $\mathcal{I}: \hsyst{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
+We call $\mathcal{I}: \hstt{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
 In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``what is the desired property if the system has a certain message in a certain queue?''
 We call such an invariant a \emph{predicate message}, denoted as \spredmsg{S}{m}{\lambda s.P}, whose formal definition is as following:
 \begin{displaymath}
@@ -936,7 +948,7 @@ It is exactly what serializability guarantees; \hemiola{} provides the way of de
 
 The following notion of \emph{atomic invariants} formally reflects the use of predicate messages in atomic histories:
 \begin{definition}[Atomic Invariants]
-  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hsyst{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{m_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
+  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{m_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
   \label{def-atomic-invariant}
 \end{definition}
 Note that an atomic invariant takes the live messages ($\listof{m_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
@@ -984,122 +996,6 @@ Note that an atomic invariant takes the live messages ($\listof{m_o}$) from an a
 \todo{Fill the paragraph.}
 
 We will see more concrete uses of predicate messages in our case studies (\autoref{sec-case-study}).
-
-\subsection{Proving Serializability Using Reduction}
-
-\begin{figure*}[t]
-  \begin{subfigure}[b]{0.4\textwidth}
-    \centering
-    \begin{tabular}{c}
-      \begin{tikzpicture}
-        \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
-        % C_1 external
-        \pic at (0, 0) {skeleton-midx-e1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
-        % Between P and C_1
-        \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
-        % Between P and C_2
-        \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
-
-        % Curves
-        \draw [->,color=mordantred19] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
-        \draw [->,color=mordantred19] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
-        \draw [->,color=mordantred19] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
-        \draw [->,color=mordantred19] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
-        \draw [->,color=mordantred19] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
-      \end{tikzpicture}\\
-      \begin{tikzpicture}
-        \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
-        % C_2 external
-        \pic at (0, 0) {skeleton-midx-e2};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
-        % Between P and C_1
-        \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mediumtealblue]below right:{\small {\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
-        % Between P and C_2
-        \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mediumtealblue]below left:{\small {\sf rqI}}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rsI}}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
-
-        % Curves
-        \draw [<-,color=mediumtealblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
-        \draw [<-,color=mediumtealblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
-        \draw [<-,color=mediumtealblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
-        \draw [<-,color=mediumtealblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
-        \draw [<-,color=mediumtealblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
-      \end{tikzpicture}
-    \end{tabular}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.58\textwidth}
-    \renewcommand{\arraystretch}{1.5}
-    \centering
-    \begin{tabular}{c}
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & & & \rdcircf{$7$} & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & \blcircf{$6$} & & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}\\
-      $\downarrow$ (after a reduction between \blcircf{$6$} and \rdcircf{$7$})\\
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & & \rdcircf{$7$} & & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & & \blcircf{$6$} & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}\\
-      $\downarrow^\ast$ (after some reductions between \blcircf{$2$} and \rdcircf{$3$}\rdcircf{$4$}\rdcircf{$5$}\rdcircf{$7$})\\
-      \begin{tabular}{c|cccccccccc}
-        \hline
-        $C_1$ & \rdcircf{$1$} & & & & \rdcircf{$7$} & & & \blcircf{$8$} & & \\
-        \hline
-        $P$ & & \rdcircf{$3$} & & \rdcircf{$5$} & & & \blcircf{$6$} & & \blcircf{$9$} & \\
-        \hline
-        $C_2$ & & & \rdcircf{$4$} & & & \blcircf{$2$} & & & & \blcircf{$10$} \\
-        \hline
-      \end{tabular}
-    \end{tabular}
-    \renewcommand{\arraystretch}{1.0}
-  \end{subfigure}
-  \caption{An example of interleaving transactions and their serialization \todo{this single figure should be able to account for atomic histories, commuting reductions, and serializability. Additionally, it could be used to provide an intuition how serialization works on top of the tree topology and the rule templates.}}
-  \label{fig-ex-sz}
-\end{figure*}
-
-\todo{1) Forget about justifying the reduction orders.}
-\todo{2) Instead of the orders, it should be better to explain what the ``certain'' conditions are.}
-\todo{3) Maybe also by examples?}
-
-We now introduce a general proof methodology that can prove serializability via commuting reductions~\cite{reduction}.
-Given a history where multiple transactions are interleaved, we can perform a finite number of reductions to get a sequential history that reaches the same state.
-Similar ideas have been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but no past work has adapted the technique for cache-coherence protocols, and we needed to design new conditions and prove that they ensure serializability.
-
-The core of the reduction technique is that we can \emph{commute two adjacent state transitions} when they satisfy certain conditions.
-Then we could intuitively claim that with a finite number of reductions we can make an interleaved history serialized.
-
-\autoref{fig-ex-sz} elaborates more on this intuition: given an interleaved history ($h_0$ in the figure), we first try to find two atomic history fragments that belong to the same transaction ($l_0$ and $l_2$ in gray; the color indicates that they are in the same transaction).
-We \emph{merge} these fragments by performing reductions.
-After a number of iterations of merge (merging $[l_0; l_2]$ and $[l_4; l_5]$ in $h_1$), we eventually get a sequential history ($h_2$ in the figure).
-
-Even though \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice,
-implying that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
-
-\todo{Haven't defined ``internally'' atomic histories yet, but I think this paragraph will not be used..}
-A possible deterministic choice -- which atomic fragments to merge -- is to try to find the \emph{first internally atomic history}.
-For example, in the history $h_1$ shown in \autoref{fig-ex-sz}, assuming $[l_0; l_2]$ is externally atomic, $[l_4; l_5]$ should be the first internally atomic history, and its initial messages would have been generated by $[l_0; l_2]$.
-\hemiola{} formalizes this intuition under the name \emph{mergeability}, providing a theorem that if any legal history is mergeable then the target system is serializable.
-See \autoref{sec-appx-proof-sz} for detailed formal definition of mergeability and the serializability proof.
 
 \section{The Hemiola Domain-Specific Language}
 \label{sec-hemiola-dsl}
@@ -1370,10 +1266,124 @@ This choice is safe since the upward request may introduce state changes outside
 Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
 We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
-\subsection{Automated Proof of Serializability}
+\subsection{Serializability Guarantee by \hemiola{}}
 
 \todo{1) We really need to provide the ``intuition'' why serializability holds with the topology and rule conditions.}
 \todo{2) The proof sketch could go to the appendix, with enough intuitions provided.}
+
+\begin{figure*}[t]
+  \begin{subfigure}[b]{0.4\textwidth}
+    \centering
+    \begin{tabular}{c}
+      \begin{tikzpicture}
+        \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
+        % C_1 external
+        \pic at (0, 0) {skeleton-midx-e1};
+        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
+        % Between P and C_1
+        \pic at (0, 0) {skeleton-midx-pc1};
+        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
+        % Between P and C_2
+        \pic at (0, 0) {skeleton-midx-pc2};
+        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
+
+        % Curves
+        \draw [->,color=mordantred19] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
+        \draw [->,color=mordantred19] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
+        \draw [->,color=mordantred19] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
+        \draw [->,color=mordantred19] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
+        \draw [->,color=mordantred19] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
+      \end{tikzpicture}\\
+      \begin{tikzpicture}
+        \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
+        % C_2 external
+        \pic at (0, 0) {skeleton-midx-e2};
+        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
+        % Between P and C_1
+        \pic at (0, 0) {skeleton-midx-pc1};
+        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,mediumtealblue]below right:{\small {\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
+        % Between P and C_2
+        \pic at (0, 0) {skeleton-midx-pc2};
+        \node[label={[label distance=-9pt,mediumtealblue]below left:{\small {\sf rqI}}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rsI}}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+
+        % Curves
+        \draw [<-,color=mediumtealblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
+        \draw [<-,color=mediumtealblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
+        \draw [<-,color=mediumtealblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
+        \draw [<-,color=mediumtealblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
+        \draw [<-,color=mediumtealblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
+      \end{tikzpicture}
+    \end{tabular}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.58\textwidth}
+    \renewcommand{\arraystretch}{1.5}
+    \centering
+    \begin{tabular}{c}
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & & & \rdcircf{$7$} & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & \blcircf{$6$} & & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}\\
+      $\downarrow$ (after a reduction between \blcircf{$6$} and \rdcircf{$7$})\\
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & & \rdcircf{$7$} & & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & & \rdcircf{$3$} & & \rdcircf{$5$} & & \blcircf{$6$} & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & \blcircf{$2$} & & \rdcircf{$4$} & & & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}\\
+      $\downarrow^\ast$ (after some reductions between \blcircf{$2$} and \rdcircf{$3$}\rdcircf{$4$}\rdcircf{$5$}\rdcircf{$7$})\\
+      \begin{tabular}{c|cccccccccc}
+        \hline
+        $C_1$ & \rdcircf{$1$} & & & & \rdcircf{$7$} & & & \blcircf{$8$} & & \\
+        \hline
+        $P$ & & \rdcircf{$3$} & & \rdcircf{$5$} & & & \blcircf{$6$} & & \blcircf{$9$} & \\
+        \hline
+        $C_2$ & & & \rdcircf{$4$} & & & \blcircf{$2$} & & & & \blcircf{$10$} \\
+        \hline
+      \end{tabular}
+    \end{tabular}
+    \renewcommand{\arraystretch}{1.0}
+  \end{subfigure}
+  \caption{An example of interleaving transactions and their serialization \todo{this single figure should be able to account for atomic histories, commuting reductions, and serializability. Additionally, it could be used to provide an intuition how serialization works on top of the tree topology and the rule templates.}}
+  \label{fig-ex-sz}
+\end{figure*}
+
+\todo{1) Forget about justifying the reduction orders.}
+\todo{2) Instead of the orders, it should be better to explain what the ``certain'' conditions are.}
+\todo{3) Maybe also by examples?}
+
+We now introduce a general proof methodology that can prove serializability via commuting reductions~\cite{reduction}.
+Given a history where multiple transactions are interleaved, we can perform a finite number of reductions to get a sequential history that reaches the same state.
+Similar ideas have been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but no past work has adapted the technique for cache-coherence protocols, and we needed to design new conditions and prove that they ensure serializability.
+
+The core of the reduction technique is that we can \emph{commute two adjacent state transitions} when they satisfy certain conditions.
+Then we could intuitively claim that with a finite number of reductions we can make an interleaved history serialized.
+
+\autoref{fig-ex-sz} elaborates more on this intuition: given an interleaved history ($h_0$ in the figure), we first try to find two atomic history fragments that belong to the same transaction ($l_0$ and $l_2$ in gray; the color indicates that they are in the same transaction).
+We \emph{merge} these fragments by performing reductions.
+After a number of iterations of merge (merging $[l_0; l_2]$ and $[l_4; l_5]$ in $h_1$), we eventually get a sequential history ($h_2$ in the figure).
+
+Even though \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice,
+implying that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
+
+\todo{Haven't defined ``internally'' atomic histories yet, but I think this paragraph will not be used..}
+A possible deterministic choice -- which atomic fragments to merge -- is to try to find the \emph{first internally atomic history}.
+For example, in the history $h_1$ shown in \autoref{fig-ex-sz}, assuming $[l_0; l_2]$ is externally atomic, $[l_4; l_5]$ should be the first internally atomic history, and its initial messages would have been generated by $[l_0; l_2]$.
+\hemiola{} formalizes this intuition under the name \emph{mergeability}, providing a theorem that if any legal history is mergeable then the target system is serializable.
+See \autoref{sec-appx-proof-sz} for detailed formal definition of mergeability and the serializability proof.
 
 \newcommand{\ontree}[2]{\ensuremath{\textit{OnTree}\ #1\ #2}}
 \newcommand{\goodrules}[2]{\ensuremath{\textit{GoodRules}\ #1\ #2}}
