@@ -155,15 +155,17 @@
 
 \newcommand{\idxOf}[1]{\ensuremath{#1.i}}
 
+\newcommand{\boolt}{\ensuremath{\mathbb{B}}}
 \newcommand{\propt}{\ensuremath{\mathbb{P}}}
 \newcommand{\hidt}{\ensuremath{\mathbb{I}}}
+\newcommand{\hidxt}{\ensuremath{\mathbb{I}}}
 \newcommand{\hvaluet}{\ensuremath{\mathbb{V}}}
 \newcommand{\hmsgt}{\ensuremath{\mathbb{M}}}
 \newcommand{\hostt}{\ensuremath{\mathbb{O}}}
 \newcommand{\hsyst}{\ensuremath{\mathbb{S}}}
-\newcommand{\hidmt}{\ensuremath{\hidt \ast \hmsgt}}
-\newcommand{\hprect}{\ensuremath{\mathcal{P}}}
-\newcommand{\htrst}{\ensuremath{\mathcal{T}}}
+\newcommand{\hidmt}{\ensuremath{\mathbb{IM}}}
+%% \newcommand{\hprect}{\ensuremath{\mathcal{P}}}
+%% \newcommand{\htrst}{\ensuremath{\mathcal{T}}}
 
 \newcommand{\hsysIn}[1]{\ensuremath{\listof{#1_{\textrm{in}}}}}
 \newcommand{\hsysRq}[1]{\ensuremath{\listof{#1_{\textrm{rq}}}}}
@@ -192,6 +194,8 @@
 \newcommand{\hstt}{\ensuremath{\mathbb{S}}}
 \newcommand{\hst}[2]{\ensuremath{\tuple{#1, #2}}}
 \newcommand{\hstm}[2]{\ensuremath{\left\langle\begin{array}{l}#1,\\ #2 \end{array}\right\rangle}}
+
+\newcommand{\objInit}[1]{\ensuremath{#1_{\textsf{init}}}}
 \newcommand{\sysInit}[1]{\ensuremath{#1_{\textsf{init}}}}
 
 \newcommand{\disj}[2]{\ensuremath{#1 \; \# \; #2}}
@@ -524,17 +528,15 @@ A number of corner cases should be handled carefully in this case:
 A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
-\todo{Avoid repeatedly using ``network channels.''}
 Transient states and network channels play a crucial role in making \emph{interleavings} correct.
 Regarding the sequence of rule executions $[\rdcircf{1}\ ;\rdcircf{3}\ ;\rdcircf{4}\;]$ as an execution flow -- we will call it a \emph{transaction} in later technical sections -- to handle the original external request \rdmsgsm{a}{rqM}, we see that no further executions happen after \blcircf{2}, which is for the other request \blmsgsm{e}{rqM}.
-As explained above case-by-case, transient states and network channels are the ones that block \blcircf{2} to be further proceeded.
+As explained above case-by-case, proper transient states and network channels block \blcircf{2} to be further proceeded.
 
-In this sense, we would like to find a minimal conditions that ensures safe interleavings, extracted and abstracted from the transient states and network channels.
+In this sense, we would like to find a minimal conditions that ensures safe interleavings, \emph{extracted and abstracted} from the transient states and network channels.
 Furthermore, we want to formalize the meaning of the ``safe'' interleavings and to show how this formalization ease the verification of cache-coherence protocols.
-
 That is exactly what we did with \hemiola{}.
-In later sections, we will first introduce an appropriate class of semantic models for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
-We will also explain how the serializability ease the burden of verification in \autoref{sec-sz-in-hemiola} and demonstrate its meaningful use cases in verifying our case-study protocols (\autoref{sec-case-study}).
+In later sections, we will first introduce an underlying semantic model for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
+We will also explain how the serializability ease the burden of verification (\autoref{sec-atomic-invariants}) and show its definite use cases in verifying our case-study protocols (\autoref{sec-case-study}).
 
 \section{Protocol Transition Systems}
 \label{sec-trs}
@@ -549,25 +551,42 @@ $\sizeof{\listof{l}}$ is the length of a list.
 Regarding a list of key-value pairs as a finite map, we override notations for lists.
 For example, $(\mapupds{M}{\listof{l}})$ updates multiple key-value pairs in a finite map $M$.
 Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single update for simplicity.
+We will use $\tuple{\cdot}$ to denote a struct and use a name (\eg{} $s.\textsf{fd}$) to access a field value.
+$(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}\ (\lambda s.\; s.\textsf{fd})\ \listof{s})$.
 
 \subsection{Syntax}
 \label{sec-syntax}
 
+\newcommand{\msgbuild}[3]{\tuple{#1, #2, #3}}
+\newcommand{\msgty}{\ensuremath{\textsf{ty}}}
+\newcommand{\msgid}{\ensuremath{\textsf{id}}}
+\newcommand{\msgval}{\ensuremath{\textsf{val}}}
+\newcommand{\mtypeOf}[1]{#1.\msgty{}}
+\newcommand{\midOf}[1]{#1.\msgid{}}
+\newcommand{\mvalOf}[1]{#1.\msgval{}}
+\newcommand{\idmbuild}[2]{\tuple{#1, #2}}
+
+\newcommand{\ruleprec}{\ensuremath{\textsf{prec}}}
+\newcommand{\ruletrs}{\ensuremath{\textsf{trs}}}
+\newcommand{\rprecOf}[1]{#1.\ruleprec{}}
+\newcommand{\rtrsOf}[1]{#1.\ruletrs{}}
+
 \begin{figure}[t]
   \centering\small
+  \setlength{\tabcolsep}{0pt}
   \def\arraystretch{1.1}
   \begin{tabular}{|c|}
     \hline
     \begin{math}
       \begin{array}{rl}
-        \textrm{Index} & i \in \hidt{} \\
-        \textrm{Value} & v \in \hvaluet{} \\
-        \textrm{Message} & m ::= \tuple{i, v} \in \hmsgt{} \triangleq \hidt \ast \hvaluet \\
+        \textrm{Id} & \msgid{} \in \hidxt{} \\
+        \textrm{Value} & \msgval{} \in \hvaluet{} \\
+        \textrm{Message} & m ::= \msgbuild{\msgty}{\msgid}{\msgval} \in \hmsgt{} \triangleq \boolt \ast \hidxt \ast \hvaluet \\
+        \textrm{Index} & i \in \hidxt{}\ \textrm{(for channels, objects, etc.)} \\
+        \textrm{Channel Index \& Message} & \idmbuild{i}{m} \in \hidmt \triangleq \hidxt \ast \hmsgt \\
         \textrm{Object state} & o \in \hostt{} \\
-        \textrm{Rule precondition} & p \in
-        \hprect \triangleq \hostt \to \listtof{\hidmt} \to \propt \\
-        \textrm{Rule transition} & t \in
-        \htrst \triangleq \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt}\\
+        \textrm{Rule precondition} & \ruleprec{} \in \hostt \to \listtof{\hidmt} \to \propt \\
+        \textrm{Rule transition} & \ruletrs{} \in \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt}\\
       \end{array}
     \end{math}\\
     \mbox{}\vspace{-10pt} \\ %% padding
@@ -575,8 +594,8 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
     \mbox{}\vspace{-10pt} \\ %% padding
     \begin{math}
       \begin{array}{rl}
-        \textrm{Rule} & r ::= \tuple{i, p, t} \\
-        \textrm{Object} & O ::= \tuple{i, \listof{r}} \\
+        \textrm{Rule} & r ::= \tuple{i, \ruleprec{}, \ruletrs{}} \\
+        \textrm{Object} & O ::= \tuple{i, \objInit{o}, \listof{r}} \\
         \textrm{System} & S ::= \hsyss{\listof{O}}{i} \\
       \end{array}
     \end{math}\\
@@ -677,29 +696,24 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
 
 \hemiola{} uses formal protocol transition systems as an underlying basis for reasoning cache-coherence protocols.
 \autoref{fig-trs-system} explains what such systems are, in the style of automata theory.
-Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
-A struct (a rule, an object, etc.)  sometimes has an \emph{index} to distinguish it from the other components.
-We will use $\tuple{\cdot}$ to denote a struct and use a name to access a field value.
-In our implementation, an index is a list of natural numbers, for easy hierarchical addressing.
-A \emph{value} $v$ refers to a general set of values, principally those that can be stored at memory addresses.
-A \emph{message} $m$ consists of a message id (effectively from an enumeration of message kinds) and value.
+A \emph{message} $m$ consists of a boolean message type (request or response), a message id (effectively from an enumeration of message kinds), and value.
+A \emph{value} refers to a general set of values, principally those that can be stored at memory addresses.
+A struct sometimes has an \emph{index} to distinguish it from the other components.
+A pair $\idmbuild{i}{m}$ is used to represent a message $m$ residing in a channel with an index $i$.
 
+A rule $r$ a struct composed of its rule index (unique within an object), a precondition (\ruleprec{}), and a transition function (\ruletrs{}).
+A precondition takes two arguments, a current object state and input messages, and decides whether the rule can be executed or not.
+A transition function takes the same arguments but returns the next object state and a list of (channel index, message) pairs as output messages.
+Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
+
+An object $O$ contains its object index (unique within a system), an initial state ($\objInit{o}$), and rules (\listof{r}) that make local state transitions within the object.
 A system $S$ contains information about objects and channels.
 It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
-Each object (or channel) has its own unique index.
 The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
 It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system.
-An object $O$ contains its object index (unique within a system) and rules (\listof{r}) that make local state transitions within the object.
-
-A rule $r$ consists of its rule index (unique within an object), a precondition ($p$), and a transition function ($t$).
-A precondition takes two arguments, a current object state and a list of (channel index, message) pairs as input messages, and decides whether the rule can be executed or not.
-A transition function takes the same arguments but returns the next object state and a list of (channel index, message) pairs as output messages.
-The rule templates, which were briefly mentioned in \autoref{sec-example}, will be defined on top of this notion of rules, as detailed in \autoref{sec-hemiola-dsl}.
 
 \subsection{Semantics}
 \label{sec-semantics}
-
-\todo{Really need to think about the notations for ``messages'' and the pair of message and its channel index, mostly used in the semantics. Also need to say implicitly every pair in the inference rules satisfies nodup(index).}
 
 \paragraph{Steps.}
 \autoref{fig-trs-semantics} describes the semantics of protocol transition systems.
