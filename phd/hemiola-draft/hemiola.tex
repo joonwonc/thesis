@@ -43,15 +43,19 @@
 \usepackage{adjustbox}
 \usepackage{ifthen}
 
+\definecolor{mordantred19}{rgb}{0.68, 0.05, 0.0}
 \definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
 \definecolor{mediumtealblue}{rgb}{0.0, 0.33, 0.71}
-\definecolor{mordantred19}{rgb}{0.68, 0.05, 0.0}
+
+\colorlet{myred}{mordantred19}
+\colorlet{mygreen}{forestgreen}
+\colorlet{myblue}{mediumtealblue}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
   columns=fullflexible,
   emph={fun, assert, Definition, Rule, rule, Endrule, endrule, using, template, accepts, holding, release, from, me, requires, transition, ltac},
-  emphstyle={\bfseries\color{forestgreen}},
+  emphstyle={\bfseries\color{mygreen}},
   %% backgroundcolor=\color{backcolour},
   %% commentstyle=\color{codegreen},
   %% keywordstyle=\color{magenta},
@@ -122,7 +126,8 @@
 \newcommand{\hemiola}{Hemiola}
 
 \renewcommand{\listof}[1]{\ensuremath{\overline{#1}}}
-\newcommand{\listtof}[1]{\ensuremath{\overrightarrow{#1}}}
+%% \newcommand{\listtof}[1]{\ensuremath{\overrightarrow{#1}}}
+\newcommand{\listtof}[1]{\ensuremath{\overline{#1}}}
 \newcommand{\listnil}{\ensuremath{\lbrack\rbrack}}
 \newcommand{\listcons}[2]{\ensuremath{#1 : #2}}
 \newcommand{\listsingle}[1]{\ensuremath{\lbrack #1 \rbrack}}
@@ -253,32 +258,32 @@
 \newcommand*\rdrecsm[1]{
   \adjustbox{raise=.1ex, margin=-1pt}{
     \tikz[baseline=(char.base)]{
-      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=mordantred19]
+      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myred]
       (char) {\scriptsize\sffamily\bf #1};}}
 }
 \newcommand*\blrecsm[1]{
   \adjustbox{raise=.1ex, margin=-1pt}{
     \tikz[baseline=(char.base)]{
-      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=mediumtealblue]
+      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myblue]
       (char) {\scriptsize\sffamily\bf #1};}}
 }
 
 \newcommand*\rdcircf[1]{
   \adjustbox{raise=.2ex, margin=-2pt}{
     \tikz[baseline=(char.base)]{
-      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=mordantred19, text=white]
+      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myred, text=white]
       (char) {\tiny\sffamily #1};}}
 }
 \newcommand*\blcircf[1]{
   \adjustbox{raise=.2ex, margin=-2pt}{
     \tikz[baseline=(char.base)]{
-      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=mediumtealblue, text=white]
+      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myblue, text=white]
       (char) {\tiny\sffamily #1};}}
 }
 
-\newcommand{\rdrecmsg}[2]{{\color{mordantred19}\rdrecsm{#1}{\sf #2}}}
+\newcommand{\rdrecmsg}[2]{{\color{myred}\rdrecsm{#1}{\sf #2}}}
 \newcommand{\rdrecmsgsm}[2]{\rdrecmsg{#1}{\small #2}}
-\newcommand{\blrecmsg}[2]{{\color{mediumtealblue}\blrecsm{#1}{\sf #2}}}
+\newcommand{\blrecmsg}[2]{{\color{myblue}\blrecsm{#1}{\sf #2}}}
 \newcommand{\blrecmsgsm}[2]{\blrecmsg{#1}{\small #2}}
 
 %% -- End of Commands
@@ -484,24 +489,24 @@ It is natural to wonder why two separate channels are required from a child to a
     \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
     % C_1 external
     %% \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,mordantred19]left:{\rdrecmsgsm{a}{rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{a}{rqM}}},color=myred] at (-1.6, -2.05) {$\bullet$};
     % C_2 external
     %% \pic at (0, 0) {skeleton-midx-e2};
-    \node[label={[label distance=-6pt,mediumtealblue]left:{\blrecmsgsm{e}{rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myblue]left:{\blrecmsgsm{e}{rqM}}},color=myblue] at (1.4, -2.05) {$\bullet$};
     % Between P and C_1
     %% \pic at (0, 0) {skeleton-midx-pc1};
-    \node[label={[label distance=-6pt,mordantred19]left:{\rdrecmsgsm{b}{rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{b}{rqM}}},color=myred] at (-1, -0.7) {$\bullet$};
     % Between P and C_2
     %% \pic at (0, 0) {skeleton-midx-pc2};
-    \node[label={[label distance=-9pt,mordantred19]below right:{\rdrecmsgsm{d}{rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-    \node[label={[label distance=-9pt,mordantred19]above right:{\rdrecmsgsm{c}{rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
-    \node[label={[label distance=-9pt,mediumtealblue]below left:{\blrecmsgsm{f}{rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
+    \node[label={[label distance=-9pt,myred]below right:{\rdrecmsgsm{d}{rsI}}},color=myred] at (0.8, -0.7) {$\bullet$};
+    \node[label={[label distance=-9pt,myred]above right:{\rdrecmsgsm{c}{rqI}}},color=myred] at (1, -0.7) {$\bullet$};
+    \node[label={[label distance=-9pt,myblue]below left:{\blrecmsgsm{f}{rqM}}},color=myblue] at (0.6, -0.7) {$\bullet$};
 
     % Curves
-    \draw [->,color=mordantred19] (-2.55, -1.85) to[out=90,in=-110] node {\rdcircf{1}} (-1.95, -0.95);
-    \draw [->,color=mordantred19] (-1.9, -0.4) to[out=70,in=110,distance=1.5cm] node {\rdcircf{3}} (1.5, -0.2);
-    \draw [->,color=mordantred19] (1.9, -0.6) to[out=-40,in=-40,distance=1cm] node {\rdcircf{4}} (1.7, -1);
-    \draw [->,color=mediumtealblue] (0.9, -1.9) to[out=90,in=-45] node {\blcircf{2}} (0.3, -1.2);
+    \draw [->,color=myred] (-2.55, -1.85) to[out=90,in=-110] node {\rdcircf{1}} (-1.95, -0.95);
+    \draw [->,color=myred] (-1.9, -0.4) to[out=70,in=110,distance=1.5cm] node {\rdcircf{3}} (1.5, -0.2);
+    \draw [->,color=myred] (1.9, -0.6) to[out=-40,in=-40,distance=1cm] node {\rdcircf{4}} (1.7, -1);
+    \draw [->,color=myblue] (0.9, -1.9) to[out=90,in=-45] node {\blcircf{2}} (0.3, -1.2);
 
     % Legends
     %% \draw [->] (2, 0) to (3, 0);
@@ -807,19 +812,19 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
       \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
       % C_1 external
       \pic at (0, 0) {skeleton-midx-e1};
-      \node[label={[label distance=-6pt,mordantred19]left:{\sf\small rqM}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]left:{\sf\small rqM}},color=myred] at (-1.6, -2.05) {$\bullet$};
       % Between P and C_1
       \pic at (0, 0) {skeleton-midx-pc1};
-      \node[label={[label distance=-6pt,mordantred19]left:{\sf\small rqM}},color=mordantred19] at (-1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]left:{\sf\small rqM}},color=myred] at (-1, -0.7) {$\bullet$};
       % Between P and C_2
       \pic at (0, 0) {skeleton-midx-pc2};
-      \node[label={[label distance=-9pt,mordantred19]below left:{\sf\small rsI}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-      \node[label={[label distance=-9pt,mordantred19]above right:{\sf\small rqI}},color=mordantred19] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myred]below left:{\sf\small rsI}},color=myred] at (0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myred]above right:{\sf\small rqI}},color=myred] at (1, -0.7) {$\bullet$};
 
       % Curves
-      \draw [->,color=mordantred19] (-2.2, -1.85) to[out=90,in=-110] node[left=3pt] {$r_1$} (-1.6, -0.95);
-      \draw [->,color=mordantred19] (-1.6, -0.45) to[out=70,in=120,distance=1.3cm] node[above] {$r_2$} (1.3, -0.2);
-      \draw [->,color=mordantred19] (1.45, -0.7) to[out=-50,in=-50,distance=1.7cm] node[below] {$r_3$} (0.5, -1.2);
+      \draw [->,color=myred] (-2.2, -1.85) to[out=90,in=-110] node[left=3pt] {$r_1$} (-1.6, -0.95);
+      \draw [->,color=myred] (-1.6, -0.45) to[out=70,in=120,distance=1.3cm] node[above] {$r_2$} (1.3, -0.2);
+      \draw [->,color=myred] (1.45, -0.7) to[out=-50,in=-50,distance=1.7cm] node[below] {$r_3$} (0.5, -1.2);
     \end{tikzpicture}\\
     \hline
     \begin{math}
@@ -882,18 +887,22 @@ With a clear notion of transactions, we can easily define sequential histories a
   \label{def-sz}
 \end{definition}
 
-\subsection{The Payoff: Predicate Messages in Transactions}
+\subsection{The Payoff: Predicate Messages in Atomic Histories}
 \label{sec-atomic-invariants}
 
 \newcommand{\msgsf}[1]{\ensuremath{\textsf{#1}}}
 \newcommand{\msgsfsm}[1]{{\small\ensuremath{\textsf{#1}}}}
-\newcommand{\rdmsg}[1]{{\color{mordantred19}\msgsf{#1}}}
-\newcommand{\rdmsgsm}[1]{{\color{mordantred19}\msgsfsm{#1}}}
-\newcommand{\blmsg}[1]{{\color{mediumtealblue}\msgsf{#1}}}
-\newcommand{\blmsgsm}[1]{{\color{mediumtealblue}\msgsfsm{#1}}}
+\newcommand{\rdmsg}[1]{{\color{myred}\msgsf{#1}}}
+\newcommand{\rdmsgsm}[1]{{\color{myred}\msgsfsm{#1}}}
+\newcommand{\blmsg}[1]{{\color{myblue}\msgsf{#1}}}
+\newcommand{\blmsgsm}[1]{{\color{myblue}\msgsfsm{#1}}}
 \newcommand{\idmsf}[2]{\idmbuild{#1}{\textsf{#2}}}
 \newcommand{\spredmsg}[3]{\ensuremath{#1 \vdash #2\{#3\}}}
 \newcommand{\predmsg}[2]{\ensuremath{#1\{#2\}}}
+
+\newcommand{\rulelbl}[2]{\ensuremath{#1:(#2)}}
+\newcommand{\rdrulelbl}[2]{{\small\color{myred}\rulelbl{#1}{#2}}}
+\newcommand{\blrulelbl}[2]{{\small\color{myblue}\rulelbl{#1}{#2}}}
 
 Now we discuss how to exploit our notion of serializability: how does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
@@ -914,16 +923,16 @@ Sometimes even a shorter version \predmsg{m}{P} will be used with clear context.
     \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
     % C_1 external
     \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,mordantred19]right:{\msgsfsm{rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]right:{\msgsfsm{rsM}}},color=myred] at (-1.4, -2.05) {$\bullet$};
     % Between P and C_1
     \pic at (0, 0) {skeleton-midx-pc1};
-    \node[label={[label distance=-9pt,mordantred19]below right:{\msgsfsm{rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
+    \node[label={[label distance=-9pt,myred]below right:{\msgsfsm{rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
     % Between P and C_2
     \pic at (0, 0) {skeleton-midx-pc2};
-    \node[label={[label distance=-6pt,mediumtealblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}??}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+    \node[label={[label distance=-6pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}??}},color=myblue] at (1, -0.7) {$\bullet$};
 
     % Curves
-    \draw [->,color=mordantred19] (-0.6, -1.15) to[out=225,in=90] node[below right=-3pt] {{\small\color{mordantred19} $r_1: (C_1.\textrm{st} \leftarrow M)$}} (-1.2, -1.85);
+    \draw [->,color=myred] (-0.6, -1.15) to[out=225,in=90] node[below right=-3pt] {\rdrulelbl{r_1}{C_1.\textrm{st} \leftarrow M}} (-1.2, -1.85);
 
     % Legends
     \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
@@ -935,7 +944,7 @@ Sometimes even a shorter version \predmsg{m}{P} will be used with clear context.
 \end{figure}
 
 \autoref{fig-ex-pred-msg-fail} presents an example of a predicate message.
-Recalling our motivating example from \autoref{sec-example}, when the system has a message of a kind \msgsf{rsM}, we expect the parent and the other child (not the requestor) has the I status (like {\color{mediumtealblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
+Recalling our motivating example from \autoref{sec-example}, when the system has a message of a kind \msgsf{rsM}, we expect the parent and the other child (not the requestor) has the I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
 However, the predicate becomes broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by $r_1 \in C_1$, which takes an input \idmsf{5}{rsM} and updates the status of $C_1$ to M.
 
 Investigating this corner case carefully, we can find that actually no two different \msgsf{rsM} messages can be in the system at the same time.
@@ -955,17 +964,10 @@ It is exactly what serializability guarantees; \hemiola{} provides the way of de
 
 Our novel approach to employing predicate messages in atomic histories begins with formalizing the notion of \emph{atomic invariants}:
 \begin{definition}[Atomic Invariants]
-  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{m_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{m_i}}{h}{\listof{m_o}}$.
+  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{im_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{im_i}}{h}{\listof{im_o}}$.
   \label{def-atomic-invariant}
 \end{definition}
-\noindent Note that atomic invariant takes the live messages ($\listof{m_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
-
-\todo{Polish from here!}
-
-\newcommand{\rdrulelbl}[2]{#1:\;{\small\color{mordantred19}#2}}
-\newcommand{\blrulelbl}[2]{#1:\;{\small\color{mediumtealblue}#2}}
-\newcommand{\rdcircflbl}[2]{\rulelbl{\rdcircf{#1}}{#2}}
-\newcommand{\blcircflbl}[2]{\rulelbl{\blcircf{#1}}{#2}}
+\noindent Note that atomic invariant takes the live messages ($\listof{im_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
 
 \begin{figure}[h]
   \centering
@@ -974,24 +976,26 @@ Our novel approach to employing predicate messages in atomic histories begins wi
       \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
       % C_2 external
       \pic at (0, 0) {skeleton-midx-e2};
-      \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]right:{\msgsfsm{rsM}}},color=myblue] at (1.6, -2.05) {$\bullet$};
       % Between P and C_1
       \pic at (0, 0) {skeleton-midx-pc1};
-      \node[label={[label distance=-6pt,mediumtealblue]right:{\small $\textsf{rsM}\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}}},color=myblue] at (1, -0.7) {$\bullet$};
       % Between P and C_2
       \pic at (0, 0) {skeleton-midx-pc2};
-      \node[label={[label distance=-9pt,mediumtealblue]below right:{\small\sf rqI}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
-      \node[label={[label distance=-6pt,mediumtealblue]left:{\small $\textsf{rsI}\{C_1.\textrm{st} = I\}$}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myblue]below right:{\msgsfsm{rqI}}},color=myblue] at (-0.6, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myblue]above left:{\small\predmsg{\msgsf{rsI}}{C_1.\textrm{st} = I}}},color=myblue] at (-0.8, -0.7) {$\bullet$};
 
       % Curves
-      \draw [->,color=mediumtealblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blrulelbl{$r_1$}{$(C_1.\textrm{st} \leftarrow I)$}} (-1.8, -1.0);
-      \draw [->,color=mediumtealblue] (-1.6, -0.4) to[out=65,in=110,distance=1.3cm] node[above] {\blrulelbl{$r_p$}{$(P.\textrm{st} \leftarrow I)$}} (1.4, -0.4);
-      \draw [->,color=mediumtealblue] (1.7, -1.0) to[out=-45,in=90] node[right] {\blrulelbl{$r_2$}{$(C_2.\textrm{st} \leftarrow M)$}} (2.4, -2.1);
+      \draw [->,color=myblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blrulelbl{r_1}{C_1.\textrm{st} \leftarrow I}} (-1.8, -0.7);
+      \draw [->,color=myblue] (-1.6, -0.2) to[out=65,in=110,distance=1.3cm] node[above] {\blrulelbl{r_p}{P.\textrm{st} \leftarrow I}} (1.4, -0.4);
+      \draw [->,color=myblue] (1.7, -1.0) to[out=-45,in=90] node[right] {\blrulelbl{r_2}{C_2.\textrm{st} \leftarrow M}} (2.4, -2.1);
     \end{tikzpicture}\\
+    \hline
+    \mbox{}\vspace{-8pt} \\ %% padding
     \begin{math}
       \begin{array}{rcrcl}
-        \mathcal{I}_a\; s\; \listof{m} & \triangleq & ((4, \textsf{rsI}) \in s.M & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I)\; \wedge\\
-        & & ((8, \textsf{rsM}) \in s.M & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I\\
+        \mathcal{I}_a\; s\; \listof{im_o} & \triangleq & ((4, \textsf{rsI}) \in \listof{im_o} & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I)\; \wedge\\
+        & & ((8, \textsf{rsM}) \in \listof{im_o} & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I\\
         & & & & \wedge\; (s.\listof{o})[\idxOf{P}].\textrm{st} = I)\\
       \end{array}
     \end{math}
@@ -1001,13 +1005,23 @@ Our novel approach to employing predicate messages in atomic histories begins wi
   \label{fig-ex-atomic-invariants}
 \end{figure}
 
-\autoref{fig-ex-atomic-invariants} shows an example of an atomic history and how predicate messages are stated and used in the history.
-\todo{Fill the paragraph.}
+\autoref{fig-ex-atomic-invariants} shows an example of predicate messages defined in an atomic history, formalized as an atomic invariant.
+$\mathcal{I}_a$ shows how predicate messages are formalized into an atomic invariant; it is basically a conjunction of predicates, where each predicate has a form of $(im \in \listof{im_o} \to P\ s)$, claiming that the predicate $P$ holds when $im$ is in \emph{the live messages} $\listof{im_o}$.
+%% (Compare this with the conventional definition of the predicate message described in \autoref{}).
+We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic history (in the figure) step-by-step:
+\begin{itemize}[leftmargin=*]
+\item The initial step of the atomic history is the one by $r_1$. The live messages are $\listsingle{\idmsf{4}{rsI}}$. Since $r_1$ changes the status of $C_1$ to I, it is straightforward to prove $\mathcal{I}_a$.
+\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis we can get the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
+\item The last step is by $r_2$ and the live messages are $\listsingle{\idmsf{10}{rsM}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsM}.
+\end{itemize}
 
-We will see more concrete uses of predicate messages in our case studies (\autoref{sec-case-study}).
+It is worth emphasizing that the invariant proof was straightforward since no interferences came into effect.
+We will see more comprehensive uses of predicate messages in our case studies (\autoref{sec-case-study}).
 
 \section{The Hemiola Domain-Specific Language}
 \label{sec-hemiola-dsl}
+
+\todo{Polish from here!}
 
 As introduced in \autoref{sec-example}, the main challenge when designing a cache-coherence protocol is to figure out correct topology, network, and locking mechanisms.
 It is also fair to say these aspects are orthogonal to the actual cache-coherence protocol descriptions, \ie{} we could design various protocols with the same network shape.
@@ -1288,45 +1302,45 @@ We believe this case provides evidence that a carefully predesigned locking mech
         \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
         % C_1 external
         \pic at (0, 0) {skeleton-midx-e1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rsM}}},color=mordantred19] at (-1.4, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,myred]left:{\small {\sf rqM}}},color=myred] at (-1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,myred]right:{\small {\sf rsM}}},color=myred] at (-1.4, -2.05) {$\bullet$};
         % Between P and C_1
         \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mordantred19]left:{\small {\sf rqM}}},color=mordantred19] at (-1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsM}}},color=mordantred19] at (-0.6, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,myred]left:{\small {\sf rqM}}},color=myred] at (-1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,myred]below left:{\small {\sf rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
         % Between P and C_2
         \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mordantred19]below left:{\small {\sf rsI}}},color=mordantred19] at (0.8, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mordantred19]right:{\small {\sf rqI}}},color=mordantred19] at (1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,myred]below left:{\small {\sf rsI}}},color=myred] at (0.8, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,myred]right:{\small {\sf rqI}}},color=myred] at (1, -0.7) {$\bullet$};
 
         % Curves
-        \draw [->,color=mordantred19] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
-        \draw [->,color=mordantred19] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
-        \draw [->,color=mordantred19] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
-        \draw [->,color=mordantred19] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
-        \draw [->,color=mordantred19] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
+        \draw [->,color=myred] (-2.4, -2.1) to[out=90,in=-135] node[left] {\rdcircf{$1$}} (-1.5, -0.3);
+        \draw [->,color=myred] (-1.4, -0.2) to[out=45,in=115] node[above] {\rdcircf{$3$}} (1.7, -0.7);
+        \draw [->,color=myred] (1.8, -0.9) to[out=-60,in=-50,distance=1.5cm] node[below] {\rdcircf{$4$}} (0.5, -1.0);
+        \draw [->,color=myred] (0.4, -0.9) to[out=135,in=45,distance=0.7cm] node[below] {\rdcircf{$5$}} (-0.4, -0.9);
+        \draw [->,color=myred] (-0.5, -1.0) to[out=225,in=90] node[below right] {\rdcircf{$7$}} (-1.1, -1.8);
       \end{tikzpicture}\\
       \begin{tikzpicture}
         \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
         % C_2 external
         \pic at (0, 0) {skeleton-midx-e2};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1.6, -2.05) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rqM}}},color=mediumtealblue] at (1.4, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,myblue]right:{\small {\sf rsM}}},color=myblue] at (1.6, -2.05) {$\bullet$};
+        \node[label={[label distance=-6pt,myblue]left:{\small {\sf rqM}}},color=myblue] at (1.4, -2.05) {$\bullet$};
         % Between P and C_1
         \pic at (0, 0) {skeleton-midx-pc1};
-        \node[label={[label distance=-6pt,mediumtealblue]right:{\small {\sf rsM}}},color=mediumtealblue] at (1, -0.7) {$\bullet$};
-        \node[label={[label distance=-9pt,mediumtealblue]below right:{\small {\sf rqM}}},color=mediumtealblue] at (0.6, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,myblue]right:{\small {\sf rsM}}},color=myblue] at (1, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,myblue]below right:{\small {\sf rqM}}},color=myblue] at (0.6, -0.7) {$\bullet$};
         % Between P and C_2
         \pic at (0, 0) {skeleton-midx-pc2};
-        \node[label={[label distance=-9pt,mediumtealblue]below left:{\small {\sf rqI}}},color=mediumtealblue] at (-0.6, -0.7) {$\bullet$};
-        \node[label={[label distance=-6pt,mediumtealblue]left:{\small {\sf rsI}}},color=mediumtealblue] at (-0.8, -0.7) {$\bullet$};
+        \node[label={[label distance=-9pt,myblue]below left:{\small {\sf rqI}}},color=myblue] at (-0.6, -0.7) {$\bullet$};
+        \node[label={[label distance=-6pt,myblue]left:{\small {\sf rsI}}},color=myblue] at (-0.8, -0.7) {$\bullet$};
 
         % Curves
-        \draw [<-,color=mediumtealblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
-        \draw [<-,color=mediumtealblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
-        \draw [<-,color=mediumtealblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
-        \draw [<-,color=mediumtealblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
-        \draw [<-,color=mediumtealblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
+        \draw [<-,color=myblue] (2.4, -2.1) to[out=90,in=-45] node[right] {\blcircf{$10$}} (1.5, -0.3);
+        \draw [<-,color=myblue] (1.4, -0.2) to[out=135,in=65] node[above] {\blcircf{$9$}} (-1.7, -0.7);
+        \draw [<-,color=myblue] (-1.8, -0.9) to[out=-120,in=-130,distance=1.5cm] node[below] {\blcircf{$8$}} (-0.5, -1.0);
+        \draw [<-,color=myblue] (-0.4, -0.9) to[out=45,in=135,distance=0.7cm] node[below] {\blcircf{$6$}} (0.4, -0.9);
+        \draw [<-,color=myblue] (0.5, -1.0) to[out=-45,in=90] node[below left] {\blcircf{$2$}} (1.1, -1.8);
       \end{tikzpicture}
     \end{tabular}
   \end{subfigure}
