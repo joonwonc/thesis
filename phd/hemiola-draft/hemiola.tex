@@ -1014,8 +1014,41 @@ We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic hist
 \item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis we can get the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
 \item The last step is by $r_2$ and the live messages are $\listsingle{\idmsf{10}{rsM}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsM}.
 \end{itemize}
-
 It is worth emphasizing that the invariant proof was straightforward since no interferences came into effect.
+
+How do atomic invariants help prove conventional invariants?
+If the system $S$ is serializable, by its definition, for every reachable state $s$ with a history $h$ (\semsteps{S}{\sysInit{S}}{h}{s}), there is a sequential history $h_\textrm{seq}$ that reaches the same state (\semsteps{S}{\sysInit{S}}{h_\textrm{seq}}{s}).
+Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be proven by inducting on each transaction, not on each step.
+
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{tikzpicture}
+      \node[anchor=west] at (-1.7, 2) {{\small Atomic invariant:}};
+      \node[anchor=west] at (1.12, 2) {$(\mathcal{I}_a\ \listof{m_i}\ s_i) \to (\mathcal{I}_a\ \listof{m_{i+1}}\ s_{i+1})$};
+      \draw [->] (2.7, 1.7) -- (3.1, 1.3);
+      \node[anchor=west] at (-1.7, 1) {{\small Conventional invariant:}};
+      \node[anchor=west] at (1.68, 1) {$(\mathcal{I}\ s_i) \to (\mathcal{I}\ s_{i+1})$};
+      \node at (2.5, 0.55) {$\vdots$};
+      \node at (3.4, 0.55) {$\vdots$};
+      \node[anchor=west] at (-1.7, 0) {{\small Steps:}};
+      \node[anchor=west] at (0, 0) {$\to s_0 \to \cdots \to s_i \to s_{i+1} \to \cdots \to s_n \to$};
+      \node at (2.95, -0.5) {{\small (Atomic history)}};
+      \draw [dotted, line width=1pt] (0.7, -0.25) to[out=-90,in=0] (1.7, -0.5);
+      \draw [dotted, line width=1pt] (5.2, -0.25) to[out=-90,in=-180] (4.2, -0.5);
+    \end{tikzpicture}\\
+    \hline
+  \end{tabular}
+\end{figure}
+
+The above figure explains how to use an atomic invariant $\mathcal{I}_a$ while proving a conventional invariant $\mathcal{I}$ in the [TrsAtomic] case.
+The point is that we can employ both $\mathcal{I}\ s_i$ and $\mathcal{I}_a\ \listof{m_i} s_i$ to prove $\mathcal{I}\ s_{i+1}$.
+%% In other words, predicate messages can be put as assumptions to prove $\mathcal{I}\ s_{i+1}$.
+For instance, we may want to have an invariant claiming that the M status uniquely exists, if any, within the system.
+(We will indeed use this invariant in our case studies, although the exact statement is a bit more complex.)
+The predicate messages defined in \autoref{fig-ex-atomic-invariants} will play a crucial role here, \eg{} the one for \idmsf{8}{rsM} says that $C_1$ and $P$ both have the I status, which means that the state transition by $(r_2: C_2.\textrm{st} \leftarrow M)$ preserves the invariant.
+The other three cases ([TrsSilent], [TrsIns], and [TrsOuts]) do not need any further information, since these cases induce just a single step.
 We will see more comprehensive uses of predicate messages in our case studies (\autoref{sec-case-study}).
 
 \section{The Hemiola Domain-Specific Language}
