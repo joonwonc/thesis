@@ -1056,22 +1056,23 @@ We will see more comprehensive uses of predicate messages in our case studies (\
 \section{The Hemiola Domain-Specific Language}
 \label{sec-hemiola-dsl}
 
-%% As introduced in \autoref{sec-example}, the main challenge when designing a cache-coherence protocol is to figure out correct topology, communication channels, and locking mechanisms.
-%% It is also fair to say these aspects are orthogonal to the actual cache-coherence protocol descriptions, \ie{} we could design various protocols with the same network shape.
+As explained in \autoref{sec-sz-in-hemiola}, on top of the serializability guarantee, it is much easier to design and prove invariants that help proving the correctness of cache-coherence protocols.
+That being said, it will be very tedious if a user has to prove the serializability per-protocol.
 
-%% At a more abstract level, we showed in the last section that serializability can be derived with a finite number of reductions.
-%% That being said, it can be quite tedious to prove such conditions per-protocol.
-%% Instead, we now develop a simple means to prove the conditions for useful families of networks and locking mechanisms.
-%% In fact, our new characterization will just require that the system is defined on a template provided by \hemiola{}.
+In this section, we would like to provide \emph{minimal and abstract conditions} to prove serializability, in order not to prove it for each protocol.
+The conditions have been already mentioned with the motivating example in \autoref{sec-example} -- network topology and locking mechanisms extracted from transient states that have been used practically for a long time.
 
-\hemiola{} provides serializability as \emph{the most general form of noninterference, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols}.
-In order to satisfy such conditions for free, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates} from the list of nine we have identified.
+While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides serializability as \emph{the most general form of noninterference, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols}.
+In order to satisfy such conditions for free, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates}.
 
-\subsection{Topology and Network Requirements}
+\subsection{Domain-Specific Language}
+
+\subsubsection{Topology and Network Requirements}
 
 In order to employ the serializability guarantee in \hemiola{}, the objects in a given system should form a tree topology.
 Most cache-coherent memory subsystems follow this topology, where leaf nodes correspond to L1 caches, and the root corresponds to the main memory.
-A child and its parent in the tree communicate using the three channels shown in \autoref{sec-example}, \eg{} whenever a child wants to send a request to the parent, it should use the upward-request channel.
+A child and its parent in the tree communicate using the three channels shown in \autoref{sec-example}.
+%% \eg{} whenever a child wants to send a request to the parent, it should use the upward-request channel.
 
 \hemiola{} as a Coq library generates the topology and network channels automatically from instances of a simple inductive type.
 For example, the following tree definition will generate topology and channels for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
@@ -1079,7 +1080,7 @@ For example, the following tree definition will generate topology and channels f
   t : \textit{tree} \triangleq \small{\textsf{Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]]}}.
 \end{displaymath}
 
-\subsection{Locking Mechanism}
+\subsubsection{Locking Mechanism}
 \label{sec-locking-mechanism}
 
 We saw in \autoref{sec-example} how correctness requires a fine-grained locking mechanism for communication between a child and its parent.
@@ -1128,7 +1129,7 @@ In cache-coherence protocols, each lock corresponds to a miss status holding reg
 An MSHR is set when a cache miss happens and the miss triggers further requests to obtain a proper status and up-to-date data.
 As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whether to handle certain requests and in storing information needed to handle them properly.
 
-\subsection{Rule Templates}
+\subsubsection{Rule Templates}
 \label{sec-rule-templates}
 
 \newcommand{\rtname}[1]{{\small\sf\bf #1}}
@@ -1274,7 +1275,7 @@ On top of the topology/network requirements and the locking mechanism, \hemiola{
     \captionsetup{labelformat=empty}
     \caption{(i) \rtname{rsrq}}
   \end{subfigure}
-  \caption{Rule templates in Hemiola}
+  \caption{Rule templates in \hemiola{}}
   \label{fig-rule-templates}
 \end{figure}
 
@@ -1322,7 +1323,7 @@ This choice is safe since the upward request may introduce state changes outside
 Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
 We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
-\subsection{Serializability Guarantee by \hemiola{}}
+\subsection{Serializability Guarantee by the \hemiola{} DSL}
 
 \todo{1) We really need to provide the ``intuition'' why serializability holds with the topology and rule conditions.}
 \todo{2) The proof sketch could go to the appendix, with enough intuitions provided.}
