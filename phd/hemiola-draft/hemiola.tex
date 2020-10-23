@@ -286,6 +286,20 @@
 \newcommand{\blrecmsg}[2]{{\color{myblue}\blrecsm{#1}{\sf #2}}}
 \newcommand{\blrecmsgsm}[2]{\blrecmsg{#1}{\small #2}}
 
+\newcommand{\msgsf}[1]{\ensuremath{\textsf{#1}}}
+\newcommand{\msgsfsm}[1]{{\small\ensuremath{\textsf{#1}}}}
+\newcommand{\rdmsg}[1]{{\color{myred}\msgsf{#1}}}
+\newcommand{\rdmsgsm}[1]{{\color{myred}\msgsfsm{#1}}}
+\newcommand{\blmsg}[1]{{\color{myblue}\msgsf{#1}}}
+\newcommand{\blmsgsm}[1]{{\color{myblue}\msgsfsm{#1}}}
+\newcommand{\idmsf}[2]{\idmbuild{#1}{\textsf{#2}}}
+\newcommand{\spredmsg}[3]{\ensuremath{#1 \vdash #2\{#3\}}}
+\newcommand{\predmsg}[2]{\ensuremath{#1\{#2\}}}
+
+\newcommand{\rulelbl}[2]{\ensuremath{#1:(#2)}}
+\newcommand{\rdrulelbl}[2]{{\small\color{myred}\rulelbl{#1}{#2}}}
+\newcommand{\blrulelbl}[2]{{\small\color{myblue}\rulelbl{#1}{#2}}}
+
 %% -- End of Commands
 
 \maketitle
@@ -347,10 +361,15 @@ To sum up, the contribution of this paper largely consists of two parts\footnote
 \section{A Motivating Example: MSI Directory Protocol with Two Caches}
 \label{sec-example}
 
-\todo{We need to put some intuition on noninterference and serialization here as well.}
 Before introducing our method for structural design and proof of cache-coherence protocols, we provide a simple yet motivating example to explain the typical challenges.
-For simplicity, in this section, we will consider only \emph{a single memory location} and design a protocol only for this location.
-We will see it is still nontrivial to design a correct protocol.
+For simplicity, in this section, we will consider a protocol only \emph{a single memory location}.
+We will see it is still nontrivial to design and verify a correct protocol.
+
+The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
+In other words, if the system is coherent, then it should behave like an atomic memory.
+This behavior inclusion is formally defined as \emph{refinement}, which will be introduced in later technical sections.
+The correctness of a cache-coherence protocol is sometimes shown by proving representative invariants, not talking about the relation to the desired spec.
+The single-writer/multiple-read (SWMR) invariant and the data-value invariant~\cite{ccbook:2020} are the ones; in proving the refinement of a protocol these invariants (or similar ones) are required to be proven.
 
 \tikzset{
   pics/skeleton-pcc/.style n args={3}{
@@ -461,23 +480,20 @@ We will see it is still nontrivial to design a correct protocol.
     \node at (2.5, -1) {$\sqsubseteq$};
     \pic at (3.7, -0.7) {spec};
   \end{tikzpicture}
-  \caption{A simple MSI directory protocol}
+  \caption{A simple MSI directory protocol and its spec}
   \vspace{-5pt}
   \label{fig-motive-1}
 \end{figure}
 
-The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
-In other words, if the system is coherent, then it should behave like an atomic memory.
-\autoref{fig-motive-1} shows caches and communication channels for a simple directory-based MSI protocol.
+\autoref{fig-motive-1} shows caches and communication channels for a simple directory-based MSI protocol (LHS of $\sqsubseteq$).
 Since we deal with only a single memory location, the specification (RHS of $\sqsubseteq$) is a single-value ($v$) container with atomic read and write.
-
-Looking at the implementation (LHS of $\sqsubseteq$), there are three caches $P$, $C_1$, and $C_2$, and each of them has its own status (M, S, or I) and data ($v$).
+There are three caches ($P$, $C_1$, and $C_2$) in the implementation, and each of them has its own status (M, S, or I) and data ($v$).
 A status of a cache represents a permission on its local replica.
 In this MSI protocol, an object can read/write the data with the M (``modified'') status, only read with S (``shared''), and cannot read/write with I (``invalid'').
 The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
 For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
 
-Objects communicate through ordered channels, shown as $\rightarrowtail$ in the figure.
+Objects communicate through ordered channels, shown as $(\rightarrowtail)$ in the figure.
 %% where each of it has a unique index (shown as a natural number in the figure).
 $C_1$ and $C_2$ have channels to receive and respond to external requests (from processor cores).
 There are three types of channels between a parent and a child: a single channel for parent-to-child messages and two channels for child-to-parent requests and responses, respectively.
@@ -492,10 +508,10 @@ It is natural to wonder why two separate channels are required from a child to a
     \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
     % C_1 external
     %% \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{a}{rqM}}},color=myred] at (-1.6, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{a}{rqWr}}},color=myred] at (-1.6, -2.05) {$\bullet$};
     % C_2 external
     %% \pic at (0, 0) {skeleton-midx-e2};
-    \node[label={[label distance=-6pt,myblue]left:{\blrecmsgsm{e}{rqM}}},color=myblue] at (1.4, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myblue]left:{\blrecmsgsm{e}{rqWr}}},color=myblue] at (1.4, -2.05) {$\bullet$};
     % Between P and C_1
     %% \pic at (0, 0) {skeleton-midx-pc1};
     \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{b}{rqM}}},color=myred] at (-1, -0.7) {$\bullet$};
@@ -509,7 +525,7 @@ It is natural to wonder why two separate channels are required from a child to a
     \draw [->,color=myred] (-2.55, -1.85) to[out=90,in=-110] node {\rdcircf{1}} (-1.95, -0.95);
     \draw [->,color=myred] (-1.9, -0.4) to[out=70,in=110,distance=1.5cm] node {\rdcircf{3}} (1.5, -0.2);
     \draw [->,color=myred] (1.9, -0.6) to[out=-40,in=-40,distance=1cm] node {\rdcircf{4}} (1.7, -1);
-    \draw [->,color=myblue] (0.9, -1.9) to[out=90,in=-45] node {\blcircf{2}} (0.3, -1.2);
+    \draw [->,color=myblue] (0.9, -1.8) to[out=90,in=-45] node {\blcircf{2}} (0.3, -1.2);
 
     % Legends
     %% \draw [->] (2, 0) to (3, 0);
@@ -523,41 +539,45 @@ It is natural to wonder why two separate channels are required from a child to a
   \label{fig-motive-2}
 \end{figure}
 
-\autoref{fig-motive-2} depicts some example rule-execution cases depending on statuses of the caches.
+\autoref{fig-motive-2} depicts some example state-transition cases depending on statuses of the caches.
 All the caches run concurrently, repeatedly executing \emph{rules} that define local state transitions.
 A rule may take some messages from input channels, perform a state transition, and put messages in output channels.
 A rule may also have a precondition, blocking use of that rule when the precondition does not hold.
-\rdcircf{1} shows the case where a child $C_1$ takes an external request (\rdrecmsgsm{a}{rqM}) to write data, but it does not have M status and thus forwards the request to the parent (\rdrecmsgsm{b}{rqM}).
-At this moment, in many cache-coherence protocol designs, the child changes its status to a \emph{transient state} SM to record its current status (S) and the next expected status (M) when it obtains the permission (response) from the parent.
-The transient state also acts like a \emph{lock} not to allow any further external requests for the value.
+\rdcircf{1} shows the case where a child $C_1$ takes an external request (\rdrecmsgsm{a}{rqWr}) to write data, but it does not have M status and thus further requests to the parent (\rdrecmsgsm{b}{rqM}) to get the permission.
+At this moment, in many cache-coherence protocol designs, $C_1$ changes its status to a \emph{transient state} SM to record its current status (S) and the next expected status (M).
+This transient state also functions as a \emph{lock} not to allow any further external requests for the value.
 
 Due to the concurrent execution of the caches, we might have another rule executed at the same time.
-\blcircf{2} is executed concurrently with \rdcircf{1}, where $C_2$ also took an external request (\blrecmsgsm{e}{rqM}) with the same purpose, thus forwarded the request as well (\blrecmsgsm{f}{rqM}).
+\blcircf{2} is executed concurrently with \rdcircf{1}, where $C_2$ also takes an external request (\blrecmsgsm{e}{rqWr}) with the same purpose, thus requests \blrecmsgsm{f}{rqM} to the parent as well.
 Since \rdcircf{1} and \blcircf{2} happened at the same time, now the parent $P$ needs to decide which request to deal with.
 Suppose that it decided to handle \rdrecmsgsm{b}{rqM} first.
 
-\rdcircf{3} presents the execution by $P$, taking the input message \rdrecmsgsm{b}{rqM} and making an \emph{invalidation} request (\rdrecmsgsm{c}{rqI}) to the other child $C_2$ to change its status to I, since when a child has M the others should not be able to read/write the data.
-The parent, at this moment, also changes its status to a transient state to disallow any other requests from the children.
-For instance, the parent should not handle \blrecmsgsm{f}{rqM}, since otherwise it will handle two {\sf\small ``rqM''}s simultaneously, which might lead to an incoherent state -- two M statuses in the caches.
+\rdcircf{3} presents the next execution by $P$, taking the input message \rdrecmsgsm{b}{rqM} and making an \emph{invalidation} request (\rdrecmsgsm{c}{rqI}) to the other child $C_2$ to change its status to I.
+This invalidation request is required, since when a child has M the others should not be able to read/write the data.
+The parent, at this moment, changes its directory status to a transient state (named $S^D$ in some textbooks) to disallow any other requests from the children.
+For instance, the parent should not handle \blrecmsgsm{f}{rqM}, since otherwise it will handle two ``\msgsf{rqM}''s simultaneously, which might lead to an incoherent state -- two M statuses in the caches.
 
 Lastly, \rdcircf{4} shows the case that $C_2$ handles the invalidation request (\rdrecmsgsm{c}{rqI}).
 A number of corner cases should be handled carefully in this case:
 \begin{itemize}[leftmargin=*]
-\item Since $C_2$ requested \blrecmsgsm{f}{rqM}, it has a transient state SM when \rdrecmsgsm{c}{rqI} arrives. It should still be able to handle this invalidation request even in the transient state. In this case $C_2$ changes its transient state to IM. We see that transient states should be fine-grained enough to distinguish which requests to handle.
-\item Due to the existence of \blrecmsgsm{f}{rqM}, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take \blrecmsgsm{f}{rqM} since it was locked after making an invalidation request. It cannot take \rdrecmsgsm{d}{rsI} as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
+\item Since $C_2$ requested \blrecmsgsm{f}{rqM}, it has a transient state SM when \rdrecmsgsm{c}{rqI} arrives. It should still be able to handle this invalidation request even in the transient state (while not allowing any external requests). In this case $C_2$ accepts \rdrecmsgsm{c}{rqI} and changes its transient state to IM. We see that transient states should be fine-grained enough to distinguish which requests to handle.
+\item Due to the existence of \blrecmsgsm{f}{rqM}, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take \blrecmsgsm{f}{rqM} since it has been locked (in a transient state) after making an invalidation request. It cannot take \rdrecmsgsm{d}{rsI} as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
 \end{itemize}
 
 A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
 Transient states and network channels play a crucial role in making \emph{interleavings} correct.
-Regarding the sequence of rule executions $[\rdcircf{1}\ ;\rdcircf{3}\ ;\rdcircf{4}\;]$ as an execution flow -- we will call it a \emph{transaction} in later technical sections -- to handle the original external request \rdrecmsgsm{a}{rqM}, we see that no further executions happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqM}.
-As explained above case-by-case, proper transient states and network channels block \blcircf{2} to be further proceeded.
+Regarding the sequence of rule executions (in red) $[\rdcircf{1}\ ;\rdcircf{3}\ ;\rdcircf{4}\;]$ as an execution flow -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could not happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqWr}.
+As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} to be further proceeded.
+This mechanism to ensure safe interleavings is called \emph{noninterference}, which ensures that no other state transitions affect while handling a certain transaction.
+In model-checking cache-coherence protocols, lots of good noninterference lemmas have been developed and used to avoid state explosion by interleaving transactions.
 
-In this sense, we would like to find a minimal conditions that ensures safe interleavings, \emph{extracted and abstracted} from the transient states and network channels.
-Furthermore, we want to formalize the meaning of the ``safe'' interleavings and to show how this formalization ease the verification of cache-coherence protocols.
+While the same concern occurs in interactive theorem proving (by requiring manual proof effort to deal with interleavings), we would like to make use of a conventional advantage of interactive theorem provers: to state and prove an once-and-for-all property and to use it multiple times.
+Particularly, in proving cache-coherence protocols, we want to find minimal conditions that ensures safe interleavings, \emph{extracted and abstracted} from the transient states and network channels, so the conditions can apply to multiple protocols.
+Building it from the scratch, it will be required to formalize the meaning of safe interleavings first, and then to show how this formalization ease the verification of cache-coherence protocols in theorem proving.
 That is exactly what we did with \hemiola{}.
-In later sections, we will first introduce an underlying semantic model for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
+In later sections, we will first see an underlying semantic model for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
 We will also explain how the serializability ease the burden of verification (\autoref{sec-atomic-invariants}) and show its definite use cases in verifying our case-study protocols (\autoref{sec-case-study}).
 
 \section{Protocol Transition Systems}
@@ -892,20 +912,6 @@ With a clear notion of transactions, we can easily define sequential histories a
 
 \subsection{The Payoff: Predicate Messages in Atomic Histories}
 \label{sec-atomic-invariants}
-
-\newcommand{\msgsf}[1]{\ensuremath{\textsf{#1}}}
-\newcommand{\msgsfsm}[1]{{\small\ensuremath{\textsf{#1}}}}
-\newcommand{\rdmsg}[1]{{\color{myred}\msgsf{#1}}}
-\newcommand{\rdmsgsm}[1]{{\color{myred}\msgsfsm{#1}}}
-\newcommand{\blmsg}[1]{{\color{myblue}\msgsf{#1}}}
-\newcommand{\blmsgsm}[1]{{\color{myblue}\msgsfsm{#1}}}
-\newcommand{\idmsf}[2]{\idmbuild{#1}{\textsf{#2}}}
-\newcommand{\spredmsg}[3]{\ensuremath{#1 \vdash #2\{#3\}}}
-\newcommand{\predmsg}[2]{\ensuremath{#1\{#2\}}}
-
-\newcommand{\rulelbl}[2]{\ensuremath{#1:(#2)}}
-\newcommand{\rdrulelbl}[2]{{\small\color{myred}\rulelbl{#1}{#2}}}
-\newcommand{\blrulelbl}[2]{{\small\color{myblue}\rulelbl{#1}{#2}}}
 
 Now we discuss how to exploit our notion of serializability: how does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
