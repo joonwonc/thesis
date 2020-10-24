@@ -1072,16 +1072,18 @@ We will see more comprehensive uses of predicate messages in our case studies (\
 \section{The Hemiola Domain-Specific Language}
 \label{sec-hemiola-dsl}
 
-As explained in \autoref{sec-sz-in-hemiola}, on top of the serializability guarantee, it is much easier to design and prove invariants that help proving the correctness of cache-coherence protocols.
-That being said, it will be very tedious if a user has to prove the serializability per-protocol.
+As explained in \autoref{sec-sz-in-hemiola}, on top of serializability it is much easier to design and prove invariants.
+That being said, it will be still a large burden if a user has to prove the serializability per-protocol.
 
 In this section, we would like to provide \emph{minimal and abstract conditions} to prove serializability, in order not to prove it for each protocol.
-The conditions have been already mentioned with the motivating example in \autoref{sec-example} -- network topology and locking mechanisms extracted from transient states that have been used practically for a long time.
+The conditions have been already mentioned with the motivating example in \autoref{sec-example} -- network topology and locking mechanisms, extracted from transient states of practical cache-coherence protocols.
 
-While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides serializability as \emph{the most general form of noninterference, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols}.
+While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from the conditions that are not coupled with any specific cache-coherence protocols}.
+
 In order to satisfy such conditions for free, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates}.
+We will present how the network topologies and the rule templates look like and explain the intuition why using these components implies serializability as well as the actual proof using a technique called \emph{commuting reductions}.
 
-\subsection{Domain-Specific Language}
+\subsection{The Domain-Specific Language}
 
 \subsubsection{Topology and Network Requirements}
 
@@ -1099,6 +1101,8 @@ For example, the following tree definition will generate topology and channels f
 \subsubsection{Locking Mechanism}
 \label{sec-locking-mechanism}
 
+\todo{- Polish from here: say ``transient state = stable state + a lock of a specific kind.''}
+\todo{- How to provide the proof intuition: 1) if we can serialize any two interleaving transactions, we can prove serializability of the system, 2) now this figure explains how the two transactions are serialized, using commuting reductions, and 3) the reason why these two transitions commute is blah blah..}
 We saw in \autoref{sec-example} how correctness requires a fine-grained locking mechanism for communication between a child and its parent.
 For example, revisiting the issue described in \autoref{fig-motive-2}, a child should be able to handle an invalidation request from the parent even if it is locked while waiting for a response to its own request.
 \hemiola{} supports a general locking mechanism that can deal with this situation.
