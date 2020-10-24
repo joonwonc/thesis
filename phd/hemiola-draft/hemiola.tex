@@ -46,10 +46,12 @@
 \definecolor{mordantred19}{rgb}{0.68, 0.05, 0.0}
 \definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
 \definecolor{mediumtealblue}{rgb}{0.0, 0.33, 0.71}
+\definecolor{darkgray}{rgb}{0.66, 0.66, 0.66}
 
 \colorlet{myred}{mordantred19}
 \colorlet{mygreen}{forestgreen}
 \colorlet{myblue}{mediumtealblue}
+\colorlet{mygray}{darkgray}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
@@ -932,7 +934,7 @@ Sometimes even a shorter version \predmsg{\msgid{}}{P} (the one for the message 
     \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
     % C_1 external
     \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,myred]right:{\msgsfsm{rsM}}},color=myred] at (-1.4, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]right:{\msgsfsm{rsWr}}},color=myred] at (-1.4, -2.05) {$\bullet$};
     % Between P and C_1
     \pic at (0, 0) {skeleton-midx-pc1};
     \node[label={[label distance=-9pt,myred]below right:{\msgsfsm{rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
@@ -947,23 +949,28 @@ Sometimes even a shorter version \predmsg{\msgid{}}{P} (the one for the message 
     \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
           {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
-  \caption{A predicate message becomes broken when interleaving happens}
+  \caption{A predicate message becomes broken when interfered}
   \vspace{-5pt}
   \label{fig-ex-pred-msg-fail}
 \end{figure}
 
 \autoref{fig-ex-pred-msg-fail} presents an example of a predicate message.
-Recalling our motivating example from \autoref{sec-example}, when the system has a message of a kind \msgsf{rsM}, we expect the parent and the other child (not the requestor) has the I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
-However, the predicate becomes broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by $r_1 \in C_1$, which takes an input \idmsf{5}{rsM} and updates the status of $C_1$ to M.
+Recalling the example protocol from \autoref{sec-example}, when the system has a message of a kind \blmsg{rsM}, we expect the parent and the other child (who is not the requestor) has the I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
+However, the predicate becomes broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by {\color{myred} $r_1 \in C_1$}, which takes an input {\color{myred} \idmsf{5}{rsM}} and updates the status of $C_1$ to M.
 
 Investigating this corner case carefully, we can find that actually no two different \msgsf{rsM} messages can be in the system at the same time.
-It implies that now the predicate message for \msgsf{rsM} should have a much more complicated form, which includes all the noninterference cases.
-The complete desired predicate message for \idmsf{8}{rsM} is then:
+It implies that now the predicate message for \msgsf{rsM} should have a much more complicated form, which considers \emph{all possible noninterference cases}.
+The complete desired predicate message for \idmsf{8}{rsM} will then look like:
 \begin{displaymath}
   \idmsf{8}{rsM}%
   \left\{\begin{array}{l}
-  C_1.\textrm{st} = I\; \wedge P.\textrm{st} = I\; \wedge\\
-  (7, \textsf{rsI}) \notin s.M\; \wedge (5, \textsf{rsM}) \notin s.M
+  \textcolor{mygray}{\textit{// The original predicate}}\\
+  \textcolor{myblue}{C_1.\textrm{st} = I\; \wedge\; P.\textrm{st} = I}\; \wedge\\
+  \textcolor{mygray}{\textit{// Noninterference with another transaction}}\\
+  \textcolor{mygray}{\textit{// to get M from}\ C_1}\\
+  \textcolor{myred}{(7, \textsf{rsI}) \notin s.M\; \wedge\; (5, \textsf{rsM}) \notin s.M}\; \wedge\\
+  \textcolor{mygray}{\textit{// More noninterference cases will be required}}\\
+  \cdots
   \end{array}\right\}
 \end{displaymath}
 
@@ -1020,16 +1027,16 @@ $\mathcal{I}_a$ shows how predicate messages are formalized into an atomic invar
 We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic history (in the figure) step-by-step:
 \begin{itemize}[leftmargin=*]
 \item The initial step of the atomic history is the one by $r_1$. The live messages are $\listsingle{\idmsf{4}{rsI}}$. Since $r_1$ changes the status of $C_1$ to I, it is straightforward to prove $\mathcal{I}_a$.
-\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis we can get the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
+\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
 \item The last step is by $r_2$ and the live messages are $\listsingle{\idmsf{10}{rsM}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsM}.
 \end{itemize}
-It is worth emphasizing that the invariant proof was straightforward since no interferences came into effect.
+It is worth emphasizing that the invariant proof was straightforward since no other state transitions interfere with an atomic history.
 
 How do atomic invariants help prove conventional invariants?
 If the system $S$ is serializable, by its definition, for every reachable state $s$ with a history $h$ (\semsteps{S}{\sysInit{S}}{h}{s}), there is a sequential history $h_\textrm{seq}$ that reaches the same state (\semsteps{S}{\sysInit{S}}{h_\textrm{seq}}{s}).
 Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be proven by inducting on each transaction, not on each step.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \begin{tabular}{|c|}
     \hline
@@ -1049,13 +1056,16 @@ Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be p
     \end{tikzpicture}\\
     \hline
   \end{tabular}
+  \caption{Use of atomic invariants in conventional invariant proofs}
+  \label{fig-use-atomic-inv}
 \end{figure}
 
-The above figure explains how to use an atomic invariant $\mathcal{I}_a$ while proving a conventional invariant $\mathcal{I}$ in the [TrsAtomic] case.
+\autoref{fig-use-atomic-inv} explains how to use an atomic invariant $\mathcal{I}_a$ while proving a conventional invariant $\mathcal{I}$ in the [TrsAtomic] case.
 The point is that we can employ both $(\mathcal{I}\ s_i)$ and $(\mathcal{I}_a\ \listof{m_i}\ s_i)$ to prove $(\mathcal{I}\ s_{i+1})$.
 For instance, we may want to have an invariant claiming that the M status uniquely exists, if any, within the system.
 (We will indeed use this invariant in our case studies, although the exact statement is a bit more complex.)
 The predicate messages defined in \autoref{fig-ex-atomic-invariants} will play a crucial role here, \eg{} the one for \idmsf{8}{rsM} says that $C_1$ and $P$ both have the I status, which means that the state transition by $(r_2: C_2.\textrm{st} \leftarrow M)$ preserves the invariant.
+
 The other three cases ([TrsSilent], [TrsIns], and [TrsOuts]) do not need any further information, since these cases induce just a single step.
 We will see more comprehensive uses of predicate messages in our case studies (\autoref{sec-case-study}).
 
