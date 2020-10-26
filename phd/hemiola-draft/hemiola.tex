@@ -1101,13 +1101,13 @@ For example, the following tree definition will generate topology and channels f
 \subsubsection{Locking Mechanism}
 \label{sec-locking-mechanism}
 
-\todo{- Polish from here: say ``transient state = stable state + a lock of a specific kind.''}
-\todo{- How to provide the proof intuition: 1) if we can serialize any two interleaving transactions, we can prove serializability of the system, 2) now this figure explains how the two transactions are serialized, using commuting reductions, and 3) the reason why these two transitions commute is blah blah..}
-We saw in \autoref{sec-example} how correctness requires a fine-grained locking mechanism for communication between a child and its parent.
-For example, revisiting the issue described in \autoref{fig-motive-2}, a child should be able to handle an invalidation request from the parent even if it is locked while waiting for a response to its own request.
-\hemiola{} supports a general locking mechanism that can deal with this situation.
-Instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more coarse-grained} locking, just by looking at whether the message is from the parent or one of its children.
-This relaxed locking mechanism is still sufficient to prove serializability.
+We saw in \autoref{sec-example} why fine-grained transient states are required to ensure safe interleavings in cache-coherence protocols.
+Revisiting the issue described in \autoref{fig-motive-2}, a child should be able to handle an invalidation request from the parent even if it is in a transient state (SM) and after the response it changes its transient state to IM.
+By looking at these transient states carefully, we have discovered that another necessary condition, other than the tree-topology condition, is the locking perspective from the transient states.
+
+\hemiola{} supports a general locking mechanism reflecting this discovery;
+instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more general} locking, just by looking at whether the message is from the parent or one of its children.
+This relaxed locking mechanism is then not coupled with any specific cache-coherence protocols but is still sufficient to prove serializability.
 
 \tikzset{
   uprightedge/.pic = {
@@ -1125,10 +1125,10 @@ This relaxed locking mechanism is still sufficient to prove serializability.
     \node at (1.4, 2) {$P_2$};
 
     \draw [>=stealth,double,->] (1.6, 1.75) -- (1.9, 1.25);
-    \node[label={[label distance=-6pt]right:{\small {\sf rqs}}}] at (1.75, 1.5) {$\bullet$};
+    \node[label={[label distance=-4pt]right:{\small $\overline{\textsf{rqs}}$}}] at (1.75, 1.5) {$\bullet$};
 
-    \node[draw,align=left] at (2.9, 0.4) {$P_1$ sets an uplock\\ when sending $\textsf{rq2}$ to $P_2$};
-    \node[draw,align=left] at (4.8, 1.7) {$P_2$ sets a downlock\\ when sending $\textsf{rqs}$ to children};
+    \node[draw,align=left] at (2.9, 0.4) {$P_1$ sets an uplock\\ when sending {\small $\textsf{rq2}$} to $P_2$};
+    \node[draw,align=left] at (4.8, 1.7) {$P_2$ sets a downlock\\ when sending {\small $\overline{\textsf{rqs}}$} to children};
   \end{tikzpicture}
   \caption{Locking mechanism in Hemiola}
   \label{fig-locking}
@@ -1142,10 +1142,13 @@ The object cannot make any further upward requests while uplocked, but \emph{it 
 On the contrary, a downlock is set when an object makes a downward request(s) to some of its children ($P_2$ in the figure); similarly it is released when the object gets corresponding response(s) from the child requestee(s).
 The object cannot make any further downward requests while downlocked.
 
-Semantically, each object has a holder for locks.
-A lock holder is a finite map from a lock type (uplock or downlock) to lock information: the original request message, the original requestor index, and requestee indices that are expected to get responses from.
-Note that an object can hold both an uplock and a downlock in some cases.
-In cache-coherence protocols, each lock corresponds to a miss status holding register (MSHR).
+Now every cache object defined in \hemiola{} does not need to set transient states to consider all combinations among stable statuses;
+instead of it, the framework suggests to maintain the cache status and to set a proper lock.
+For example, instead of setting a transient state SM, it is now desirable to maintain its status S and to set an uplock to record it just made the upward request.
+(The framework provides even more, actually, by guiding users to employ the \emph{rule templates}, introduced in the next section, that automatically set proper locks.)
+
+Each object defined in \hemiola{} has a semantic \emph{lock state}, a finite map from a lock type (uplock or downlock) to lock information: the original request message, the original requestor index, and requestee indices that are expected to get responses from.
+In cache-coherence protocols, each lock corresponds to a miss status holding register (MSHR), a very well-known register used within a cache.
 An MSHR is set when a cache miss happens and the miss triggers further requests to obtain a proper status and up-to-date data.
 As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whether to handle certain requests and in storing information needed to handle them properly.
 
@@ -1347,6 +1350,7 @@ We believe this case provides evidence that a carefully predesigned locking mech
 
 \todo{1) We really need to provide the ``intuition'' why serializability holds with the topology and rule conditions.}
 \todo{2) The proof sketch could go to the appendix, with enough intuitions provided.}
+\todo{- How to provide the proof intuition: 1) if we can serialize any two interleaving transactions, we can prove serializability of the system, 2) now this figure explains how the two transactions are serialized, using commuting reductions, and 3) the reason why these two transitions commute is blah blah..}
 
 \begin{figure*}[t]
   \begin{subfigure}[b]{0.4\textwidth}
