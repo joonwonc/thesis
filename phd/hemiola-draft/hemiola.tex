@@ -1171,8 +1171,6 @@ As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whet
 \newcommand{\ppo}[3]{\ensuremath{\{#1\}#2\lbrack#3\rbrack}}
 \newcommand*{\bfrac}[2]{\genfrac{}{}{0pt}{}{#1}{#2}}
 
-On top of the topology/network requirements and the locking mechanism, \hemiola{} provides rule templates to ensure that objects communicate within the topology and locks are properly set.
-
 \begin{figure}[t]
   \centering
   \begin{subfigure}[b]{0.32\columnwidth}
@@ -1302,25 +1300,25 @@ On top of the topology/network requirements and the locking mechanism, \hemiola{
   \label{fig-rule-templates}
 \end{figure}
 
-\todo{Clarify that the rule templates also see the message types (request or response).}
+In order to establish the topology/network requirements and the locking mechanism automatically, \hemiola{} provides rule templates that make state transitions within the conditions.
 \autoref{fig-rule-templates} presents the nine rule templates supported in \hemiola{}.
-Each diagram has the form $\ppo{P}{O}{Q}$ and arrows with $\circ$ and $\bullet$.
-It means that the rule template is for an object $O$, requires input messages ($\circ$) and a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
+Each diagram has the form $\ppo{P}{O}{Q}$ and arrows with the circles ($\circ$ and $\bullet$) and the labels representing requests (\msgsfsm{rq(s)}) and responses (\msgsfsm{rs(s)}).
+It means that the rule template is for an object $O$, requires input messages ($\circ$) with the the message types determined by the label, has a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
 
-$\uled$, $\dled$, $\ulfree$, and $\dlfree$ in a precondition indicate that the object is uplocked, downlocked, uplock-free, and downlock-free, respectively.
+$\uled$, $\dled$, $\ulfree$, and $\dlfree$ in a precondition indicate that the object should be uplocked, downlocked, uplock-free, and downlock-free, respectively.
 $\setul$, $\setdl$, $\relul$, and $\reldl$ in a state transition indicate setting an uplock, setting a downlock, releasing an uplock, and releasing a downlock, respectively.
 $\stsilent{}$ annotates that the rule template forbids any state modification beside locking.
 Looking at the rules one-by-one:
-\begin{enumerate}[label=(\alph*)]
-\item \rtname{immd}: a rule responds immediately to an upward request. It can make a local state transition without any input/output messages as well (input/output messages marked with parentheses in \autoref{fig-rule-templates}).
-\item \rtname{immu}: a rule responds immediately to a downward request.
-\item \rtname{rquu}: a rule (possibly) takes an upward request and requests to its parent.
-\item \rtname{rsdd}: a rule takes a downward response and (possibly) responds to the original child requestor.
-\item \rtname{rqud}: a rule (possibly) takes an upward request and requests to some of its children.
-\item \rtname{rsud}: a rule takes upward responses and (possibly) responds to the original child requestor.
-\item \rtname{rqdd}: a rule takes a downward request and requests to some of its children.
-\item \rtname{rsuu}: a rule takes upward responses and responds to its parent.
-\item \rtname{rsrq}: a rule takes a downward response and requests to some of its children.
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item \rtname{immd} responds immediately to an upward request. It can make a local state transition without any input/output messages as well (input/output messages marked with parentheses in \autoref{fig-rule-templates}).
+\item \rtname{immu} responds immediately to a downward request.
+\item \rtname{rquu} (possibly) takes an upward request and requests to its parent.
+\item \rtname{rsdd} takes a downward response and (possibly) responds to the original child requestor.
+\item \rtname{rqud} (possibly) takes an upward request and requests to some of its children.
+\item \rtname{rsud} takes upward responses and (possibly) responds to the original child requestor.
+\item \rtname{rqdd} takes a downward request and requests to some of its children.
+\item \rtname{rsuu} takes upward responses and responds to its parent.
+\item \rtname{rsrq} takes a downward response and requests to some of its children.
 \end{enumerate}
 
 The rule templates are carefully designed to perform any practical transactions \emph{safely} with serializable behavior.
@@ -1330,21 +1328,22 @@ This transaction kind is one of the longest-running in cache-coherence protocols
 
 Each rule in the templates sets/releases a lock properly, depending on which messages the rule takes and generates.
 While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we still see a number of interesting cases that are worth analyzing again in terms of correctness and liveness:
-\begin{itemize}
+\begin{itemize}[leftmargin=*]
 \item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-trs-semantics}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
 \item \rtname{\{immu, rqdd\}} show that an object can handle a request from the parent even when uplocked. These rules do not have a precondition that the object should be uplock-free. Note again that this relaxation is to avoid a deadlock.
-\item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure correctness (serializability).
+\item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure serializability.
 \item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
 \end{itemize}
 
-\todo{Clarify this paragraph more, or consider removing it.}
-\todo{(Need to think carefully about how to claim Hemiola locks are not overused.)}
-A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
-We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
-Looking at the rule template \rtname{rquu}, we see that the downlock-free ($\dlfree$) condition is \emph{not} required to make an upward request to the parent.
-This choice is safe since the upward request may introduce state changes outside the object until it takes a corresponding downward response (see \rtname{rsdd}, which checks downlock-freedom when taking the response).
-Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
-We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
+\todo{How to convince that the Hemiola locks are not overused?}
+
+%% \todo{Clarify this paragraph more, or consider removing it.}
+%% A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
+%% We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
+%% Looking at the rule template \rtname{rquu}, we see that the downlock-free ($\dlfree$) condition is \emph{not} required to make an upward request to the parent.
+%% This choice is safe since the upward request may introduce state changes outside the object until it takes a corresponding downward response (see \rtname{rsdd}, which checks downlock-freedom when taking the response).
+%% Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
+%% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
 
