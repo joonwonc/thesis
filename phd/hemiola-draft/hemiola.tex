@@ -1328,26 +1328,6 @@ Considering an extreme case, in a cache-coherence protocol, if an L1 cache wants
 In order to perform such a transaction, it must be able to traverse all the other caches.
 This transaction kind is one of the longest-running in cache-coherence protocols, and the rule templates are designed with proper locking ($\uled$ and $\dled$) and a state-change condition ($\stsilent$), not to create any incoherence while such a long transaction is interleaved with other transactions.
 
-Each rule in the templates sets/releases a lock properly, depending on which messages the rule takes and generates.
-While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we still see a number of interesting cases that are worth analyzing again in terms of correctness and liveness:
-\begin{itemize}[leftmargin=*]
-\item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-trs-semantics}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
-\item \rtname{\{immu, rqdd\}} show that an object can handle a request from the parent even when uplocked. These rules do not have a precondition that the object should be uplock-free. Note again that this relaxation is to avoid a deadlock.
-\item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure serializability.
-\item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
-\end{itemize}
-
-%% \todo{How to convince that the Hemiola locks are not overused?}
-%% \todo{Clarify this paragraph more, or consider removing it.}
-%% A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
-%% We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
-%% Looking at the rule template \rtname{rquu}, we see that the downlock-free ($\dlfree$) condition is \emph{not} required to make an upward request to the parent.
-%% This choice is safe since the upward request may introduce state changes outside the object until it takes a corresponding downward response (see \rtname{rsdd}, which checks downlock-freedom when taking the response).
-%% Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
-%% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
-
-\subsection{Serializability Guarantee by the \hemiola{} DSL}
-
 \newcommand{\rdcircfl}[2]{\rdcircf{#1}{#2}}
 \newcommand{\rdcircflsm}[2]{\rdcircf{#1}{\footnotesize #2}}
 \newcommand{\blcircfl}[2]{\blcircf{#1}{#2}}
@@ -1483,12 +1463,13 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         \draw [line width=0.2mm, <-<] (0, 0) -- (0, -1.2);
         \draw [line width=0.2mm, >->] (0.2, 0) -- (0.2, -1.2);
         \node[label={[label distance=-4pt,myblue]left:{\small {\sf rqM}}},color=myblue] at (-0.2, -0.4) {$\bullet$};
-        \node[label={[label distance=-9pt,myred]below left:{\small {\sf rsI}}},color=myred] at (0, -0.8) {$\bullet$};
+        \node[label={[label distance=-2pt,myred]left:{\small {\sf rsI}}},color=myred] at (0, -0.8) {$\bullet$};
         \node[label={[label distance=-4pt,myred]right:{\small {\sf rqI}}},color=myred] at (0.2, -0.8) {$\bullet$};
         \node at (0, -1.5) {$C_2$};
 
         % Curves
-        \draw [->,color=myred] (1.2, 0.4) to[out=-135,in=90] node[below right] {\rdcircflsm{3}{rqud}} (0.5, -0.6);
+        \draw [->,color=myblue] (-0.5, -1.9) to[out=110,in=-90] node[left] {\blcircflsm{2}{rquu}} (-0.7, -0.7);
+        \draw [->,color=myred] (0.5, -1.0) to[out=-90,in=-90,distance=1.3cm] node[right=5pt] {\rdcircflsm{4}{immu}} (-0.5, -1.0);
       \end{tikzpicture}\\
     \end{tabular}
     \caption{Reduction cases}
@@ -1497,6 +1478,26 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
   \caption{Interleaving transactions and their serialization by commuting rule-template-based state transitions}
   \label{fig-ex-sz}
 \end{figure*}
+
+Each rule in the templates sets/releases a lock properly, depending on which messages the rule takes and generates.
+While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we still see a number of interesting cases that are worth analyzing again in terms of correctness and liveness:
+\begin{itemize}[leftmargin=*]
+\item \rtname{\{immd, rquu, rqud\}} show that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-trs-semantics}. On the other hand, \rtname{\{immd, rsdd, rsud\}} show that a transaction may not generate output messages.
+\item \rtname{\{immu, rqdd\}} show that an object can handle a request from the parent even when uplocked. These rules do not have a precondition that the object should be uplock-free. Note again that this relaxation is to avoid a deadlock.
+\item \rtname{rsdd} says that in order to handle a response from the parent, the object should be downlock-free. This precondition is indeed required to ensure serializability.
+\item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
+\end{itemize}
+
+%% \todo{How to convince that the Hemiola locks are not overused?}
+%% \todo{Clarify this paragraph more, or consider removing it.}
+%% A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
+%% We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
+%% Looking at the rule template \rtname{rquu}, we see that the downlock-free ($\dlfree$) condition is \emph{not} required to make an upward request to the parent.
+%% This choice is safe since the upward request may introduce state changes outside the object until it takes a corresponding downward response (see \rtname{rsdd}, which checks downlock-freedom when taking the response).
+%% Their implementation, however, blocks the upward request when a downlock is set, even if it is (proven to be) safe to relax it.
+%% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
+
+\subsection{Serializability Guarantee by the \hemiola{} DSL}
 
 We now present the intuition and the sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
@@ -1539,8 +1540,8 @@ While this reduction is trivial in the sense of orthogonal objects and channels,
 These state transitions still commute, as shown in \autoref{fig-ex-sz-comm} (below), since \blcircf{2} cannot make any object state transition, according to the definition of the ``rquu'' rule template.
 
 How can we argue that atomic-history fragments are always mergeable?
-As seen in the two cases in \autoref{fig-ex-sz-state-trs}, we can argue the merge process just by looking at which rule templates are used.
-\todo{}
+As seen in the two cases in \autoref{fig-ex-sz-state-trs}, the reason for the mergeability comes only from what have been specified by the rule templates.
+It is required to consider all possible reduction cases among the rule templates to prove the serializability.
 
 The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among the rule templates, left/right pushes, etc. -- and the serializability proof with the topology/network and rule conditions.
 The highest-level theorem simply claims that the use of good topology and the rule templates automatically guarantees serializability:
