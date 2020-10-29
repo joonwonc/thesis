@@ -272,13 +272,13 @@
 }
 
 \newcommand*\rdcircf[1]{
-  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt, margin=-1pt}{
+  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myred, text=white]
       (char) {\tiny\sffamily #1};}}
 }
 \newcommand*\blcircf[1]{
-  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt, margin=-1pt}{
+  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myblue, text=white]
       (char) {\tiny\sffamily #1};}}
@@ -571,7 +571,7 @@ A so-called three-channel system has been widely used and regarded as a good cho
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
 Transient states and network channels play a crucial role in making \emph{interleavings} correct.
-Regarding the sequence of rule executions (in red) $[\,\rdcircf{1}\,; \rdcircf{3}\,; \rdcircf{4}\,]$ as an execution flow -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could not happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqWr}.
+Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \rdcircf{4}]$ as an execution flow -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could not happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqWr}.
 As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} to be further proceeded.
 This mechanism to ensure safe interleavings is called \emph{noninterference}, which ensures that no other state transitions affect while handling a certain transaction.
 In model-checking cache-coherence protocols, lots of good noninterference lemmas have been developed and used to avoid state explosion by interleaving transactions.
@@ -1337,8 +1337,7 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 \item \rtname{rsrq} forces the order of a traversal, saying that the traversal for the outer objects must be done before traversing the inner objects. The forced order is important to avoid a deadlock. For example, if the object makes requests to its parent and children at the same time and sets both an uplock and a downlock, a deadlock may occur.
 \end{itemize}
 
-\todo{How to convince that the Hemiola locks are not overused?}
-
+%% \todo{How to convince that the Hemiola locks are not overused?}
 %% \todo{Clarify this paragraph more, or consider removing it.}
 %% A reader may wonder if there is a rule template that \emph{overuses} locks, \ie{} one with an unnecessary check that a certain lock is free.
 %% We argue that the rule templates are also carefully designed not to have such cases; quite the contrary, we found another implementation~\cite{Zhang:2019,thesis:Zhang:2019}, a cache-coherence protocol written in the Bluespec HDL (hardware description language)~\cite{bluespec}, that overused a lock in a specific situation, although their current cache-coherence protocol does not have any cases that may benefit from this relaxation.
@@ -1349,8 +1348,10 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
 
-\newcommand{\rdcircfl}[2]{\rdcircf{#1}{\footnotesize #2}}
-\newcommand{\blcircfl}[2]{\blcircf{#1}{\footnotesize #2}}
+\newcommand{\rdcircfl}[2]{\rdcircf{#1}{#2}}
+\newcommand{\rdcircflsm}[2]{\rdcircf{#1}{\footnotesize #2}}
+\newcommand{\blcircfl}[2]{\blcircf{#1}{#2}}
+\newcommand{\blcircflsm}[2]{\blcircf{#1}{\footnotesize #2}}
 
 \begin{figure*}[t]
   \begin{subfigure}[b]{0.3\textwidth}
@@ -1372,13 +1373,13 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         \node[label={[label distance=-6pt,myred]right:{\small {\sf rqI}}},color=myred] at (1, -0.7) {$\bullet$};
 
         % Curves
-        \draw [->,color=myred] (-2.1, -1.8) to[out=90,in=-90] node[left] {\rdcircfl{1}{rquu}} (-1.6, -0.9);
-        \draw [->,color=myred] (-1.6, -0.5) to[out=70,in=110,distance=1.4cm] node[left=15pt] {\rdcircfl{3}{rqud}} (1.4, -0.4);
-        \draw [->,color=myred] (1.5, -0.9) to[out=-50,in=-50,distance=1.5cm] node[below] {\rdcircfl{4}{immu}} (0.5, -1.1);
+        \draw [->,color=myred] (-2.1, -1.8) to[out=90,in=-90] node[left] {\rdcircflsm{1}{rquu}} (-1.6, -0.9);
+        \draw [->,color=myred] (-1.6, -0.5) to[out=70,in=110,distance=1.4cm] node[left=15pt] {\rdcircflsm{3}{rqud}} (1.4, -0.4);
+        \draw [->,color=myred] (1.5, -0.9) to[out=-50,in=-50,distance=1.5cm] node[below] {\rdcircflsm{4}{immu}} (0.5, -1.1);
         \draw [->,color=myred] (0.4, -0.8) to[out=135,in=45,distance=0.6cm] (-0.3, -0.7);
         \draw [densely dashed,color=myred,line width=0.3pt] (0, -0.35) to[out=90,in=-170] (1.3, 0.35);
-        \node at (1.7, 0.3) {\rdcircfl{5}{rsud}};
-        \draw [->,color=myred] (-0.6, -1.1) to[out=225,in=90] node[below right] {\rdcircfl{7}{rsdd}} (-1.1, -1.8);
+        \node at (1.7, 0.3) {\rdcircflsm{5}{rsud}};
+        \draw [->,color=myred] (-0.6, -1.1) to[out=225,in=90] node[below right] {\rdcircflsm{7}{rsdd}} (-1.1, -1.8);
       \end{tikzpicture}\\
       %% {\bf (a) The {\color{myred} red} transaction }\\
       \begin{tikzpicture}
@@ -1397,13 +1398,13 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         \node[label={[label distance=-10pt,myblue]below left:{\small {\sf rqM}}},color=myblue] at (0.6, -0.7) {$\bullet$};
 
         % Curves
-        \draw [->,color=myblue] (1.1, -1.8) to[out=90,in=-45] node[below left=-3pt] {\blcircfl{2}{rquu}} (0.6, -1.1);
+        \draw [->,color=myblue] (1.1, -1.8) to[out=90,in=-45] node[below left=-3pt] {\blcircflsm{2}{rquu}} (0.6, -1.1);
         \draw [->,color=myblue] (0.3, -0.7) to[out=135,in=45,distance=0.5cm] (-0.3, -0.7);
         \draw [densely dashed,color=myblue,line width=0.3pt] (0, -0.35) to[out=90,in=-170] (1.3, 0.35);
-        \node at (1.7, 0.3) {\blcircfl{6}{rqud}};
-        \draw [->,color=myblue] (-0.5, -1.1) to[out=-135,in=-135,distance=1.8cm] node[below] {\blcircfl{8}{immu}} (-1.3, -0.7);
-        \draw [->,color=myblue] (-1.1, -0.3) to[out=60,in=120,distance=1.3cm] node[left=17pt] {\blcircfl{9}{rsud}} (1.4, -0.5);
-        \draw [->,color=myblue]  (1.6, -0.95) to[out=-90,in=90] node[above right=-2pt] {\blcircfl{10}{rsdd}} (2.1, -1.8);
+        \node at (1.7, 0.3) {\blcircflsm{6}{rqud}};
+        \draw [->,color=myblue] (-0.5, -1.1) to[out=-135,in=-135,distance=1.8cm] node[below] {\blcircflsm{8}{immu}} (-1.3, -0.7);
+        \draw [->,color=myblue] (-1.1, -0.3) to[out=60,in=120,distance=1.3cm] node[left=17pt] {\blcircflsm{9}{rsud}} (1.4, -0.5);
+        \draw [->,color=myblue]  (1.6, -0.95) to[out=-90,in=90] node[above right=-2pt] {\blcircflsm{10}{rsdd}} (2.1, -1.8);
       \end{tikzpicture}
     \end{tabular}
     \caption{The two transactions}
@@ -1411,14 +1412,14 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
   \end{subfigure}
   \begin{subfigure}[b]{0.5\textwidth}
     \renewcommand{\arraystretch}{1.2}
-    \setlength\tabcolsep{3.5pt}
+    \setlength\tabcolsep{2.5pt}
     \small\centering
     \begin{tabular}{c}
       \multicolumn{1}{l}{
         \begin{tikzpicture}
           \node at (-0.6, 0) {};
           \node[anchor=west] at (0, 0.25) {{\footnotesize\it State transition timeline}};
-          \draw [>=stealth,->,line width=1pt] (0, 0) to (5.5, 0);
+          \draw [>=stealth,->,line width=1pt] (0, 0) to (5, 0);
         \end{tikzpicture}}\\
       \begin{tabular}{c|ccccccccccc}
         \hline
@@ -1429,7 +1430,9 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & & & \blcircf{10} \\
         \hline
       \end{tabular}\\
-      $\downarrow$ (commute \blcircf{6} and \rdcircf{7})\\
+      \vspace{-10pt}\\
+      $\downarrow$ (\blcircf{6} and \rdcircf{7} commute)\\
+      \vspace{-10pt}\\
       \begin{tabular}{c|ccccccccccc}
         \hline
         $C_1$ & & \rdcircf{1} & & & & & \rdcircf{7} & & \blcircf{8} & & \\
@@ -1439,7 +1442,9 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & & & \blcircf{10} \\
         \hline
       \end{tabular}\\
-      $\downarrow^\ast$ (commute \blcircf{2} and \rdcircf{3}\rdcircf{4}\rdcircf{5}\rdcircf{7})\\
+      \vspace{-10pt}\\
+      $\downarrow$ ($[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$ and $[\blcircf{2}]$ commute)\\
+      \vspace{-10pt}\\
       \begin{tabular}{c|ccccccccccc}
         \hline
         $C_1$ & & \rdcircf{1} & & & & \rdcircf{7} & & & \blcircf{8} & & \\
@@ -1466,8 +1471,8 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         \node at (0, -1.5) {$C_1$};
 
         % Curves
-        \draw [->,color=myblue] (1, 0.8) to[out=-135,in=90] node[below right] {\blcircfl{6}{rqud}} (0.3, -0.2);
-        \draw [->,color=myred] (0.3, -1.0) to[out=-90,in=90] node[right] {\rdcircfl{7}{rsdd}} (0.3, -1.7);
+        \draw [->,color=myblue] (1, 0.8) to[out=-135,in=90] node[below right] {\blcircflsm{6}{rqud}} (0.3, -0.2);
+        \draw [->,color=myred] (0.3, -1.0) to[out=-90,in=90] node[right] {\rdcircflsm{7}{rsdd}} (0.3, -1.7);
       \end{tikzpicture}\\
       \begin{tikzpicture}
         \node at (0, 0.5) {$P$};
@@ -1483,10 +1488,10 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
         \node at (0, -1.5) {$C_2$};
 
         % Curves
-        \draw [->,color=myred] (1.2, 0.4) to[out=-135,in=90] node[below right] {\rdcircfl{3}{rqud}} (0.5, -0.6);
+        \draw [->,color=myred] (1.2, 0.4) to[out=-135,in=90] node[below right] {\rdcircflsm{3}{rqud}} (0.5, -0.6);
       \end{tikzpicture}\\
     \end{tabular}
-    \caption{Commutations}
+    \caption{Reduction cases}
     \label{fig-ex-sz-comm}
   \end{subfigure}
   \caption{Interleaving transactions and their serialization by commuting rule-template-based state transitions}
@@ -1497,15 +1502,16 @@ We now present the intuition and the sketch of the serializability proof for the
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
 This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but no past work has tried to discover new serializability conditions that can fit for cache-coherence protocols and to prove it using reductions.
 
-We call two adjacent state transitions \emph{commutable} if the state transitions with the opposite order reach to the same state:
+We say that two adjacent state transitions \emph{commute} if the state transitions with the opposite order reach to the same state:
 $\semstep{S}{s_0}{l_0}{s_1} \to \semstep{S}{s_1}{l_1}{s_2} \to \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \to \semstep{S}{s_1'}{l_0}{s_2}$.
-Our high-level intuition is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
+We can naturally lift the notion for histories to argue whether two histories commute or not.
+Our high-level intuition for the serializability proof is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
 More specifically, we will try to \emph{merge} two separated atomic-history fragments by performing reductions.
-If it is enforced that no other atomic fragments are split during this merge, we can eventually get the sequential history by performing a finite number of merges.
+%% If it is enforced that no other atomic fragments are split during this merge, we can eventually get the sequential history by performing a finite number of merges.
 
-We will elaborate more on this intuition with \autoref{fig-ex-sz}, two interleaving transactions started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-example}.
-\autoref{fig-ex-sz-trs} presents the two transactions (in {\color{myred} red} and {\color{myblue} blue}).
-We use an arrow ({\color{myred} $\to$}) and \rdcircfl{1}{rquu} to label a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{rquu} is a rule in $C_1$, taking an input message \idmsf{1}{rqWr} and making an output \idmsf{3}{rqM}.
+We elaborate more on this intuition with \autoref{fig-ex-sz}: two interleaving transactions started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-example}.
+The two transactions are presented in \autoref{fig-ex-sz-trs} by {\color{myred} red} and {\color{myblue} blue} colors.
+We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{rquu}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{rquu} is a rule in $C_1$ using the ``rquu'' rule template, that takes an input message \idmsf{1}{rqWr} and outputs \idmsf{3}{rqM}.
 
 %% \begin{itemize}[leftmargin=*]
 %% \item \rdcircfl{1}{rquu} (or \blcircfl{2}{rquu}): forward \msgsfsm{rqM} to $P$ since $C_1$ (or $C_2$) does not have the M status.
@@ -1516,13 +1522,30 @@ We use an arrow ({\color{myred} $\to$}) and \rdcircfl{1}{rquu} to label a state 
 %% \end{itemize}
 
 \autoref{fig-ex-sz-state-trs} shows how reductions apply to the original interleaved history (top) to make it sequential (bottom).
+In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we should perform a reduction either between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\blcircf{6}]$ or between $[\blcircf{6}]$ and $[\rdcircf{7}]$.
+From the perspective of this kind of merge, we will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
 
+Two state transitions trivially commute if 1) the object state transitions happen in the different objects and 2) input/output channels used for the transitions are all orthogonal to each others.
+If either of the conditions does not hold, we may need to analyze more whether the transitions commute or not.
+In this merge case, $[\blcircf{6}]$ can be pushed to the right (\ie{} \blcircf{6} and \rdcircf{7} commute).
+The object state transitions are straightforward to deal with, since they are orthogonal ($P$ for \blcircf{6} and $C_1$ for \rdcircf{7}).
+It is nontrivial to deal with the used channels, however, since the output of \blcircf{6} (\blmsgsm{rqI}) and the input of \rdcircf{7} (\rdmsgsm{rsM}) share the same channel $5$.
+\autoref{fig-ex-sz-comm} (above) depicts this case; we see \blcircf{6} and \rdcircf{7} still commute, since \rdcircfl{7}{rsdd} should take a response (\rdmsgsm{rsM}) while \blcircfl{6}{rqud} outputs a request.
+It indicates that \blcircf{6} and \rdcircf{7} are involved with different messages in the same channel, thus not affecting the commutativity.
+We obtain a new (less-interleaved) history after the reduction, shown in the middle.
 
+Now we should merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$; in this case, \blcircf{2} can be pushed to the right.
+While this reduction is trivial in the sense of orthogonal objects and channels, the only nontrivial case is between \blcircf{2} and \rdcircf{4}, where the both rules are executed in $C_2$.
+These state transitions still commute, as shown in \autoref{fig-ex-sz-comm} (below), since \blcircf{2} cannot make any object state transition, according to the definition of the ``rquu'' rule template.
 
-The biggest contribution of the \hemiola{} framework includes the precise formalization of aforementioned intuitions -- merging atomic fragments, commutativity among the rule templates, etc. -- and the serializability proof with the topology/network and rule conditions.
+How can we argue that atomic-history fragments are always mergeable?
+As seen in the two cases in \autoref{fig-ex-sz-state-trs}, we can argue the merge process just by looking at which rule templates are used.
+\todo{}
+
+The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among the rule templates, left/right pushes, etc. -- and the serializability proof with the topology/network and rule conditions.
 The highest-level theorem simply claims that the use of good topology and the rule templates automatically guarantees serializability:
-\newcommand{\ontree}[2]{\ensuremath{\textsf{OnTree}\ #1\ #2}}
-\newcommand{\goodrules}[2]{\ensuremath{\textsf{GoodRules}\ #1\ #2}}
+\newcommand{\ontree}[2]{\ensuremath{\mathsf{OnTree}\ #1\ #2}}
+\newcommand{\goodrules}[2]{\ensuremath{\mathsf{GoodRules}\ #1\ #2}}
 \begin{theorem}[\hemiola{}'s serializability guarantee]
   \begin{displaymath}
     \forall S, t.\; \ontree{S}{t} \land \goodrules{S}{t} \to \hsrz{S},
@@ -1530,7 +1553,7 @@ The highest-level theorem simply claims that the use of good topology and the ru
   where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$ conforms to one of the rule templates.
   \label{thm-sz-guarantee}
 \end{theorem}
-While we only provide the intuition why this theorem holds in this section, interested readers are referred to \autoref{sec-appx-sz-guarantee}, which presents the required formalization and the proof of this theorem.
+While we only provided the intuition why this theorem holds, interested readers are referred to \autoref{sec-appx-sz-guarantee}, which presents the required formalization and the proof of this theorem.
 Also, the full mechanized Coq proof is in the supplementary material.
 
 \section{Case Studies: Hierarchical MSI and MESI Protocols}
