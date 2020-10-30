@@ -76,8 +76,8 @@
   showtabs=false,
   tabsize=2,
   frame=single,
-  xleftmargin=0.05\columnwidth,
-  xrightmargin=0.05\columnwidth,
+  xleftmargin=0.03\columnwidth,
+  xrightmargin=0.03\columnwidth,
 }
 \def\slstinline{\lstinline[basicstyle=\ttfamily\small]}
 
@@ -1906,8 +1906,8 @@ In this section we present a hierarchical MESI protocol and demonstrate that the
 
 \subsubsection{Protocol description}
 
-\paragraph{Object states.}
-Object state in the MESI protocol is the same as in the MSI protocol, taking the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$.
+\paragraph{Cache states.}
+The cache state in the MESI protocol is the same as in the MSI protocol, taking the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$.
 The only difference is that the status may be \stE{}.
 
 \paragraph{New rules added beyond the MSI protocol.}
@@ -1960,19 +1960,19 @@ Once the original requestor obtains \stE{} status, it can both read and write th
 \label{sec-mesi-proof}
 
 \paragraph{Logical status and new invariants for \stE{}.}
-We extend the notion of logical status from the MSI protocol, declaring that an object in MESI is \stE{} if either 1) the object has \stE{} and there is no invalidation response to the object or 2) there is a response \slstinline{rsE} to the object.
-We should extend the invariants as well to cover objects with \stE{} status.
+We extend the notion of logical status from the MSI protocol, declaring that a cache in MESI is \stE{} if either 1) it has \stE{} and there is no eviction response to it or 2) there is a response \slstinline{rsE} to it.
+We should extend the invariants as well to cover caches with \stE{} status.
 \begin{itemize}
-\item The exclusiveness invariant also applies to \stE{}; whenever a cache has logical status \stE{}, all the other objects are in \stI{}.
+\item The exclusiveness invariant also applies to \stE{}; whenever a cache has logical status \stE{}, all the other caches are logically in \stI{}.
 \item The sharing and invalidness invariants remain the same.
-\item A new invariant for \stE{} claims that if an object takes an invalidation request without writeback from a child, and the directory status pointing to the child is \stE{}, then the object has a coherent value.
+\item A new invariant for \stE{} claims that if a cache takes an eviction request \emph{without writeback} from a child, and the directory status pointing to the child is \stE{}, then it has a coherent value.
 \end{itemize}
 
-\paragraph{Invariant and refinement proof.}
-Unlike the exclusiveness and the invalidness invariants, the invariant for \stE{} does not involve a large chunk of objects; it is rather an invariant that just relates a child and the parent state.
-Therefore, we did not employ predicate messages in this invariant proof, instead using a normal induction on state-transition steps.
+\paragraph{Invariant and refinement proofs.}
+Unlike the exclusiveness and the invalidness invariants, the invariant for \stE{} does not involve a large chunk of caches; it is rather an invariant that just relates a child and the parent cache states.
+Therefore, we do not employ predicate messages in this invariant proof, instead using a normal induction on state-transition steps.
 
-The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover objects with \stE{} status and messages with ID \slstinline{rsE}.
+The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover caches with \stE{} status and messages with ID \slstinline{rsE}.
 
 \section{Compilation and Synthesis to Hardware}
 \label{sec-synthesis}
