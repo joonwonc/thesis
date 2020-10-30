@@ -47,12 +47,12 @@
 \definecolor{mordantred19}{rgb}{0.68, 0.05, 0.0}
 \definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
 \definecolor{mediumtealblue}{rgb}{0.0, 0.33, 0.71}
-\definecolor{darkgray}{rgb}{0.66, 0.66, 0.66}
+\definecolor{dimgray}{rgb}{0.41, 0.41, 0.41}
 
 \colorlet{myred}{mordantred19}
 \colorlet{mygreen}{forestgreen}
 \colorlet{myblue}{mediumtealblue}
-\colorlet{mygray}{darkgray}
+\colorlet{mygray}{dimgray}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
@@ -914,7 +914,7 @@ With a clear notion of transactions, we can easily define sequential histories a
 \end{definition}
 
 \subsection{The Payoff: Predicate Messages in Atomic Histories}
-\label{sec-atomic-invariants}
+\label{sec-pred-msg}
 
 Now we discuss how to exploit our notion of serializability: how does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
@@ -1774,57 +1774,42 @@ The transition function takes the current object state (\slstinline{ost}), the o
 The transition returns a pair of the next state and an output message; this rule sets its status to \stS{}, stores the up-to-date value brought from the \slstinline{downRsS} message, sets the directory status to \stS{} by adding the two children -- one that was downgraded to \stS{} before and the other that originally requested \stS{} -- as sharers, and sets the ownership bit as true since the up-to-date value might be dirty in this case.
 It also sends a response (\slstinline{rsS}) to the requestor with the up-to-date value. Lastly, the rule automatically releases the downlock.
 
-\begin{figure}[h]
-  \centering
-\begin{lstlisting}[escapeinside={(*}{*)}]
-Definition liDropImm: Rule :=
-  rule.imm
-  :requires (fun ost _ _ =>
-    ost#[status] (*$\leq$*) msiS /\ ost#[owned] = false)
-  :transition (fun ost => ost +#[status <- msiNP]).
-\end{lstlisting}
-  \caption{$L_i$ immediately dropping a line}
-  \label{fig-rule-li-drop-imm}
-\end{figure}
-
-\todo{Change it to the ordinary invalidation-request rule; explain the messages rqI and rsI.}
-\autoref{fig-rule-li-drop-imm} is the last example, and it shows that the protocol is noninclusive.
-Template \slstinline{rule.imm} is for making an immediate state transition that neither takes any input messages nor generates any output messages.
-Its precondition just says that the line is possibly shared (\slstinline{ost#[status]} $\leq$ \slstinline{msiS}) but needs not be written back (\slstinline{ost#[owned] = false}).
-In this case, we can \emph{silently} drop the line by setting the status to \slstinline{msiNP} (not present), to denote explicitly that the line is removed.
-Note that there is no precondition about the directory status at all; a line can be dropped even when the directory status is \stS{} or \stM{}, which is not allowed in inclusive caches.
-
 It is worth recalling that thanks to the rule templates, rule descriptions in the protocol never mention anything about how to set/release locks to deal with interleavings safely; they are rather designed as if only a single transaction is being processed when executing a rule.
 
 \subsubsection{Correctness proof}
 \label{sec-msi-proof}
 
 Now we present the correctness proof of the MSI protocol, claiming that the implementation refines to a single-line memory as a spec.
-We already discussed in \autoref{sec-atomic-invariants} that a number of invariants are necessarily required to prove simulation.
+We already discussed in \autoref{sec-pred-msg} that a number of invariants are necessarily required to prove simulation.
 In this section, we provide necessary invariants to prove the correctness of the MSI protocol, and we demonstrate how \hemiola{} helps prove such invariants using predicate messages.
 
 \paragraph{Logical status of a cache.}
-The MSI protocol largely requires three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}.
-For instance, we want to claim that whenever a cache has \stM{} status, all the other caches have \stI{} status.
-\todo{This is wrong.}
-Unfortunately, this invariant is not true, since there might be another cache that has not handled an invalidation response yet, thus retaining a valid status.
+Before talking about invariants, we would like to clarify how to deal with cache statuses in transition.
+For example, what would be the representative cache status if a cache currently has a status S but is just about to handle the eviction response (say \msgsfsm{rsPut}) that will remove the line?
+It implies that the parent directory already accepted the eviction request and changed the directory status (for the child) properly.
+In this case, it would make more sense to regard the child cache status to \stI{}.
 
-In order to deal with this subtlety, we introduce a notion called \emph{logical status} to obtain an abstract status of each cache.
-In the above example, even if the cache has not handled the invalidation response yet, the logical status is \stI{}.
+In order to deal with this situation, we introduce a notion called \emph{logical status} to obtain an abstract status of each cache.
+In the above example, even if the cache has not handled \msgsfsm{rsPut} yet, the logical status is \stI{}.
 Logical statuses are defined formally as follows:
 \begin{itemize}[leftmargin=*]
-\item A cache has logical status \stM{} iff it has \stM{} and there is no invalidation response to it.
-\item A cache has logical status \stS{} iff either 1) it has \stS{} and there is no invalidation response to it or 2) there is a response \slstinline{rsS} to it.
-\item A cache has logical status \stI{} iff either 1) it has \stI{} and there is no \slstinline{rsM} or \slstinline{rsS} to it or 2) there is an invalidation response \slstinline{rsI} to it.
+\item A cache has logical status \stM{} iff it has \stM{} and there is no \msgsfsm{rsPut} to it.
+\item A cache has logical status \stS{} iff either 1) it has \stS{} and there is no \msgsfsm{rsPut} to it or 2) there is a response \msgsfsm{rsS} to it.
+\item A cache has logical status \stI{} iff either 1) it has \stI{} and there is no \msgsfsm{rsM} or \msgsfsm{rsS} to it or 2) there is a response \msgsfsm{rsPut} to it.
 \end{itemize}
-Note that the logical status of a cache is \emph{not} \stM{} when there is a response \slstinline{rsM} to it, since the response could imply an ongoing invalidation process.
+Note that the logical status of a cache is \emph{not} \stM{} when there is a response \msgsfsm{rsM} to it, since the response could imply an ongoing invalidation process.
 
 \paragraph{Invariants.}
-Using the logical status of each cache, we can state the invariant for each status:
-\begin{itemize}
-\item The \emph{exclusiveness} invariant claims an expected property regarding \stM{} status. It says that whenever a cache (or the main memory) has logical status \stM{}, then all the other caches are in logical \stI{} status.
+The MSI protocol largely requires three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}:
+\begin{itemize}[leftmargin=*]
+\item The \emph{exclusiveness} invariant claims an expected property regarding \stM{} status.
+  It says that whenever a cache has logical status \stM{}, then all the other caches are in logical \stI{} status.
 \item The \emph{sharing} invariant claims that all caches in logical \stS{} status have the same value.
-\item \todo{Clarify more about a ``certain'' set; say it will be further explained soon.} The \emph{invalidness} invariant claims that a certain set of caches are all in logical \stI{} status. Such a set may refer to the caches inside (or outside) a subtree of the system, determined by looking at the directory status or the ownership bit. For example, if a cache $O$ has an ownership bit true, then all the caches outside $O$ have logical \stI{} status.
+\item The \emph{invalidness} invariants claim that a certain set of caches are all in logical \stI{} status in some circumstances.
+  \begin{itemize}[leftmargin=*]
+  \item On ownership bits: if a cache $C$ has an ownership bit true, then all the caches outside $C$ have logical \stI{} status.
+  \item On directories with the \stM{} status: if a parent $P$ has a directory status $M$ to a child $C_i$, then all the caches outside $C_i$ (including $P$) have logical \stI{} status.
+  \end{itemize}
 \end{itemize}
 
 The sharing invariant is the easiest one to prove, since the rules involved with sharing the coherent value employ just simple value forwarding.
@@ -1833,55 +1818,64 @@ Proving the preservation of the invariant for this rule is very straightforward.
 
 \paragraph{Invariant proofs using predicate messages.}
 
-\todo{1) Need to give much more intuitions why invariants proofs are hard and how predicate messages help prove them.}
+While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness and invalidness invariants, since these invariants are involved with global cache states.
+We have already learned in \autoref{sec-pred-msg} that in order to prove this kind of invariants, it is desired to state some supporting invariants based on the existence of certain messages, called predicate messages.
+We also discovered that on top of serializability it is much easier to state and prove predicate messages.
 
-\newcommand{\subtree}[1]{\ensuremath{\textrm{tr}(#1)}}
-\newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}(#1)}}
-\newcommand{\objsinv}[1]{\ensuremath{\textsf{Invalid}(#1)}}
-
-While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness invariant and the invalidness invariant.
+\newcommand{\subtree}[1]{\ensuremath{\textrm{tr}\,(#1)}}
+\newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}\,(#1)}}
+\newcommand{\objsinv}[1]{\ensuremath{\textsf{Invalid}\;(#1)}}
 
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
-    \node at (0, 0) {$O$};
-    \node at (-0.6, 1) {$P$};
-    \draw [>->] (-0.5, 0.8) -- (-0.1, 0.2);
-    \node[label={[label distance=-6pt]right:{\small $\textsf{rsM}\{\objsinv{\subtreec{O}}\}$}}] at (-0.3, 0.5) {$\bullet$};
-    %% tr(O)
-    \draw [thick,loosely dotted] (-0.2, -0.3) -- (-0.4, -0.6);
-    \draw [thick,loosely dotted] (0, -0.3) -- (0, -0.7);
-    \draw [thick,loosely dotted] (0.2, -0.3) -- (0.4, -0.6);
-    %% tr-1(P)
-    \draw [thick,loosely dotted] (-0.8, 0.7) -- (-1, 0.3);
-    \draw [thick,loosely dotted] (-0.6, 0.7) -- (-0.6, 0.3);
-    \draw [thick,loosely dotted] (-0.8, 1.2) -- (-1, 1.5);
+    %% Part 1
+    \node [color=myblue] at (0, 0.8) {$(P.\textsf{owned} = \top)\{\objsinv{\subtreec{P}}\}$};
+    \node at (0, 0) {$P$};
+    \node at (-0.9, -0.9) {$C_0$};
+    \node at (0, -1.2) {$C_1$};
+    \node at (1.1, -0.7) {$C_n$};
+
+    \draw [dotted,line width=1pt] (0, 0.5) -- (0, 0.2);
+    \draw [>->] (-0.2, -0.2) -- (-0.7, -0.7);
+    \draw [>->] (0, -0.9) -- (0, -0.2);
+    \draw [>->] (0.85, -0.5) -- (0.2, -0.1);
+    \draw [loosely dotted,line width=1pt] (0.3, -1.1) to[out=0,in=-150] (0.8, -0.9);
+
+    \node [color=myblue,label={[myblue,label distance=-9pt]below right:{\msgsfsm{rsI}}}] at (0, -0.55) {$\bullet$};
+    \node [color=myblue,label={[myblue,label distance=-9pt]above right:{\predmsg{\msgsfsm{rsI}}{\objsinv{\subtree{C_n}}}}}] at (0.525, -0.3) {$\bullet$};
+    \node [color=myred,label={[myred,label distance=-9pt]above left:{\predmsg{\msgsfsm{rsM}}{\objsinv{\subtreec{C_0}}}}}] at (-0.45, -0.45) {$\bullet$};
+
+    \node [anchor=west,draw] at (0.8, -1.4) {{\small {\color{myblue} current}/{\color{myred} next}}};
+
+    %% Part 2
+    \node [color=mygray] at (-2.1, -2.1) {$L_1$};
+    \node [color=mygray,anchor=west] at (-1.6, -2.2) {$(L_1.\textsf{st} = M)\{\objsinv{\lambda c. c \neq L_1}\}$};
+    \draw [dotted,line width=1pt] (-1.8, -2.1) -- (-1.5, -2.2);
+    \draw [loosely dotted,line width=1pt] (-1.15, -1.15) -- (-1.45, -1.45);
+    \draw [color=mygray,>->] (-1.5, -1.5) -- (-1.9, -1.9);
+
+    \node [anchor=east,draw] at (-2.6, -2.1) {{\small\color{mygray} eventually}};
+
+    \node [color=mygray,label={[label distance=-9pt,mygray]above left:{\predmsg{\msgsfsm{rsM}}{\objsinv{\subtreec{L_1}}}}}] at (-1.7, -1.7) {$\bullet$};
   \end{tikzpicture}
-  \caption{Predicate messages over \slstinline{rsM}}
-  \label{fig-predicate-msg}
+  \caption{Use of predicate messages to prove the exclusiveness invariant}
+  \label{fig-pred-msg-msi}
 \end{figure}
 
-The common underlying difficulty comes from stating invariants for certain types of messages.
-For instance, \autoref{fig-predicate-msg} depicts what the desired invariant is when a message with the ID \slstinline{rsM} exists in the system.
-Defining $\subtree{O}$ ($\subtreec{O}$) as a set of objects inside (outside) the subtree rooted at $O$, the desired invariant is that each object in $\subtreec{O}$ is in logically invalid state, denoted as $\objsinv{\subtreec{O}}$.
-This invariant is indeed required at the moment when an L1 cache takes \slstinline{rsM} and changes its status to \stM{}.
+We would like to present a practical usage of predicate messages in proving the MSI protocol, shown in \autoref{fig-pred-msg-msi}.
+Suppose that an L1 cache (shown as {\color{mygray} $L_1$} in gray in the figure) requested to the parent to get the \stM{} status.
+When it finally handles the response \msgsfsm{rsM}, it should know all the other caches (except itself) have the logical \stI{} status to prove the exclusiveness invariant (denoted as {\color{mygray} $\{\objsinv{\lambda c. c \neq L_1}\}$}).
+This proof case can be supported using the predicate message for \msgsfsm{rsM}, stating \objsinv{\subtreec{C}} (outside of the subtree rooted to $C$) when the message goes to $C$.
+Since $L_1$ is the leaf node in the tree, it is trivial to prove $(\objsinv{\subtreec{L_1}} \to \objsinv{\lambda c. c \neq L_1})$.
+It is indeed the case where a predicate message helps prove a conventional invariant.
 
-We call this invariant over a specific message a \emph{predicate message}, since it is like a message carrying a predicate over the target system.
-How could we prove the correctness of predicate messages?
-A naive but typical approach is to strengthen the invariant repeatedly by manually considering possible states.
-In the case of \slstinline{rsM}:
-\begin{itemize}
-\item We should strengthen the invariant by claiming that each object in $\subtreec{O}$ cannot take \slstinline{rsS} as well; if there is an object that can take it, then its state becomes \stS{}, which violates the invariant.
-\item Following the above case, we also should claim that an object in $\subtreec{O}$ cannot take \slstinline{downRsS}, otherwise it may take the message and release \slstinline{rsS}, which violates the invariant.
-\item $\cdots$ we should repeat this process until the invariant is provable by induction, which checks each state transition by a rule.
-\end{itemize}
-Such a process represents a typical burden in stating and proving an invariant, especially in distributed systems.
-
-Thanks to \hemiola{}'s serializability support, we need not strengthen the invariant at all.
-Instead, we can employ \emph{atomic invariants} defined in \autoref{def-atomic-invariant}, restricting the proof to the predicates for live messages in a current atomic history.
-
-Revisiting the case of \slstinline{rsM}, in the middle of an atomic history, \slstinline{rsM} is the only live message.
-Now if we state the atomic invariant that provides a predicate for each live message, we do not need to worry about whether the predicates for the other live messages still hold when making a state transition with \slstinline{rsM}.
+\autoref{fig-pred-msg-msi} also shows another case, where conventional invariants and predicate messages coordinate to prove a predicate message for the next state.
+When a child $C_i$ sends the invalidation response \msgsfsm{rsI}, it should know that all the caches inside the subtree of $C_i$ have been invalidated (denoted as {\color{myblue} \objsinv{\subtree{C_i}}}).
+When the parent $P$ subsequently handles the invalidation responses, it responds with \msgsfsm{rsM} to the original requestor ($C_0$ in the figure), requiring to prove {\color{myred} \objsinv{\subtreec{C_0}}}.
+While $P$ also changes its status to \stI{} in this state transition, how do we infer that the caches outside $P$ are in the logical \stI{} status, which is required to prove the predicate over {\color{myred} \msgsfsm{rsM}}?
+In this case, we know that $P$ has the ownership bit true (from a simple object-level invariant of $P$) thus we obtain the desired predicate from the invalidness invariant on ownership bits (denoted as {\color{myblue} $(P.\textsf{owned} = \top)\{\objsinv{\subtreec{P}}\}$}).
+Combining all the predicates and the state transition by $P$, we can prove the next predicate message for {\color{myred} \msgsfsm{rsM}}.
 
 \paragraph{Refinement proof.}
 
