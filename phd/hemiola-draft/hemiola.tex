@@ -2138,16 +2138,11 @@ The \hemiola{} language reifier and the protocol compiler (including the prebuil
 
 \paragraph{Model-checking cache-coherence protocols.}
 
-%% Model checking (in short):
-%% - TLA(tla:Lamport:2002), Murphi(murphi:Dill:1996)
-%% - State-explosion concerns: Joshi:2003, Komuravelli:2014
-%% - Symmetry reduction: Banks:2017
-%% - Not hierarchical, but highly optimized 2-level: Oswald:2018
-%% - Modularity: Chen:2008, Chen:2010, Oswald:2020, Opeoluwa:2016, Opeoluwa:2017
+\todo{Add McMillan CompMC~\cite{McMillan:1999}.}
+\todo{Add the ``Flow'' papers~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.}
 
-\todo{Add the ``Flow'' papers}
 Model checking has long been widely used to verify cache-coherence protocols.
-Various model checkers like TLA+~\cite{tla:Lamport:2002}, SMV, and Murphi~\cite{murphi:Dill:1996} have been used, but due to conventional state-explosion issues, applicability has been limited to finite numbers of caches or specific protocols~\cite{Joshi:2003,Komuravelli:2014}.
+Various model checkers like TLA+~\cite{tla:Lamport:2002}, SMV~\cite{smv:Jhala:2001}, and Murphi~\cite{murphi:Dill:1996} have been used, but due to conventional state-explosion issues, applicability has been limited to finite numbers of caches or specific protocols~\cite{Joshi:2003,Komuravelli:2014}.
 A two-level cache-coherence protocol was verified with an arbitrary number of cores using symmetry reduction -- a well-known verification technique to avoid state explosion in model checking -- in Murphi~\cite{Banks:2017}, but it was only for a specific protocol called TSO-CC and did not verify hierarchical protocols.
 
 In order to increase scalability, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
