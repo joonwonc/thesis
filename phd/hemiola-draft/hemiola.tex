@@ -2001,19 +2001,20 @@ We will further discuss the desired specification of the multiline implementatio
   \begin{tikzpicture}
     \node[arg] (hemiolaSource) at (0, 1.2) {\small\sf{(Single-line) \hemiola{} protocol}};
     \node[component] (compiler) at (0, 0) {\small\sf{Protocol Compiler}};
-    \node[arg, fill=white] (kamiTarget) at (0, -1.2) {\small\sf{(Multiline) Kami implementation}};
+    \node (compilerBelow) at (-0.8, -0.25) {};
+    \node[arg, fill=white] (kamiTarget) at (0, -3.0) {\small\sf{(Multiline) Kami implementation}};
     \node[anchor=east, arg] (extComp) at (-2, 0.4) {\scriptsize\sf{Custom data structure reifier/compiler}};
     \node[anchor=east, arg] (infoEnc) at (-2, 0) {\scriptsize\sf{Tag/Information encoder/decoder}};
     \node[anchor=east, arg] (cacheConfig) at (-2, -0.4) {\scriptsize\sf{Cache/MSHR configuration}};
 
-    \node[anchor=west,
+    \node[anchor=north east,
       rectangle, draw=black,
       minimum width=2.2cm,
-      minimum height=1.5cm] (lib) at (2.5, 0) {};
+      minimum height=1.5cm] (lib) at (-2, -1.2) {};
     \node[above right] at (lib.north west) {\scriptsize\sf{Prebuilt Kami library}};
-    \node[anchor=west, libcomp] (bitvector) at (2.6, 0.5) {\scriptsize\tt{Bitvector}};
-    \node[anchor=west, libcomp] (cache) at (2.6, 0) {\scriptsize\tt{Cache}};
-    \node[anchor=west, libcomp] (mshrs) at (2.6, -0.5) {\scriptsize\tt{MSHRs}};
+    \node[anchor=east, libcomp] (bitvector) at (-2.1, -1.45) {\scriptsize\tt{Bitvector}};
+    \node[anchor=east, libcomp] (cache) at (-2.1, -1.95) {\scriptsize\tt{Cache}};
+    \node[anchor=east, libcomp] (mshrs) at (-2.1, -2.45) {\scriptsize\tt{MSHRs}};
 
     \draw [dataflow] (hemiolaSource) to
     node[left, inner sep=1pt] (reifyArrow) {}
@@ -2023,18 +2024,18 @@ We will further discuss the desired specification of the multiline implementatio
     \draw [arrow] (extComp) to[out=0,in=180] (compiler);
     \draw [arrow] (infoEnc) to (compiler);
     \draw [arrow] (cacheConfig) to[out=0,in=180] (compiler);
-    \draw [arrow] (lib) to[out=180,in=0] (compiler);
+    \draw [arrow] (lib) to[out=0,in=-90] (compilerBelow);
 
-    \node[anchor=west, arg] (bsvTarget) at (0.5, -1.7) {\small\sf{Bluespec implementation}};
-    \node[anchor=west, arg] (fpga) at (2.7, -2.2) {\small\sf{Circuit on FPGA}};
+    \node[arg] (bsvTarget) at (0, -3.8) {\small\sf{Bluespec implementation}};
+    \node[arg] (fpga) at (0, -4.6) {\small\sf{Circuit on FPGA}};
 
-    \draw [dataflow] (kamiTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
-    \draw [dataflow] (bsvTarget) to[out=270,in=180,outer sep=3pt] node[left] {\scriptsize\sf\it{Bluespec synthesis}} (fpga);
+    \draw [dataflow] (kamiTarget) to[out=-90,in=90,outer sep=3pt] node[left] {\scriptsize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
+    \draw [dataflow] (bsvTarget) to[out=-90,in=90,outer sep=3pt] node[left] {\scriptsize\sf\it{Bluespec synthesis}} (fpga);
 
     \begin{pgfonlayer}{bg}
-      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1) {\scriptsize\sf\it{compilation}};
-      \draw[dashed] (-6.5, -1.2) -- (5.5, -1.2);
-      \node[anchor=west, text={rgb:black,3;white,1}, arg] at (-6.5, -1.4) {\scriptsize\sf\it{synthesis}};
+      \node[anchor=west, text=mygray, arg] at (-6.0, -2.8) {\scriptsize\sf\it{compilation}};
+      \draw[dashed] (-6.0, -3.0) -- (2.0, -3.0);
+      \node[anchor=west, text=mygray, arg] at (-6.0, -3.2) {\scriptsize\sf\it{synthesis}};
     \end{pgfonlayer}
   \end{tikzpicture}
   \caption{Compilation and Synthesis of \hemiola{} protocols}
@@ -2044,44 +2045,35 @@ We will further discuss the desired specification of the multiline implementatio
 \autoref{fig-compiler} depicts a compilation/synthesis flow from a given \hemiola{} protocol to an FPGA-ready circuit.
 A source program of the protocol compiler is a single-line protocol described in \hemiola{} with the rule templates.
 
-\paragraph{Preprocessing: reification}
+\paragraph{Preprocessing: reification.}
 
 Before feeding a \hemiola{} source program to the compiler, a preprocessing step is required, which is to reify the program into an AST we can hand off to the compiler.
-\hemiola{} supports automated, correct-by-construction reification driven by a series of tactics in Coq.
-For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \hemiola{} rule to the corresponding rule AST, where \slstinline{HRule} is a Coq \slstinline{Record} containing the AST and its correctness, \ie{} denotation of the AST matches the denotation of the original rule:
-\begin{lstlisting}[numbers=none, frame=none, xleftmargin=10pt]
-Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
-\end{lstlisting}
-
-\paragraph{Compiling asynchronous line accesses}
-
-One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
-In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
-
-In order to implement asynchronous line accesses, the protocol compiler transforms a \hemiola{} rule into multiple Kami rules, each of which takes part of the source-rule execution.
-For example, a \hemiola{} rule \slstinline{l1GetMImmE} (described in \autoref{fig-rule-l1-silent-upgrade}) 1) accepts an input message, 2) reads a MESI status and checks the precondition (\slstinline{ost#[status] = mesiE}), 3) writes the new status (\slstinline{+#[status <- mesiM]}) and value (\slstinline{+#[val <- msg.(msg_value)]}), and 4) releases a new message.
-In this case, the compiler emits multiple rules, where one of them just accepts a message and makes a read request to get the MESI status, another rule takes a read response and checks the precondition, and so on.
-In order to make the execution of these rules correct, the compiler sets local flags in the target object to make partial executions in-order.
-
-Currently, such asynchronous line accesses are not optimized enough; for example, we may want to have more sophisticated flags to make the partial executions \emph{pipelined}, so that a status read and a value write for different addresses are executed in parallel.
-This optimization is nontrivial but ubiquitous in real cache controllers.
-See \autoref{sec-synthesis-protocol} for more detailed discussion.
+\hemiola{} supports automated, correct-by-construction reification driven by a series of custom tactics in Coq.
 
 \paragraph{Prebuilt hardware components}
 The compiler uses prebuilt hardware components described in Kami.
-One of them is a cache, whose interface includes making read/write requests and getting the responses.
-The cache normally uses a BRAM (block RAM), which is defined as a primitive in Kami.
-The Kami BRAM is later synthesized to a BRAM on an FPGA.
+Some of them are for implementing NCID~\cite{Zhao:2010} introduced in \autoref{sec-noninclusive}, whose interfaces include asynchronous read and write of the line information (ownership bits, statuses, directory statuses, etc.) and value.
+The cache normally uses a primitive BRAM (block RAM) module in Kami, later synthesized to a BRAM on an FPGA.
 The cache module also manages \emph{victim lines} that should be evicted eventually.
-Optimization opportunities remain in the cache itself, especially for noninclusive caches.
-To improve space efficiency, various techniques have been used in industry~\cite{Zhao:2010,Yan:2019}; the cache used in the compiler is currently implemented without such nontrivial optimizations.
 
 Another prebuilt component holds a finite number of MSHRs, whose abstract interface includes registering, updating, and releasing MSHRs with respect to their types (uplock or downlock) and locking addresses.
 Recall that ideally (as a spec) MSHRs are assigned per-line, but the actual design can contain only a finite number of them.
 The compiler takes several counts as configuration parameters to determine the sizes of caches (\eg{} \#lines, \#ways) and MSHRs (\eg{} \#uplocks, \#downlocks).
 
+\paragraph{Pipeline for asynchronous line accesses.}
+
+One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
+In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
+
+In order to implement asynchronous line accesses, the protocol compiler uses the prebuilt pipeline.
+A \hemiola{} rule execution corresponds to the executions of multiple stages in the pipeline, each of which takes part of the source-rule execution.
+Each earlier stage in the pipeline accepts the input message, (asynchronously) reads the line information, and checks the precondition and the MSHR conditions.
+The last stage then makes the state transition using the line read from the earlier stages, by requesting a write to the line.
+In order to make the execution of these pipeline-stage rules correct, as per usual pipeline, the pipeline has a stall logic to make concurrent partial executions for different line addresses correct.
+Pipelining in the cache module is nontrivial but ubiquitous in real-world cache controllers.
+
 \paragraph{Compiling custom data structures}
-Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for it.
+Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compilation process for it.
 This task is straightforward for the user, since both reification and compilation work at the level of expressions, not rules.
 For instance, a field access \slstinline{dir.(dir_sharers)} for a Coq record \slstinline{dir} is reified to an expression AST node \slstinline{(HDirGetSh hdir)}, where \slstinline{hdir} is the reified directory structure, and compiled to \slstinline{cdir@."dir_sharers"} in Kami, which uses a field-access expression.
 
