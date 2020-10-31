@@ -310,6 +310,13 @@
 \section{Introduction}
 \label{sec-intro}
 
+%% From the reviewer E:
+%% 1) How do Hemiola's transactions relate to traditional coherence protocol transactions? Are they intended to be the same?
+%% > (Atomic history in Hemiola) ~ (Transaction). May need to change some names?
+%% 2) Your notion of "locks" appears to correspond to the notion of protocol stalls in traditional coherence terminology.
+%%    Is this correct?
+%% > This is correct. Maybe it's better to mention it, when talking about "locking mechanisms".
+
 \todo{Mention interleavings, noninterference lemmas used in model checking, and \hemiola{}'s contribution to establish the serializability guarantee as the most general form of the noninterference property, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols.}
 
 Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
@@ -2140,6 +2147,7 @@ The \hemiola{} language reifier and the protocol compiler (including the prebuil
 
 \todo{Add McMillan CompMC~\cite{McMillan:1999}.}
 \todo{Add the ``Flow'' papers~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.}
+\todo{Add Fractal and PVCoherence~\cite{Zhang:2010,Zhang:2014}.}
 
 Model checking has long been widely used to verify cache-coherence protocols.
 Various model checkers like TLA+~\cite{tla:Lamport:2002}, SMV~\cite{smv:Jhala:2001}, and Murphi~\cite{murphi:Dill:1996} have been used, but due to conventional state-explosion issues, applicability has been limited to finite numbers of caches or specific protocols~\cite{Joshi:2003,Komuravelli:2014}.
@@ -2160,12 +2168,6 @@ They used Murphi to verify synthesized protocols, but in a two-level protocol~\c
 They also mentioned that this extension to hierarchical protocols cannot cover noninclusive protocols.
 
 \paragraph{Theorem proving for cache-coherence protocols.}
-
-%% Theorem Proving
-%% - Specific (not general): Park:1996, Moore:1998
-%% - For an arbitrary tree topology: Murali:2015
-%% - TileLink verification: ivy:Padon:2016, McMillan:2016
-%% - No final refinement proof: Li:2018,
 
 Theorem proving also has been used to verify cache-coherence protocols.
 There are a number of works that proved the correctness with specific protocols~\cite{Park:1996,Moore:1998}.
