@@ -2147,24 +2147,26 @@ The \hemiola{} language reifier and the protocol compiler (including the prebuil
 
 \paragraph{Model-checking cache-coherence protocols.}
 
-\todo{Add McMillan CompMC~\cite{McMillan:1999}.}
-\todo{Add the ``Flow'' papers~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.}
-\todo{Add Fractal and PVCoherence~\cite{Zhang:2010,Zhang:2014}.}
-
 Model checking has long been widely used to verify cache-coherence protocols.
-Various model checkers like TLA+~\cite{tla:Lamport:2002}, SMV~\cite{smv:Jhala:2001}, and Murphi~\cite{murphi:Dill:1996} have been used, but due to conventional state-explosion issues, applicability has been limited to finite numbers of caches or specific protocols~\cite{Joshi:2003,Komuravelli:2014}.
-A two-level cache-coherence protocol was verified with an arbitrary number of cores using symmetry reduction -- a well-known verification technique to avoid state explosion in model checking -- in Murphi~\cite{Banks:2017}, but it was only for a specific protocol called TSO-CC and did not verify hierarchical protocols.
+Various model checkers like Murphi~\cite{murphi:Dill:1996}, SMV~\cite{smv:McMillan:1993}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-explosion issues.
 
-In order to increase scalability, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
+In order to overcome the state explosion, model checkers has developed sound techniques such as compositional model checking, symmetry reduction, or data-type reduction, all of which help effectively reducing the state space~\cite{McMillan:1999}.
+Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
+In order to obtain effective noninterference lemmas, a number of approaches used the description of transactions (in the name of ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
+Instead of looking at each transaction, \hemiola{} provides serializability that guarantees noninterference among any transactions defined on top of the framework.
+
+In order to verify cache-coherence protocols with arbitrary number of cores (but not hierarchical), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
+Since \hemiola{} is built on Coq, we can take full advantage of parameterization, and indeed the framework supports verification of cache-coherence protocols with an arbitrary tree shape as a parameter.
+
+In order to increase scalability further, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
 However, these approaches face a common obstacle: because of the modularity requirement, it became hard to design and verify noninclusive protocols.
 \cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
-%% \footnote{The protocol is still hierarchical even with two-level; it does not have the LLC but the global directory for abstract L2 clusters.}
 \cite{Opeoluwa:2016,Opeoluwa:2017} have developed the Neo theory as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
-They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} \cite{Zhao:2010}) but did not provide the actual design and proof.
-On the other hand, we fully proved hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
+They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} NCID~\cite{Zhao:2010}) but did not provide the actual design and proof.
+We provided the actual proofs of hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
 
 Another notable success of cache-coherence verification employed program synthesis to generate a protocol for a given atomic specification~\cite{Oswald:2018,Oswald:2020}.
-The synthesizer can generate various hierarchical protocols, each of which is nontrivial and fairly optimized.
+The synthesizer can generate various hierarchical protocols, each of which is nontrivial and more optimized than the procotols defined in \hemiola{}.
 The atomic specification is similar to \hemiola{}'s rule templates in the sense that a user can describe the protocol just with stable states.
 They used Murphi to verify synthesized protocols, but in a two-level protocol~\cite{Oswald:2018} they only succeeded up to three caches without exhausting memory, and for hierarchical protocols~\cite{Oswald:2020} they succeeded only with the root, two cache-H, and two cache-L nodes.
 They also mentioned that this extension to hierarchical protocols cannot cover noninclusive protocols.
@@ -2174,12 +2176,11 @@ They also mentioned that this extension to hierarchical protocols cannot cover n
 Theorem proving also has been used to verify cache-coherence protocols.
 There are a number of works that proved the correctness with specific protocols~\cite{Park:1996,Moore:1998}.
 A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}, but it was not structured to promote streamlined reuse of results for other protocols.
-It also included rather complex invariants that needed to characterize transitory states that are unreachable in a serialized semantics.
+It also included rather complex and ad-hoc invariants that needed to characterize transient states.
 
-Another notable project designed a modular-specification approach for cache coherence, verifying each module (\ie{} cache) against the spec while automatically generating (and proving) invariants, using the Ivy verification tool~\cite{ivy:Padon:2016, McMillan:2016}.
+Another notable project designed a modular-specification approach for cache coherence, verifying each module (\ie{} cache) against the spec while automatically generating (and proving) invariants, using the Ivy verification tool~\cite{ivy:Padon:2016, McMillan:2016, ivy:McMillan:2020}.
 The modular spec is specialized to the TileLink protocol~\cite{tilelink}, whose interface is similar to the rule templates in \hemiola{}.
-That being said, this project targeted only the specific TileLink protocol, thus not clearly distinguishing which invariants can be reused for other protocols (like serializability) and which are for the actual protocol.
-We demonstrated a generic proof of serializability and used it to show the full correctness proofs of case-study protocols.
+That being said, this project targeted only the specific TileLink protocol, thus not clearly distinguishing which invariants can be reused for other protocols (like serializability provided by \hemiola{}) and which are for the actual protocol.
 
 In order to avoid tedious invariant searching, a toolchain was built to generate invariants and their proofs automatically for the FLASH cache-coherence protocol~\cite{Li:2018}.
 However, it did not provide the final refinement proof between the implementation and the spec.

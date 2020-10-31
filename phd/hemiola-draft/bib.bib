@@ -490,36 +490,13 @@ note = {AAI3322423}
  keywords = {Abstraction/refinement, Assume-guarantee reasoning, Explicit state model checking, Hierarchical cache coherence protocols},
 }
 
-@inproceedings{smv:Jhala:2001,
-author="Jhala, Ranjit and McMillan, Kenneth L.",
-editor="Berry, G{\'e}rard
-and Comon, Hubert
-and Finkel, Alain",
-title="Microarchitecture Verification by Compositional Model Checking",
-bookTitle="Computer Aided Verification: 13th International Conference, Paris, France, July 18--22, 2001 Proceedings",
-year="2001",
-publisher="Springer",
-address="Berlin, Heidelberg",
-pages="396--410",
-isbn="978-3-540-44585-2",
-doi="10.1007/3-540-44585-4_40",
-url="http://dx.doi.org/10.1007/3-540-44585-4_40"
-}
-
-@inproceedings{smv:Lungu:2007,
- author = {Lungu, Anita and Sorin, Daniel J.},
- title = {Verification-Aware Microprocessor Design},
- booktitle = {Proceedings of the 16th International Conference on Parallel Architecture and Compilation Techniques},
- series = {PACT '07},
- year = {2007},
- isbn = {0-7695-2944-5},
- pages = {83--93},
- numpages = {11},
- url = {http://dx.doi.org/10.1109/PACT.2007.79},
- doi = {10.1109/PACT.2007.79},
- acmid = {1299112},
- publisher = {IEEE Computer Society},
- address = {Washington, DC, USA},
+@book{smv:McMillan:1993,
+author = {McMillan, Kenneth L.},
+title = {Symbolic Model Checking},
+year = {1993},
+isbn = {0792393805},
+publisher = {Kluwer Academic Publishers},
+address = {USA}
 }
 
 @inproceedings{Opeoluwa:2016,
@@ -639,6 +616,18 @@ numpages = {17},
 series = {CHARME '01}
 }
 
+@InProceedings{Chou:2004,
+author="Chou, Ching-Tsun and Mannava, Phanindra K. and Park, Seungjoon",
+editor="Hu, Alan J. and Martin, Andrew K.",
+title="A Simple Method for Parameterized Verification of Cache Coherence Protocols",
+booktitle="Formal Methods in Computer-Aided Design",
+year="2004",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="382--398",
+isbn="978-3-540-30494-4"
+}
+
 %% Cache-coherence verification: theorem proving
 
 @inproceedings{Park:1996,
@@ -736,4 +725,19 @@ month={July},}
  acmid = {3077651},
  publisher = {FMCAD Inc},
  address = {Austin, TX},
+}
+
+@InProceedings{ivy:McMillan:2020,
+author="McMillan, Kenneth L.
+and Padon, Oded",
+editor="Lahiri, Shuvendu K.
+and Wang, Chao",
+title="Ivy: A Multi-modal Verification Tool for Distributed Algorithms",
+booktitle="Computer Aided Verification",
+year="2020",
+publisher="Springer International Publishing",
+address="Cham",
+pages="190--202",
+abstract="Ivy is a multi-modal verification tool for correct design and implementation of distributed protocols and algorithms, supporting modular specification, implementation and proof. Ivy supports proving safety and liveness properties of parameterized and infinite-state systems via three modes: deductive verification using an SMT solver, abstraction and model checking, and manual proofs using natural deduction. It supports light-weight formal methods via compositional specification-based testing and bounded model checking. Ivy can extract executable distributed programs by translation to efficient C++ code. It is designed to support decidable automated reasoning, to improve proof stability and to provide transparency in the case of proof failures. For this purpose, it presents concrete finite counterexamples, automatically audits proofs for decidability of verification conditions, and provides modular hiding of theories.",
+isbn="978-3-030-53291-8"
 }
