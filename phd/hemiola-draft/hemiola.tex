@@ -318,6 +318,8 @@
 %% > This is correct. Maybe it's better to mention it, when talking about "locking mechanisms".
 
 \todo{Mention interleavings, noninterference lemmas used in model checking, and \hemiola{}'s contribution to establish the serializability guarantee as the most general form of the noninterference property, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols.}
+\todo{It looks better not to write the introduction like our approach is better than state-of-the-art model-checking techniques used in CCP. Let's rather say ``model checking has produced good techniques'' + ``theorem proving still suffers from dealing with interleavings'' + ``the benefit of theorem proving is that we can state and prove general theorems and reuse them repeatedly'' + ``so what is the general theorem for CCP?''}
+\todo{This phrase attracts me a lot: design the most general form of noninterference, discover the abstract conditions that are not coupled with any specific CCPs, and use it repeatedly for various case studies.}
 
 Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
 Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and sometimes miss subtle bugs.%% ~\cite{ccbug}.
