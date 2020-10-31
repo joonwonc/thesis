@@ -100,11 +100,12 @@
 \begin{abstract}
   Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
   Under the hood, we often find multiple memory-access transactions executed in a distributed manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
-  We introduce \hemiola{}, a framework for designing, proving, and synthesizing cache-coherence protocols, where a central reasoning principle is provided by the framework, allowing a user to prove a specific protocol assuming that \emph{memory accesses come one-at-a-time}.
-  At the framework level, using commuting reductions, we prove that any state reachable with concurrent memory access is also reachable with serialized memory access.
+  We introduce \hemiola{}, a framework embedded in Coq to design, prove, and synthesize cache-coherence protocols in a structural way.
+  The framework guides the user to design protocols that never make any incorrect interleavings while handling transactions concurrently.
+  Any protocol designed in \hemiola{} always satisfies the \emph{serializability} property, allowing a user to prove the protocol assuming that \emph{transactions are executed one-at-a-time}.
   The proof relies on conditions on the protocol topology and state-change rules, but we have designed a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
-  We implemented \hemiola{} as a framework embedded in Coq and used it to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
-  %% , and we synthesized these protocols to run on FPGAs.
+  We used \hemiola{} to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
+  We also demonstrated that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in the framework.
 \end{abstract}
 
 %% Commands --
@@ -347,9 +348,10 @@ A concrete limitation of modular design and verification comes when trying to ve
 Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
 
 We would like to solve these addressed issues basically by taking conventional advantage of theorem proving: to state and prove the once-and-for-all property and to use it multiple times.
-Particularly, in proving cache-coherence protocols, we want to formalize \emph{the most general form of noninterference}, find minimal and abstract conditions \emph{that are not coupled to any specific protocols} but still ensure the noninterference, state the implication as a theorem, prove it once, and use it repeatedly for various cache-coherence protocols.
+Particularly, in proving cache-coherence protocols, we want to formalize \emph{the most general form of noninterference}, find minimal and abstract conditions \emph{that are not coupled to any specific protocols} but still imply the noninterference, state the implication as a theorem, prove it once, and use it repeatedly for various cache-coherence protocols.
 
 We go one step further: rather than requiring the user to prove the conditions per protocol, we establish a framework that guides the user to design the protocol that automatically satisfies the conditions, without worrying about possible complex interleavings among different transactions.
+The framework does not require the user to write any noninterference properties or to design the protocol in a modular manner.
 
 In this paper, we introduce the \hemiola{} framework, embedded in the Coq proof assistant, which eliminates the burden of designing and proving correct interleavings in cache-coherence protocols.
 Specifically, \hemiola{} formalizes a set of message-passing distributed protocols with tree hierarchies and particular topologies of channels between nodes, with associated locks.
