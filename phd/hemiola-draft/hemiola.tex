@@ -643,13 +643,14 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
 
 \begin{figure*}[t]
   \small\centering
-  \def\arraystretch{1.1}
-  \arraycolsep=1pt
+  \def\arraystretch{1.15}
+  \setlength\tabcolsep{2pt}
+  \setlength\arraycolsep{0pt}
   \begin{tabular}{|c|c|}
     \hline
     \begin{tabular}{c}
       \multicolumn{1}{l}{\textbf{* Types}} \\
-      \begin{tabular}{ll}
+      \begin{tabular}{lr}
         $\textrm{Message States}\ \ M \in \hidxt{} \to \listtof{\hmsgt}$ &
         $\textrm{State}\ \ s \in \hstt{} ::= \tuple{\listof{o}, M}$ \\
         \multicolumn{2}{l}{$\textrm{Label}\ \ l ::= \lblEmpty{}\; |\; \lblIns{\listof{im}}\; |\; \lblOuts{\listof{im}}\; |\; \lblInt{\idxOf{O}}{\idxOf{r}}{\listof{im}}{\listof{im}}$} \\
@@ -807,10 +808,10 @@ Finally we define a notion of correctness in \hemiola{}.
 Trace refinement is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states.
 \begin{definition}[Simulation]
   We call $(\sim): \hstt{} \to \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
-  \begin{align*}
-    \forall s_0, s_1, l.\; & \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to\\
-    & \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
-  \end{align*}
+  \begin{displaymath}
+    \forall s_0, s_1, l.\; \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to
+    \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
+  \end{displaymath}
 \end{definition}
 \begin{theorem}[Simulation implies trace refinement]
   If there is a simulation $(\sim)$ between two given systems $I$ and $S$, then \refines{I}{S}.
@@ -955,7 +956,7 @@ Sometimes even a shorter version \predmsg{\msgid{}}{P} (the one for the message 
     \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
           {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
-  \caption{A predicate message becomes broken when interfered}
+  \caption{A predicate message gets broken when interfered}
   \vspace{-5pt}
   \label{fig-ex-pred-msg-fail}
 \end{figure}
@@ -1042,7 +1043,7 @@ How do atomic invariants help prove conventional invariants?
 If the system $S$ is serializable, by its definition, for every reachable state $s$ with a history $h$ (\semsteps{S}{\sysInit{S}}{h}{s}), there is a sequential history $h_\textrm{seq}$ that reaches the same state (\semsteps{S}{\sysInit{S}}{h_\textrm{seq}}{s}).
 Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be proven by inducting on each transaction, not on each step.
 
-\begin{figure}[t]
+\begin{figure}[h]
   \centering
   \begin{tabular}{|c|}
     \hline
@@ -1062,7 +1063,7 @@ Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be p
     \end{tikzpicture}\\
     \hline
   \end{tabular}
-  \caption{Use of atomic invariants in conventional invariant proofs}
+  \caption{Atomic invariants in conventional invariant proof}
   \label{fig-use-atomic-inv}
 \end{figure}
 
@@ -1339,7 +1340,8 @@ This transaction kind is one of the longest-running in cache-coherence protocols
 \newcommand{\blcircflsm}[2]{\blcircf{#1}{\footnotesize #2}}
 
 \begin{figure*}[t]
-  \begin{subfigure}[b]{0.3\textwidth}
+  \centering
+  \begin{subfigure}[b]{0.33\textwidth}
     \centering
     \begin{tabular}{c}
       \begin{tikzpicture}
@@ -1395,7 +1397,7 @@ This transaction kind is one of the longest-running in cache-coherence protocols
     \caption{The two transactions}
     \label{fig-ex-sz-trs}
   \end{subfigure}
-  \begin{subfigure}[b]{0.5\textwidth}
+  \begin{subfigure}[b]{0.40\textwidth}
     \renewcommand{\arraystretch}{1.2}
     \setlength\tabcolsep{2.5pt}
     \small\centering
@@ -1438,28 +1440,37 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \hline
         $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & & & \blcircf{10} \\
         \hline
+        \multicolumn{12}{c}{\mbox{}}\\
       \end{tabular}
     \end{tabular}
     \renewcommand{\arraystretch}{1.0}
     \caption{Serialization of an interleaved history by reductions}
     \label{fig-ex-sz-state-trs}
   \end{subfigure}
-  \begin{subfigure}[b]{0.18\textwidth}
+  \begin{subfigure}[b]{0.25\textwidth}
     \centering
     \begin{tabular}{c}
       \begin{tikzpicture}
+        % Alignment
+        \node at (-1.6, 0) {}; \node at (1.6, 0) {};
+
         \node at (0, 0.5) {$P$};
         \node at (0, 0.15) {\tiny $5$};
         \draw [line width=0.2mm, >->] (0, 0) -- (0, -1.2);
         \node[label={[label distance=-4pt,myblue]right:{\small {\sf rqI}}},color=myblue] at (0, -0.4) {$\bullet$};
         \node[label={[label distance=-4pt,myred]right:{\small {\sf rsM}}},color=myred] at (0, -0.8) {$\bullet$};
         \node at (0, -1.5) {$C_1$};
-
         % Curves
         \draw [->,color=myblue] (1, 0.8) to[out=-135,in=90] node[below right] {\blcircflsm{6}{rqud}} (0.3, -0.2);
         \draw [->,color=myred] (0.3, -1.0) to[out=-90,in=90] node[right] {\rdcircflsm{7}{rsdd}} (0.3, -1.7);
       \end{tikzpicture}\\
+      \vspace{-8pt}\\
+      \hline
+      \vspace{-8pt}\\
       \begin{tikzpicture}
+        % Alignment
+        \node at (-1.6, 0) {}; \node at (1.6, 0) {};
+
         \node at (0, 0.5) {$P$};
         \node at (-0.2, 0.15) {\tiny $6$};
         \node at (0, 0.15) {\tiny $7$};
@@ -1471,7 +1482,6 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \node[label={[label distance=-2pt,myred]left:{\small {\sf rsI}}},color=myred] at (0, -0.8) {$\bullet$};
         \node[label={[label distance=-4pt,myred]right:{\small {\sf rqI}}},color=myred] at (0.2, -0.8) {$\bullet$};
         \node at (0, -1.5) {$C_2$};
-
         % Curves
         \draw [->,color=myblue] (-0.5, -1.9) to[out=110,in=-90] node[left] {\blcircflsm{2}{rquu}} (-0.7, -0.7);
         \draw [->,color=myred] (0.5, -1.0) to[out=-90,in=-90,distance=1.3cm] node[right=5pt] {\rdcircflsm{4}{immu}} (-0.5, -1.0);
@@ -1559,7 +1569,7 @@ The highest-level theorem simply claims that the use of good topology and the ru
   where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$ conforms to one of the rule templates.
   \label{thm-sz-guarantee}
 \end{theorem}
-While we only provided the intuition why this theorem holds, interested readers are referred to \autoref{sec-appx-sz-guarantee}, which presents the required formalization and the proof of this theorem.
+While we only provided the intuition why this theorem holds, interested readers are referred to \autoref{sec-appx-proof-sz}, which presents the required formalization and the proof of this theorem.
 Also, the full mechanized Coq proof is in the supplementary material.
 
 \section{Case Studies: Hierarchical MSI and MESI Protocols}
@@ -1666,11 +1676,11 @@ It also does not have an ownership bit, since it does not have a case where it h
     \draw [<-<] (0.4, -0.3) -- (0.8, -0.8);
     \draw [>->] (0.2, -0.3) -- (0.6, -0.8);
     % message
-    \node[label={[label distance=-6pt]right:{\small {\sf rqS}}}] at (0.8, -0.55) {$\bullet$};
+    \node[color=myblue,label={[label distance=-10pt]above right:{\blmsgsm{rqS}}}] at (0.8, -0.55) {$\bullet$};
   },
   pcc2/.pic = {
-    \node at (0, 0) {$P(\stS{}, v, \dir{\stS{}}{1,2}, \top)$};
-    \node at (-1.1, -1.1) {$C_1(\stS{}, v)$};
+    \node at (0, 0) {\color{myred} $P(\stS{}, v, \dir{\stS{}}{1,2}, \top)$};
+    \node at (-1.1, -1.1) {\color{myred} $C_1(\stS{}, v)$};
     \node at (1.1, -1.1) {$C_2(\stI{}, \cdot)$};
     % to the parent of P
     \node at (0, 1) {$\vdots$};
@@ -1686,7 +1696,7 @@ It also does not have an ownership bit, since it does not have a case where it h
     \draw [<-<] (0.4, -0.3) -- (0.8, -0.8);
     \draw [>->] (0.2, -0.3) -- (0.6, -0.8);
     % message
-    \node[label={[shift={(0.3,-0.2)}]left:{\small {\sf rsS}$(v)$}}] at (0.4, -0.55) {$\bullet$};
+    \node[color=myred,label={[shift={(0.3,-0.25)}]left:{\rdmsgsm{rsS}{\color{myred}$(v)$}}}] at (0.4, -0.55) {$\bullet$};
   }
 }
 \begin{figure}[h]
@@ -1694,7 +1704,7 @@ It also does not have an ownership bit, since it does not have a case where it h
   \frame{
     \begin{tikzpicture}
       \pic at (-2.3, 0) {pcc1};
-      \node at (0, 0) {$\longrightarrow^{\ast}$};
+      \node at (0, 0) {$\Longrightarrow$};
       \pic at (2.3, 0) {pcc2};
     \end{tikzpicture}
   }
@@ -1704,8 +1714,10 @@ It also does not have an ownership bit, since it does not have a case where it h
 
 \autoref{fig-ownership-bit} presents an example of a shared-state cache having its ownership bit set in a hierarchical memory subsystem.
 It could happen when an L1 cache $C_2$ wants to get \stS{} while another L1 cache $C_1$ has \stM{}.
-In this case, the value is pulled from $C_1$, and the parent $P$ gets the data as well, entering a shared state with ownership bit set.
+In this case, $C_2$ sends \blmsg{rqS} and waits for the response with the value \rdmsg{rsS}{\color{myred}$(v)$}.
+After a few steps, the value is pulled from $C_1$, and the parent $P$ gets the data as well, entering a shared status with ownership bit set.
 Here the bit says that the shared value might be dirty, so it should be written back.
+
 The ownership bit intuitively constrains which caches can have valid status.
 In the figure, all the other caches outside $P$, after pulling a value from $C_1$, are in the invalid status, since previously $C_1$ had the dirty value with \stM{}.
 We will see how this intuition is used for the correctness proof soon in \autoref{sec-msi-proof}.
@@ -2127,7 +2139,7 @@ Each protocol used just a right amount of BRAMs for data caches and information 
 In order to confirm that the implementations run on the FPGA correctly, we performed tandem verification covering over $10^9$ memory requests for each protocol, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
 Optimization and verification of the cache-controller design are nontrivial; the pipeline requires a correct stall logic, which is as sophisticated as the one in pipelined processors~\cite{comarch}.
 While the verification of the pipeline is one of our future-work directions, we see it as orthogonal to the verification of cache-coherence rptocols, which is what \hemiola{} focuses on.
-Interested readers are referred to \autoref{sec-appx-multiline}, which describes the desired specification and refinement of a multiline implementation from the protocol compiler.
+Interested readers are referred to \autoref{sec-appx-compiler-proof}, which describes the desired specification and refinement of a multiline implementation from the protocol compiler.
 
 \section{Discussion and Related Work}
 \label{sec-discussion}
@@ -2204,7 +2216,7 @@ Another important future direction is to prove liveness of the protocols designe
 \clearpage
 \appendix
 
-\section{Proving Serializability Using Reduction}
+\section{The Proof of Serializability in \hemiola{}}
 \label{sec-appx-proof-sz}
 
 \subsection{Semi-Sequential Histories}
@@ -2426,9 +2438,6 @@ We are finally equipped with enough definitions to introduce a convenient genera
   According to \autoref{thm-sseq-sz}, we will eventually obtain a sequential history reaching the same state by repeating this process.
 \end{proof}
 
-\section{Hemiola's Serializability Guarantee}
-\label{sec-appx-sz-guarantee}
-
 \renewcommand*{\proofname}{Proof Sketch}
 \begin{theorem}[\hemiola{}'s serializability guarantee]
   \begin{displaymath}
@@ -2454,8 +2463,8 @@ We are finally equipped with enough definitions to introduce a convenient genera
 \end{proof}
 \renewcommand*{\proofname}{Proof}
 
-\section{Deriving a Multiline Specification by Compositionality}
-\label{sec-appx-multiline}
+\section{Correctness of the Protocol Compiler}
+\label{sec-appx-compiler-proof}
 
 As explained in \autoref{sec-compiler}, the protocol compiler takes a cache configuration as an argument, thus we can have several different implementations by providing different configurations.
 Then what would be the specification for all possible implementations from a given source protocol?
