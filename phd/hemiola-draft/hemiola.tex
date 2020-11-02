@@ -1418,7 +1418,8 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \hline
       \end{tabular}\\
       \vspace{-10pt}\\
-      $\downarrow$ (\blcircf{6} and \rdcircf{7} commute)\\
+      $\downarrow$ (merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$\\
+      \hspace{10pt} by commuting \blcircf{6} and \rdcircf{7})\\
       \vspace{-10pt}\\
       \begin{tabular}{c|ccccccccccc}
         \hline
@@ -1430,7 +1431,8 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \hline
       \end{tabular}\\
       \vspace{-10pt}\\
-      $\downarrow$ ($[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$ and $[\blcircf{2}]$ commute)\\
+      $\downarrow$ (merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$\\
+      \hspace{10pt} by commuting $[\blcircf{2}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$)\\
       \vspace{-10pt}\\
       \begin{tabular}{c|ccccccccccc}
         \hline
@@ -1440,7 +1442,6 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \hline
         $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & & & \blcircf{10} \\
         \hline
-        \multicolumn{12}{c}{\mbox{}}\\
       \end{tabular}
     \end{tabular}
     \renewcommand{\arraystretch}{1.0}
@@ -1487,7 +1488,7 @@ This transaction kind is one of the longest-running in cache-coherence protocols
         \draw [->,color=myred] (0.5, -1.0) to[out=-90,in=-90,distance=1.3cm] node[right=5pt] {\rdcircflsm{4}{immu}} (-0.5, -1.0);
       \end{tikzpicture}\\
     \end{tabular}
-    \caption{Reduction cases}
+    \caption{Nontrivial reduction cases}
     \label{fig-ex-sz-comm}
   \end{subfigure}
   \caption{Interleaving transactions and their serialization by commuting rule-template-based state transitions}
@@ -1514,20 +1515,21 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
 
-We now present the intuition and the sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
+We now present our intuition and sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
-This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but no past work has tried to discover new serializability conditions that can fit for cache-coherence protocols and to prove it using reductions.
+This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover the serializability conditions that can fit for cache-coherence protocols and proved it using reductions.
 
 We say that two adjacent state transitions \emph{commute} if the state transitions with the opposite order reach to the same state:
-$\semstep{S}{s_0}{l_0}{s_1} \to \semstep{S}{s_1}{l_1}{s_2} \to \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \to \semstep{S}{s_1'}{l_0}{s_2}$.
-We can naturally lift the notion for histories to argue whether two histories commute or not.
+\begin{displaymath}
+  \semstep{S}{s_0}{l_0}{s_1} \to \semstep{S}{s_1}{l_1}{s_2} \to \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
+\end{displaymath}
+We can naturally lift the definition to the one for histories to argue whether two histories commute or not.
 Our high-level intuition for the serializability proof is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
-More specifically, we will try to \emph{merge} two separated atomic-history fragments by performing reductions.
-%% If it is enforced that no other atomic fragments are split during this merge, we can eventually get the sequential history by performing a finite number of merges.
+More specifically, we will try to \emph{merge} any two separated atomic-history fragments by performing reductions.
 
-We elaborate more on this intuition with \autoref{fig-ex-sz}: two interleaving transactions started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-example}.
-The two transactions are presented in \autoref{fig-ex-sz-trs} by {\color{myred} red} and {\color{myblue} blue} colors.
-We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{rquu}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{rquu} is a rule in $C_1$ using the ``rquu'' rule template, that takes an input message \idmsf{1}{rqWr} and outputs \idmsf{3}{rqM}.
+We elaborate this intuition more in \autoref{fig-ex-sz}, with two interleaving transactions started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-example}.
+The two transactions are presented in \autoref{fig-ex-sz-trs} (in {\color{myred} red} and {\color{myblue} blue}).
+We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{rquu}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{rquu} is a rule in $C_1$ using the ``rquu'' rule template, taking an input message \idmsf{1}{rqWr} and outputting \idmsf{3}{rqM}.
 
 %% \begin{itemize}[leftmargin=*]
 %% \item \rdcircfl{1}{rquu} (or \blcircfl{2}{rquu}): forward \msgsfsm{rqM} to $P$ since $C_1$ (or $C_2$) does not have the M status.
@@ -1537,28 +1539,32 @@ We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{rquu}) to deno
 %% \item \rdcircfl{7}{rsdd} (or \blcircfl{10}{rsdd}): $C_1$ (or $C_2$) takes the response and updates its status to M.
 %% \end{itemize}
 
-\autoref{fig-ex-sz-state-trs} shows how reductions apply to the original interleaved history (top) to make it sequential (bottom).
+\autoref{fig-ex-sz-state-trs} shows the original legal interleaved history (top) and how reductions apply to it and make it sequential (bottom).
 In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we should perform a reduction either between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\blcircf{6}]$ or between $[\blcircf{6}]$ and $[\rdcircf{7}]$.
-From the perspective of this kind of merge, we will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
+We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
 
 Two state transitions trivially commute if 1) the object state transitions happen in the different objects and 2) input/output channels used for the transitions are all orthogonal to each others.
 If either of the conditions does not hold, we may need to analyze more whether the transitions commute or not.
-In this merge case, $[\blcircf{6}]$ can be pushed to the right (\ie{} \blcircf{6} and \rdcircf{7} commute).
+In the first merge case, $[\blcircf{6}]$ can be pushed to the right (\ie{} \blcircf{6} and \rdcircf{7} commute).
 The object state transitions are straightforward to deal with, since they are orthogonal ($P$ for \blcircf{6} and $C_1$ for \rdcircf{7}).
 It is nontrivial to deal with the used channels, however, since the output of \blcircf{6} (\blmsgsm{rqI}) and the input of \rdcircf{7} (\rdmsgsm{rsM}) share the same channel $5$.
-\autoref{fig-ex-sz-comm} (above) depicts this case; we see \blcircf{6} and \rdcircf{7} still commute, since \rdcircfl{7}{rsdd} should take a response (\rdmsgsm{rsM}) while \blcircfl{6}{rqud} outputs a request.
+\autoref{fig-ex-sz-comm} (top) depicts this case; we see \blcircf{6} and \rdcircf{7} still commute, since \rdcircfl{7}{rsdd} should take a ``response'' (\rdmsgsm{rsM}) while \blcircfl{6}{rqud} outputs a ``request'' (\blmsgsm{rqI}).
 It indicates that \blcircf{6} and \rdcircf{7} are involved with different messages in the same channel, thus not affecting the commutativity.
-We obtain a new (less-interleaved) history after the reduction, shown in the middle.
+After the merge, we obtain a new (less-interleaved) history after the reduction, shown in the middle of \autoref{fig-ex-sz-state-trs}.
 
 Now we should merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$; in this case, \blcircf{2} can be pushed to the right.
 While this reduction is trivial in the sense of orthogonal objects and channels, the only nontrivial case is between \blcircf{2} and \rdcircf{4}, where the both rules are executed in $C_2$.
-These state transitions still commute, as shown in \autoref{fig-ex-sz-comm} (below), since \blcircf{2} cannot make any object state transition, according to the definition of the ``rquu'' rule template.
+These state transitions still commute, as shown in \autoref{fig-ex-sz-comm} (bottom), since \blcircf{2} cannot make any object state transition, according to the definition of the ``rquu'' rule template.
+After this merge we finally obtain the sequential history.
 
-How can we argue that atomic-history fragments are always mergeable?
-As seen in the two cases in \autoref{fig-ex-sz-state-trs}, the reason for the mergeability comes only from what have been specified by the rule templates.
-It is required to consider all possible reduction cases among the rule templates to prove the serializability.
+How can we argue that the atomic-history fragments are always mergeable?
+As seen in the two cases in \autoref{fig-ex-sz-state-trs}, the reason for the mergeability \emph{comes only from what have been specified in the rule templates}.
+While trying to merge two fragments, we especially look at the rule template used in the last state transition of the first fragment and figure out which state transitions can be performed between the two.
+For example, when checking the mergeability between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we find that \rdcircf{5} generates the output message \rdmsgsm{rsM}, and it blocks all the other transactions to go from $P$ to $C_1$, \eg{} \blcircf{6} was blocked until \rdcircf{7} consumes \rdmsgsm{rsM}.
+We can thus commute \blcircf{6} and \rdcircf{7} due to this blocking.
+In this sense, in proving serializability, we look at each rule template and characterize the allowed state transitions between two atomic-history fragments.
 
-The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among the rule templates, left/right pushes, etc. -- and the serializability proof with the topology/network and rule conditions.
+The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among the rule templates, left/right pushes, etc. -- and the serializability proof that employes the intuitions.
 The highest-level theorem simply claims that the use of good topology and the rule templates automatically guarantees serializability:
 \newcommand{\ontree}[2]{\ensuremath{\mathsf{OnTree}\ #1\ #2}}
 \newcommand{\goodrules}[2]{\ensuremath{\mathsf{GoodRules}\ #1\ #2}}
@@ -1569,7 +1575,7 @@ The highest-level theorem simply claims that the use of good topology and the ru
   where $(\ontree{S}{t})$ requires that the system $S$ is well-defined on the topology/network $t$, and $(\goodrules{S}{t})$ requires that each rule in $S$ conforms to one of the rule templates.
   \label{thm-sz-guarantee}
 \end{theorem}
-While we only provided the intuition why this theorem holds, interested readers are referred to \autoref{sec-appx-proof-sz}, which presents the required formalization and the proof of this theorem.
+While we only provided the intuition why this theorem holds, interested readers are referred to \autoref{sec-appx-proof-sz}, which presents the required formalization and more details about the proof.
 Also, the full mechanized Coq proof is in the supplementary material.
 
 \section{Case Studies: Hierarchical MSI and MESI Protocols}
@@ -1979,7 +1985,7 @@ Once the original requestor obtains \stE{} status, it can both read and write th
 \paragraph{Logical status and new invariants for \stE{}.}
 We extend the notion of logical status from the MSI protocol, declaring that a cache in MESI is \stE{} if either 1) it has \stE{} and there is no eviction response to it or 2) there is a response \slstinline{rsE} to it.
 We should extend the invariants as well to cover caches with \stE{} status.
-\begin{itemize}
+\begin{itemize}[leftmargin=*]
 \item The exclusiveness invariant also applies to \stE{}; whenever a cache has logical status \stE{}, all the other caches are logically in \stI{}.
 \item The sharing and invalidness invariants remain the same.
 \item A new invariant for \stE{} claims that if a cache takes an eviction request \emph{without writeback} from a child, and the directory status pointing to the child is \stE{}, then it has a coherent value.
@@ -2331,7 +2337,7 @@ For a given legal history in a system, the very first step to reduce it to a seq
 
 \autoref{fig-reducing-exts} shows the resulting history after pushing all the external input and output labels in the original history.
 We can generate such a history by performing reductions:
-\begin{itemize}
+\begin{itemize}[leftmargin=*]
 \item Try to pick the first external input label that is not in the leftmost region of the history yet. If it exists, it can always be pushed to the left of the history, since the label semantically stands for adding input messages to the system.
 \item Try to pick the last external output label that is not at the rightmost region of the history yet. If it exists, it can always be pushed to the right of the history, since the label semantically stands for releasing output messages from the system.
 \end{itemize}
