@@ -115,8 +115,10 @@
 \newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
 \newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
 
+%% \newtheorem{definition}{Definition}[section]
 \renewcommand{\subsectionautorefname}{section}
 \renewcommand{\subsubsectionautorefname}{section}
+\newcommand{\definitionautorefname}{definition}
 
 \newcommand{\ie}{i.e.,}
 \newcommand{\eg}{e.g.,}
@@ -254,7 +256,7 @@
 \newcommand{\hsrzl}[2]{\ensuremath{\mathsf{Serializable}\ #1\ #2}}
 \newcommand{\hsrz}[1]{\ensuremath{\mathsf{Serializable}\ #1}}
 
-\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{s} #2}}
+\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{\textsf{semi}} #2}}
 \newcommand{\hsseq}[3]{\ensuremath{#1 \parallel_{#3} #2}}
 
 %% Visualization of messages/histories
@@ -898,6 +900,8 @@ In particular, we do not want a serialized history having a different trace from
 A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
 
 \subsubsection{Sequential histories and serializability}
+\label{sec-seq-sz}
+
 With a clear notion of transactions, we can easily define sequential histories and serializability.
 
 \begin{definition}[Sequential Histories and Serializability]\mbox{}\vspace{-8pt}\\
@@ -916,7 +920,6 @@ With a clear notion of transactions, we can easily define sequential histories a
       \hsrz{S} \triangleq \forall h.\; \hsrzl{S}{h}.
     \end{displaymath}
   \end{enumerate}
-  \label{def-sz}
 \end{definition}
 
 \subsection{The Payoff: Predicate Messages in Atomic Histories}
@@ -1514,6 +1517,7 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 %% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
+\label{sec-sz-guarantee}
 
 We now present our intuition and sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
@@ -2225,14 +2229,20 @@ Another important future direction is to prove liveness of the protocols designe
 \section{The Proof of Serializability in \hemiola{}}
 \label{sec-appx-proof-sz}
 
+As briefly explained in \autoref{sec-sz-guarantee}, we prove the serializability in \hemiola{} by using commuting reductions~\cite{reduction} and look at what each rule template guarantees to merge atomic-history fragments.
+In this section, we first formalize all the notions used for the serializability proof and then provide more details about the proof.
+The full mechanized Coq proof is in the supplementary material.
+
 \subsection{Semi-Sequential Histories}
 \label{sec-appx-semi-sequential}
 
-While \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice.
-This implies that it is crucial to have a proper \emph{order of reductions}, precluding cases where the merging process gets stuck in infinite loops.
+While \autoref{fig-ex-sz} conveys the intuition of making a history sequential by merging atomic-history fragments repeatedly, in order to formalize the intuition we need to show that finitely many reductions suffice.
+For example, while merging two atomic-history fragments, if we happen to separate the other fragment between the two, we will never be sure whether the merging process will be finished with the sequential history.
+%% Therefore, during the merge it is crucial to ensure that no other fragment between the two fragments is separated.
 
 \begin{figure}[h]
   \centering
+  \setlength\arraycolsep{2pt}
   \frame{
   \begin{math}
     \begin{array}{cc}
@@ -2250,8 +2260,10 @@ This implies that it is crucial to have a proper \emph{order of reductions}, pre
   \label{fig-semi-trs}
 \end{figure}
 
+What would be the way to say how much a given history is sequentialized?
 Semi-transactions are defined in order to have a quantitative progress measure for reductions.
 The definition, given in \autoref{fig-semi-trs}, is almost the same as for (ordinary) transactions, except that an atomic history does not need to be external.
+Thanks to this relaxation, any atomic-history fragment is a semi-transaction.
 Semi-sequential histories are also defined in a similar way:
 \begin{definition}[Semi-Sequential Histories]
   A history $h$ is \emph{semi-sequential} with \emph{degree} $n$ iff the history
@@ -2262,10 +2274,10 @@ Semi-sequential histories are also defined in a similar way:
 \end{definition}
 
 The only difference from sequential histories is that we \emph{count} the number of semi-transactions.
-The definition indicates that in order to obtain a serialized history, we should perform reductions to decrease the count as much as possible.
+The definition indicates that in order to obtain a serialized history, we should perform reductions to \emph{decrease the count as much as possible}.
 \hemiola{} provides a theorem that reflects this intuition:
 \begin{theorem}[Semi-sequentiality and serializability]\label{thm-sseq-sz}\mbox{}\\
-  \begin{enumerate}
+  \begin{enumerate}[leftmargin=*]
   \item Given a system $S$, a legal history is always semi-sequential:
     \begin{displaymath}
       \forall h.\; \semleg{S}{h} \to \exists n.\; \hsseq{S}{h}{n}.
@@ -2273,8 +2285,8 @@ The definition indicates that in order to obtain a serialized history, we should
   \item If $S$ satisfies the following property, then $S$ is serializable:
     \begin{align*}
       \forall h, n, s.\; & \semsteps{S}{\sysInit{S}}{h}{s} \land \hsseq{S}{h}{n} \to \\
-      & \hseq{S}{h} \vee \exists h_r, m.\; \semsteps{S}{\sysInit{S}}{h_r}{s}
-      \wedge \hsseq{S}{h_r}{m} \wedge m < n.
+      & \hseq{S}{h}\; \vee\\
+      & \exists h_r, m.\; \semsteps{S}{\sysInit{S}}{h_r}{s} \wedge \hsseq{S}{h_r}{m} \wedge m < n.
     \end{align*}
   \end{enumerate}
 \end{theorem}
@@ -2289,7 +2301,8 @@ The definition indicates that in order to obtain a serialized history, we should
 \subsection{Pushing All External Input/Output Labels}
 \label{sec-appx-sz-ext-labels}
 
-For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively, while preserving the order among external input labels (or external output labels) themselves.
+For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively.
+Recall that the serializability (defined in \autoref{sec-seq-sz}) does not require to preserve the behavior of a history, but the sequential history to reach to the same state.
 
 \tikzset{
   ->-/.style={
@@ -2338,52 +2351,52 @@ For a given legal history in a system, the very first step to reduce it to a seq
 \autoref{fig-reducing-exts} shows the resulting history after pushing all the external input and output labels in the original history.
 We can generate such a history by performing reductions:
 \begin{itemize}[leftmargin=*]
-\item Try to pick the first external input label that is not in the leftmost region of the history yet. If it exists, it can always be pushed to the left of the history, since the label semantically stands for adding input messages to the system.
+\item Try to pick \emph{the first external input label} that is not in the leftmost region of the history yet. If it exists, it can always be pushed to the left of the history, since the label semantically stands for adding input messages to the system.
 \item Try to pick the last external output label that is not at the rightmost region of the history yet. If it exists, it can always be pushed to the right of the history, since the label semantically stands for releasing output messages from the system.
 \end{itemize}
+Note that pushing the external input (output) labels to the leftmost (rightmost), respectively, is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to hold all the external output messages as late as possible.
 
-\subsubsection{Interleaving and nonconfluent histories}
+\subsection{Interleaving and nonconfluent histories}
 
 \newcommand{\hcont}[2]{\ensuremath{#1 \leadsto #2}}
 \newcommand{\hextcont}[3]{\ensuremath{#1 \vdash #2 \leadsto_{\textsf{ext}} #3}}
 \newcommand{\hdiscont}[2]{\ensuremath{#1 \not\leadsto #2}}
-\newcommand{\hitlv}[2]{\ensuremath{\mathit{Interleaved}\ #1\ #2}}
+\newcommand{\hitlv}[2]{\ensuremath{\mathsf{Interleaved}\ #1\ #2}}
 
+Now we formalize the atomic-history fragments mentioned in \autoref{sec-sz-guarantee} -- whether the two fragments belong to the same transaction or not.
 Throughout this section, we will just deal with histories only consisting of internal labels, to focus on how to serialize atomic histories, assuming external labels are already pushed to the edges by the method described in \autoref{sec-appx-sz-ext-labels}.
 
-In order to use \autoref{thm-sseq-sz}, we need a clear way to choose which semi-transactions to merge, to produce a smaller-degree semi-sequential history.
-The notion of continuity lets us figure out whether two histories are related as adjacent parts of a transaction:
-\begin{definition}[Continuity]\mbox{}\\
-  \begin{enumerate}
-  \item Two atomic histories $h_1$ and $h_2$ are \emph{continuous} iff the
-    initial messages of $h_2$ are in the live messages of $h_1$:
-    \begin{displaymath}
-      \hcont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listof{\amsgi{m_2}} \subseteq \listof{\amsge{m_1}}.
-    \end{displaymath}
-  \item We say $h_1$ and $h_2$ are \emph{externally continuous} (denoted
-    $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally
-    atomic.
-  \item Two atomic histories $h_1$ and $h_2$ are \emph{discontinuous} iff the live messages of
-    $h_1$ are \emph{disjoint} from the initial messages of $h_2$:
-    \begin{displaymath}
-      \hdiscont{h_1}{h_2} \triangleq\; \atomic{\listof{\amsgi{m_1}}}{h_1}{\listof{\amsge{m_1}}} \wedge \atomic{\listof{\amsgi{m_2}}}{h_2}{\listof{\amsge{m_2}}} \wedge \listdisj{\listof{\amsge{m_1}}}{\listof{\amsgi{m_2}}}.
-    \end{displaymath}
+The below notion of continuity lets us figure out whether two histories are related as adjacent parts of a whole atomic history:
+\begin{definition}[Continuity]\mbox{}\vspace{-8pt}\\
+  \begin{enumerate}[leftmargin=*]
+  \item Two atomic histories $h_1$ and $h_2$ are \emph{continuous} ($\leadsto$) iff the initial messages of $h_2$ are in the live messages of $h_1$:
+    \begin{align*}
+      \hcont{h_1}{h_2}\; \triangleq\quad & \atomic{\listof{\amsgi{im_1}}}{h_1}{\listof{\amsge{im_1}}} \wedge \atomic{\listof{\amsgi{im_2}}}{h_2}{\listof{\amsge{im_2}}}\\
+      & \wedge\; \listof{\amsgi{im_2}} \subseteq \listof{\amsge{im_1}}.
+    \end{align*}
+  \item We say $h_1$ and $h_2$ are \emph{externally continuous} (denoted $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally atomic.
+  \item Two atomic histories $h_1$ and $h_2$ are \emph{discontinuous} iff the live messages of $h_1$ are \emph{disjoint} from the initial messages of $h_2$:
+    \begin{align*}
+      \hdiscont{h_1}{h_2}\; \triangleq\quad & \atomic{\listof{\amsgi{im_1}}}{h_1}{\listof{\amsge{im_1}}} \wedge \atomic{\listof{\amsgi{im_2}}}{h_2}{\listof{\amsge{im_2}}}\\
+      & \wedge\; \listdisj{\listof{\amsge{im_1}}}{\listof{\amsgi{im_2}}}.
+    \end{align*}
   \end{enumerate}
 \end{definition}
+Note that the discontinuity requires that the live messages of the previous history are \emph{disjoint} to the initial messages of the next history.
+We will very soon explore how to deal with the case where the next history takes a part of the live messages of the previous history.
 
 Using the notion of continuity, we can also decide formally whether a given history is interleaved or not:
 \begin{definition}[Interleaved Histories]
   In a given system $S$, a sequence of histories $\listof{h}$ is \emph{interleaved} iff there exist two histories $h_1$ and $h_2$ in the sequence that are externally continuous and any history between the two is discontinuous to $h_1$:
-  \begin{displaymath}
-    \begin{array}{rl}
-      \hitlv{S}{\listof{h}} \triangleq & \exists h_1, h_2, \listof{h_1}, \listof{h_2}, \listof{h_3}. \\
-      & \listof{h} = \listof{h_3} + h_2 : \listof{h_2} + h_1 : \listof{h_1} \wedge \\
-      & \hextcont{S}{h_1}{h_2} \wedge \forall h' \in \listof{h_2}.\; \hdiscont{h_1}{h'}.
-    \end{array}
-  \end{displaymath}
-  We also say a history $h$ is interleaved if we can find an interleaved sequence of histories $\listof{h}$ that satisfies $h = \listconcat{\listof{h}}$.
+  \begin{align*}
+    \hitlv{S}{\listof{h}}\; \triangleq\quad & \exists h_1, h_2, \listof{h_1}, \listof{h_2}, \listof{h_3}. \\
+    & \listof{h} = \listof{h_3} + h_2 : \listof{h_2} + h_1 : \listof{h_1}\; \wedge \\
+    & \hextcont{S}{h_1}{h_2} \wedge (\forall h' \in \listof{h_2}.\; \hdiscont{h_1}{h'}).
+  \end{align*}
+  We also call a history $h$ interleaved (overrided as \hitlv{S}{h}) if we can find an interleaved sequence of histories $\listof{h_s}$ that satisfies $h = \listconcat{\listof{h_s}}$.
 \end{definition}
 
+\todo{Rewrite from here}.
 So far we have defined sequential histories and interleaved histories.
 Recalling the intuition again, we will perform a number of reductions to change a given interleaved history to a sequential one.
 That said, this strategy implicitly assumes any history is either interleaved or sequential, a fact we should prove.
@@ -2403,7 +2416,7 @@ The \emph{nonconfluence} predicate removes this case, by claiming that any inter
   \end{align*}
 \end{definition}
 
-\subsubsection{Merging atomic histories by pushes}
+\subsection{Merging atomic histories by pushes}
 
 \newcommand{\hmgb}[3]{\ensuremath{#1 \vdash #2 \hookrightarrow #3}}
 \newcommand{\smgb}[1]{\ensuremath{\mathit{Mergeable}\ #1}}
