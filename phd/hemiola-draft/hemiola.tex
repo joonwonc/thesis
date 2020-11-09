@@ -101,10 +101,10 @@
   Hardware cache-coherence protocols provide the illusion of shared memory address spaces with atomic word-level access.
   Under the hood, we often find multiple memory-access transactions executed in a distributed manner, across the levels of a cache hierarchy, and this source of concurrency is one of the greatest challenges in formal verification of cache coherence.
   We introduce \hemiola{}, a framework embedded in Coq to design, prove, and synthesize cache-coherence protocols in a structural way.
-  The framework guides the user to design protocols that never make any incorrect interleavings while handling transactions concurrently.
+  The framework guides the user to design protocols that never experience inconsistent interleavings while handling transactions concurrently.
   Any protocol designed in \hemiola{} always satisfies the \emph{serializability} property, allowing a user to prove the protocol assuming that \emph{transactions are executed one-at-a-time}.
   The proof relies on conditions on the protocol topology and state-change rules, but we have designed a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
-  We used \hemiola{} to design and prove hierarchical noninclusive MSI and MESI protocols as case studies.
+  We used \hemiola{} to design and prove hierarchical MSI and MESI protocols, in both inclusive and noninclusive variants, as case studies.
   We also demonstrated that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in the framework.
 \end{abstract}
 
@@ -115,10 +115,8 @@
 \newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
 \newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
 
-%% \newtheorem{definition}{Definition}[section]
 \renewcommand{\subsectionautorefname}{section}
 \renewcommand{\subsubsectionautorefname}{section}
-\newcommand{\definitionautorefname}{definition}
 
 \newcommand{\ie}{i.e.,}
 \newcommand{\eg}{e.g.,}
@@ -247,6 +245,9 @@
 \newcommand{\extatomicShort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
 \newcommand{\trsn}[2]{\ensuremath{#1 \sswarrow #2}}
 
+\newcommand{\extatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
+\newcommand{\intatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{int}}}}
+
 \newcommand{\amsgi}[1]{\ensuremath{#1^{\textrm{init}}}}
 \newcommand{\amsge}[1]{\ensuremath{#1^{\textrm{end}}}}
 
@@ -254,7 +255,7 @@
 \newcommand{\hsrzl}[2]{\ensuremath{\mathsf{Serializable}\ #1\ #2}}
 \newcommand{\hsrz}[1]{\ensuremath{\mathsf{Serializable}\ #1}}
 
-\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{\textsf{semi}} #2}}
+\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{s} #2}}
 \newcommand{\hsseq}[3]{\ensuremath{#1 \parallel_{#3} #2}}
 
 %% Visualization of messages/histories
@@ -326,60 +327,60 @@ Cache-coherence protocols have been regarded as one of the greatest correctness 
 Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and may miss subtle bugs.
 
 As per typical distributed-protocol verification, the main challenge comes while dealing with interleavings among transactions.
-In cache-coherence protocols, a request from a processor may involve multiple caches to change their local states, and we call the sequence of such state transitions a \emph{transaction}.
+In cache-coherence protocols, a request from a processor may require multiple caches to change their local states, and we call a sequence of such state transitions a \emph{transaction}.
 Thus it is natural that different cache objects concurrently handle different requests, which makes the transactions \emph{interleaved}.
 Interleavings make the verification much more difficult, by significantly increasing the number of states to be explored.
 
-Research on model checking has produced sound techniques to overcome such a state-space-explosion issue.
+Research on model checking has produced sound techniques to overcome such state-space-explosion.
 One of the core techniques is to establish \emph{noninterference} lemmas~\cite{McMillan:1999,McMillan:2001,Chou:2004,flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}, which ensure that concurrent executions of transactions are not spuriously interleaved.
-In addition to this resolution, model checkers have supported \emph{parameterization} to verify cache-coherence protocols with arbitrary number of cores~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
+In addition to this resolution, model checkers have supported \emph{parameterization} to verify cache-coherence protocols with unknown numbers of cores~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
 In order to cover hierarchical protocols, recent approaches~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} also employed \emph{modularity} to verify the protocol per hierarchy level.
 
 While the same concern exists in theorem proving (by requiring additional proof effort to deal with interlevings), it also has employed similar techniques.
-Parameterization is natural-born in theorem proving, thanks to its rich syntax, making it possible to prove a cache-coherence protocol with an arbitrary tree shape given as a parameter~\cite{Murali:2015}.
-Modularity has been used as well, along with assume-guarantee reasoning, to make the modular proof possible~\cite{McMillan:2016}.
+Parameterization is a natural fit for theorem proving, thanks to rich logics, making it possible to prove a cache-coherence protocol with an arbitrary tree shape given as a parameter~\cite{Murali:2015}.
+Modularity has been harnessed as well, e.g. with assume-guarantee reasoning~\cite{McMillan:2016}.
 
-The noninterference reasoning, though, has an inherent weakness that it requires explicit lemma statements per protocol.
-The lemmas are often manually described by the user with her intuition or automatically discovered typically guided by counterexamples.
+The established style of noninterference reasoning, though, has an inherent weakness: it requires explicit lemma statements per-protocol.
+The lemmas are often described explicitly by the user (guided by intuition) or discovered automatically (typically guided by counterexamples).
 Another issue is that even though these lemmas are stated and proven, it is hard to be sure if the lemmas are enough to resolve all possible interleavings in the system.
 
-The use of modularity also has an issue that it imposes significant restrictions in protocol design, in order to obtain clear module boundaries among caches.
+Use of modularity has also imposed significant restrictions in protocol design, in order to obtain clear module boundaries among caches.
 A concrete limitation of modular design and verification comes when trying to verify cache-coherence protocols that are not \emph{inclusive}.
 Noninclusive caches have been in common industrial use for a decade: AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}, and Intel Skylake-X processors use noninclusive caches~\cite{intel-non-inclusive,Zhao:2010,Yan:2019}.
 
-We would like to solve these addressed issues basically by taking conventional advantage of theorem proving: to state and prove the once-and-for-all property and to use it multiple times.
-Particularly, in proving cache-coherence protocols, we want to formalize \emph{the most general form of noninterference}, find minimal and abstract conditions \emph{that are not coupled to any specific protocols} but still imply the noninterference, state the implication as a theorem, prove it once, and use it repeatedly for various cache-coherence protocols.
+We would like to avoid all of these weaknesses via a new approach doing mechanized proof in an expressive logic, stating and proving once-and-for-all a general property and using it multiple times.
+Particularly, in proving cache-coherence protocols, we want to formalize \emph{the most-general form of noninterference}, find minimal and abstract conditions \emph{that are not coupled to any specific protocols} but still imply noninterference, state the implication as a theorem, prove it once, and use it repeatedly for various cache-coherence protocols.
 
-We go one step further: rather than requiring the user to prove the conditions per protocol, we establish a framework that guides the user to design the protocol that automatically satisfies the conditions, without worrying about possible complex interleavings among different transactions.
+We go one step further: rather than requiring the user to prove the conditions per-protocol, we establish a framework that guides the user to design protocols that automatically satisfy the conditions, without worrying about possible complex interleavings among different transactions.
 The framework does not require the user to write any noninterference properties or to design the protocol in a modular manner.
 
 In this paper, we introduce the \hemiola{} framework, embedded in the Coq proof assistant, which eliminates the burden of designing and proving correct interleavings in cache-coherence protocols.
 Specifically, \hemiola{} formalizes a set of message-passing distributed protocols with tree hierarchies and particular topologies of channels between nodes, with associated locks.
-\hemiola{} exposes a domain-specific language of protocols, such that any expressible protocol is guaranteed to satisfy the ``general'' noninterference, which will be called \emph{serializability} and formalized in technical sections.
+\hemiola{} exposes a domain-specific language of protocols, such that any expressible protocol is guaranteed to exhibit ``general'' noninterference, which will be called \emph{serializability} and formalized later in the paper.
 Furthermore, \hemiola{} provides a novel invariant proof method that only requires consideration of execution histories that do not interleave memory accesses -- so that almost all formal reasoning about concurrency is already done by the framework, not proofs of individual protocols.
 
-To demonstrate usability of our framework, we provide complete correctness proofs for hierarchical, noninclusive cache-coherence protocols as case studies.
+To demonstrate usability of our framework, we provide complete correctness proofs for hierarchical cache-coherence protocols, in both inclusive and noninclusive variants, as case studies.
 We also demonstrate that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in \hemiola{}.
 
 \paragraph{Contributions.}
 To sum up, the contribution of this paper largely consists of two parts\footnote{All the code and proofs of the framework and the case studies are available in the supplementary material we provided for the paper submission.}:
 \begin{itemize}[leftmargin=*]
 \item We discover a minimal set of topology and lock conditions that ensures \emph{serializability}, extracted from usual cache-coherence protocol designs. We then identify a domain-specific protocol language, where every protocol defined in this language ensures serializability by construction, backed up with mechanized Coq proof (\autoref{sec-hemiola-dsl}). Lastly, we formalize how serializability helps prove correctness (refinement), by using the novel notion of \emph{predicate messages} in distributed protocols.
-\item Using the protocol language, we provide the complete correctness proofs of hierarchical, noninclusive MSI and MESI cache-coherence protocols (\autoref{sec-case-study}). Ours are the first complete mechanized proofs for various hierarchical noninclusive cache-coherence protocols, and as a bonus they share a large segment of reusable proofs.
+\item Using the protocol language, we provide the complete correctness proofs of hierarchical MSI and MESI cache-coherence protocols (\autoref{sec-case-study}), for inclusive and noninclusive versions of the former and a noninclusive version of the latter. Ours are the first complete mechanized proofs for various hierarchical noninclusive cache-coherence protocols, and as a bonus they share a large segment of reusable proofs (including with inclusive variants).
 \end{itemize}
 
 \section{A Motivating Example: MSI Directory Protocol with Two Caches}
 \label{sec-example}
 
 Before introducing our method for structural design and proof of cache-coherence protocols, we provide a simple yet motivating example to explain the typical challenges.
-For simplicity, in this section, we will consider a protocol only \emph{a single memory location}.
+For simplicity, in this section, we will consider a protocol protecting only \emph{a single memory location}.
 We will see it is still nontrivial to design and verify a correct protocol.
 
 The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
 In other words, if the system is coherent, then it should behave like an atomic memory.
 This behavior inclusion is formally defined as \emph{refinement}, which will be introduced in later technical sections.
 The correctness of a cache-coherence protocol is sometimes shown by proving representative invariants, not talking about the relation to the desired spec.
-The single-writer/multiple-read (SWMR) invariant and the data-value invariant~\cite{ccbook:2020} are the ones; in proving the refinement of a protocol these invariants (or similar ones) are required to be proven.
+The single-writer/multiple-reader (SWMR) invariant and the data-value invariant~\cite{ccbook:2020} are classic choices; in proving the refinement of a protocol, these invariants (or similar ones) must be proven.
 
 \tikzset{
   pics/skeleton-pcc/.style n args={3}{
@@ -498,7 +499,7 @@ The single-writer/multiple-read (SWMR) invariant and the data-value invariant~\c
 \autoref{fig-motive-1} shows caches and communication channels for a simple directory-based MSI protocol (LHS of $\sqsubseteq$).
 Since we deal with only a single memory location, the specification (RHS of $\sqsubseteq$) is a single-value ($v$) container with atomic read and write.
 There are three caches ($P$, $C_1$, and $C_2$) in the implementation, and each of them has its own status (M, S, or I) and data ($v$).
-A status of a cache represents a permission on its local replica.
+The status of a cache represents a permission on its local replica.
 In this MSI protocol, an object can read/write the data with the M (``modified'') status, only read with S (``shared''), and cannot read/write with I (``invalid'').
 The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
 For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
@@ -578,15 +579,15 @@ A so-called three-channel system has been widely used and regarded as a good cho
 While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
 
 Transient states and network channels play a crucial role in making \emph{interleavings} correct.
-Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \rdcircf{4}]$ as an execution flow -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could not happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqWr}.
-As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} to be further proceeded.
+Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \rdcircf{4}]$ as an execution flow -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could happen after \blcircf{2}, which is for the other request \blrecmsgsm{e}{rqWr}.
+As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} from further processing.
 
-This mechanism to ensure safe interleavings is called \emph{noninterference}, which ensures that no other state transitions affect while handling a certain transaction.
-In model-checking cache-coherence protocols, lots of good noninterference lemmas have been developed and used to avoid state explosion by interleaving transactions~\cite{McMillan:1999,McMillan:2001,Chou:2004,flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
+This mechanism to ensure safe interleavings is called \emph{noninterference}, which ensures that no other state transitions affect state relevant to a transaction while it is still running.
+In model-checking cache-coherence protocols, many effective noninterference lemmas have been developed and used to avoid state explosion by interleaving transactions~\cite{McMillan:1999,McMillan:2001,Chou:2004,flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
 
 Instead of stating noninterference lemmas coupled to each protocol, in \hemiola{} we try to find general conditions that ensures safe interleavings, \emph{extracted and abstracted} from the transient states and network channels, so the conditions can apply to various protocols.
 In later sections, we will first see an underlying semantic model for protocols (\autoref{sec-trs}) and a formal notion of safe interleavings (called serializability) within it (\autoref{sec-sz-in-hemiola}).
-We will also explain how the serializability ease the burden of verification (\autoref{sec-atomic-invariants}) and show its definite use cases in verifying our case-study protocols (\autoref{sec-case-study}).
+We will also explain how this notion of serializability eases the burden of verification (\autoref{sec-pred-msg}) and show how it helps in verifying our case-study protocols (\autoref{sec-case-study}).
 
 \section{Protocol Transition Systems}
 \label{sec-trs}
@@ -615,14 +616,14 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
     \hline
     \begin{math}
       \begin{array}{rl}
-        \textrm{Id} & \msgid{} \in \hidxt{} \\
+        \textrm{ID} & \msgid{} \in \hidxt{} \\
         \textrm{Value} & \msgval{} \in \hvaluet{} \\
         \textrm{Message} & m ::= \msgbuild{\msgty}{\msgid}{\msgval} \in \hmsgt{} \triangleq \boolt \ast \hidxt \ast \hvaluet \\
         \textrm{Index} & i \in \hidxt{}\ \textrm{(for channels, objects, etc.)} \\
         \textrm{Channel Index \& Message} & im ::= \idmbuild{i}{m} \in \hidmt \triangleq \hidxt \ast \hmsgt \\
         \textrm{Object state} & o \in \hostt{} \\
-        \textrm{Rule precondition} & \ruleprec{} \in \hostt \to \listtof{\hidmt} \to \propt \\
-        \textrm{Rule transition} & \ruletrs{} \in \hostt \to \listtof{\hidmt} \to \hostt \ast \listtof{\hidmt}\\
+        \textrm{Rule precondition} & \ruleprec{} \in \hostt \times \listtof{\hidmt} \to \propt \\
+        \textrm{Rule transition} & \ruletrs{} \in \hostt \times \listtof{\hidmt} \to \hostt \times \listtof{\hidmt}\\
       \end{array}
     \end{math}\\
     \mbox{}\vspace{-10pt} \\ %% padding
@@ -737,14 +738,14 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
   \label{fig-trs-semantics}
 \end{figure*}
 
-\hemiola{} uses formal protocol transition systems as an underlying basis for reasoning cache-coherence protocols.
+\hemiola{} uses formal protocol transition systems as an underlying basis for reasoning about cache-coherence protocols.
 \autoref{fig-trs-system} explains what such systems are, in the style of automata theory.
-A \emph{message} $m$ consists of a boolean message type (request or response), a message id (effectively from an enumeration of message kinds), and value.
-A \emph{value} refers to a general set of values, principally those that can be stored at memory addresses.
+A \emph{message} $m$ consists of a Boolean message type (request or response), a message ID (effectively from an enumeration of message kinds), and a value.
+We use \emph{value} to refer to the set of legal contents of memory addresses.
 A struct sometimes has an \emph{index} to distinguish it from the other components.
 A pair \idmbuild{i}{m} is used to represent a message $m$ residing in a channel with an index $i$.
 
-A rule $r$ a struct composed of its rule index (unique within an object), a precondition (\ruleprec{}), and a transition function (\ruletrs{}).
+A rule $r$ is a struct composed of its rule index (unique within an object), a precondition (\ruleprec{}), and a transition function (\ruletrs{}).
 A precondition takes two arguments, a current object state and input messages, and decides whether the rule can be executed or not.
 A transition function takes the same arguments but returns the next object state and a list of (channel index, message) pairs as output messages.
 Our definition is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
@@ -753,7 +754,7 @@ An object $O$ contains its object index (unique within a system), an initial sta
 A system $S$ contains information about objects and channels.
 It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
 The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
-It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system.
+It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system, i.e. the interface of the cache-coherence protocol with processor cores.
 
 \subsection{Semantics}
 \label{sec-semantics}
@@ -767,7 +768,7 @@ Object states are represented in a finite map from object indices to object stat
 
 Rule [StepSilent] represents the case where no state transition happens in the current step; an empty label (\lblEmpty{}) is generated in this case.
 From now on, we assume that all the input/output messages used in the step definitions do not share the same channel, \ie{} $(\nodup{\listof{\idxOf{im}}})$.
-A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{im}) should not be empty, channels of the messages are valid; an external inputs label $(\lblIns{\listof{im}})$ is generated in this case.
+A system may accept input messages from the external world; [StepIns] describes this case, where the external input messages (\listof{im}) should not be empty, and channels of the messages are valid; an external inputs label $(\lblIns{\listof{im}})$ is generated in this case.
 [StepOuts] describes the opposite case, for output messages being released to the external world.
 In this case, each output message should be in the head of its residing channel ($\listof{im} \subseteq \heads{M}$).
 
@@ -779,10 +780,11 @@ We use notations $\enqMsgs{M}{\listof{im}}$ and $\deqMsgs{M}{\listof{im}}$ for s
 It is also required that any state transition does not both dequeue and enqueue an element from the same queue; $\disj{\midxIns{im}}{\midxOuts{im}}$ in [StepInt] exactly describes this condition.
 
 The step semantics is naturally lifted to one for multiple steps, presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$, $s_0$, and $s_1$ are similar to ones in the step semantics, and $\listof{l}$ is a sequence of labels generated by executions of the steps.
-[StepsNil] serves the case where no state transitions happen at all.
+[StepsNil] serves the case where no state transitions happen.
 [StepsCons] is a natural inductive constructor that combines previous steps and a new one.
 Note that the latest label is added to the head, thus the last label in the sequence is the oldest one.
 (We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
+\todo{Refactor the paper so that we add new labels at the end!}
 
 We will sometimes call a sequence of labels a \emph{history}.
 We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds, where $\sysInit{S}$ is the initial state of the system $S$, constructed by composing all initial object states.
@@ -806,18 +808,19 @@ Finally we define a notion of correctness in \hemiola{}.
 \end{definition}
 
 Trace refinement is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states.
+\todo{Here and earlier, consider collapsing the distinction between $\boolt{}$ and $\propt{}$, to avoid confusing readers who don't speak type theory.}
 \begin{definition}[Simulation]
-  We call $(\sim): \hstt{} \to \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
+  We call $(\sim): \hstt{} \times \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
   \begin{displaymath}
     \forall s_0, s_1, l.\; \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to
     \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
   \end{displaymath}
 \end{definition}
 \begin{theorem}[Simulation implies trace refinement]
-  If there is a simulation $(\sim)$ between two given systems $I$ and $S$, then \refines{I}{S}.
+  If there is a simulation $(\sim)$ between two systems $I$ and $S$, then \refines{I}{S}.
 \end{theorem}
 \begin{proof}
-  By the induction on state-transition steps.
+  By induction on state-transition steps.
 \end{proof}
 
 \section{Serializability in Protocol Transition Systems}
@@ -827,8 +830,7 @@ Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness
 While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed serially, \ie{} \emph{atomically in some order with no interleaving}.
 
 In this section, we provide the formal definition of serializability and explain how it eases the burden of designing and proving conventional invariants.
-It is worth recalling at this moment that we build the framework to prove cache-coherence protocols more easily.
-In the next section we will explore which conditions in cache-coherence protocols ensure serializability and how to prove it with the conditions.
+These definitions are motivated by proof of cache-coherence protocols, and we postpone discussion of that specific application for the next section.
 
 \subsection{From Atomic Histories to Serializability}
 
@@ -881,7 +883,7 @@ Finally, $r_3$ takes $(7, \textsf{rqI})$, the output message from $r_2$.
 Summing up all the rule executions, by the definition of an atomic history we get the predicate $\atomic{\listsingle{(1,\textsf{rqWr})}}{h}{\listsingle{(7,\textsf{rsI})}}$.
 This example shows that an atomic history intuitively captures a \emph{transaction flow} triggered by the initial messages.
 Note that an atomic history does not need to be a completed transaction.
-The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response to an external channel.
+The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response sent on an external channel.
 
 We call a history \emph{externally atomic} if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$); we denote it as $(\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}})$.
 An externally atomic history records the way the system responded to some set of messages received from the outside world.
@@ -898,8 +900,6 @@ In particular, we do not want a serialized history having a different trace from
 A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
 
 \subsubsection{Sequential histories and serializability}
-\label{sec-seq-sz}
-
 With a clear notion of transactions, we can easily define sequential histories and serializability.
 
 \begin{definition}[Sequential Histories and Serializability]\mbox{}\vspace{-8pt}\\
@@ -918,6 +918,7 @@ With a clear notion of transactions, we can easily define sequential histories a
       \hsrz{S} \triangleq \forall h.\; \hsrzl{S}{h}.
     \end{displaymath}
   \end{enumerate}
+  \label{def-sz}
 \end{definition}
 
 \subsection{The Payoff: Predicate Messages in Atomic Histories}
@@ -928,13 +929,12 @@ There is a clear gap between two notions, serializability and trace refinement: 
 However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a simulation -- which implies trace refinement -- proof usually requires a number of invariants of the implementation.
 
 We call $\mathcal{I}: \hstt{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
-In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``what is the desired property if the system currently has a certain message in a certain channel?''
+In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``some important property holds whenever the system includes a certain message in a certain channel.''
 We call such an invariant a \emph{predicate message}, formally defined as following:
 \begin{displaymath}
   \spredmsg{S}{im}{P} \triangleq \forall s.\; \semrch{S}{s} \to im \in s.M \to P\; s.
 \end{displaymath}
-We will just use \predmsg{im}{P} when the system $S$ is easily inferred by the context.
-Sometimes even a shorter version \predmsg{\msgid{}}{P} (the one for the message with \msgid{}) will be used with clear context.
+We will write just \predmsg{im}{P} when the system $S$ is clear from context, also often using an even-shorter version \predmsg{\msgid{}}{P} (considering only those messages with a given ID) when it is not ambiguous.
 
 \begin{figure}[h]
   \centering
@@ -957,17 +957,17 @@ Sometimes even a shorter version \predmsg{\msgid{}}{P} (the one for the message 
     \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
           {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
-  \caption{A predicate message gets broken when interfered}
+  \caption{Interference breaks a predicate message}
   \vspace{-5pt}
   \label{fig-ex-pred-msg-fail}
 \end{figure}
 
 \autoref{fig-ex-pred-msg-fail} presents an example of a predicate message.
-Recalling the example protocol from \autoref{sec-example}, when the system has a message of a kind \blmsg{rsM}, we expect the parent and the other child (who is not the requestor) has the I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
-However, the predicate becomes broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by {\color{myred} $r_1 \in C_1$}, which takes an input {\color{myred} \idmsf{5}{rsM}} and updates the status of $C_1$ to M.
+Recalling the example protocol from \autoref{sec-example}, when the system has a message of a kind \blmsg{rsM}, we expect the parent and the other child (who is not the requestor) to have I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
+However, the predicate is broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by {\color{myred} $r_1 \in C_1$}, which takes an input {\color{myred} \idmsf{5}{rsM}} and updates the status of $C_1$ to M.
 
 Investigating this corner case carefully, we can find that actually no two different \msgsf{rsM} messages can be in the system at the same time.
-It implies that now the predicate message for \msgsf{rsM} should have a much more complicated form, which considers \emph{all possible noninterference cases}.
+This finding implies that now the predicate message for \msgsf{rsM} should have a much-more-complicated form, which considers \emph{all possible noninterference cases}.
 The complete desired predicate message for \idmsf{8}{rsM} will then look like:
 \begin{displaymath}
   \idmsf{8}{rsM}%
@@ -984,14 +984,14 @@ The complete desired predicate message for \idmsf{8}{rsM} will then look like:
 
 It is indeed a burden to consider all possible interleavings per predicate message.
 We would not have faced such a complication if we could ensure that no other transactions interfere while handling a transaction.
-It is exactly what serializability guarantees; \hemiola{} provides the way of designing and proving predicate messages in the simpler form, not taking any interleavings into account.
+Serializability guarantees exactly that simplification, and \hemiola{} provides a way of designing and proving predicate messages in the simpler form, not taking any interleavings into account.
 
 Our novel approach to employing predicate messages in atomic histories begins with formalizing the notion of \emph{atomic invariants}:
 \begin{definition}[Atomic Invariants]
-  $\mathcal{I}_a: \listtof{\hidmt{}} \to \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{im_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{im_i}}{h}{\listof{im_o}}$.
+  $\mathcal{I}_a: \listtof{\hidmt{}} \times \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{im_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{im_i}}{h}{\listof{im_o}}$.
   \label{def-atomic-invariant}
 \end{definition}
-\noindent Note that atomic invariant takes the live messages ($\listof{im_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
+\noindent Note that an atomic invariant takes the live messages ($\listof{im_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
 
 \begin{figure}[h]
   \centering
@@ -1035,8 +1035,8 @@ $\mathcal{I}_a$ shows how predicate messages are formalized into an atomic invar
 We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic history (in the figure) step-by-step:
 \begin{itemize}[leftmargin=*]
 \item The initial step of the atomic history is the one by $r_1$. The live messages are $\listsingle{\idmsf{4}{rsI}}$. Since $r_1$ changes the status of $C_1$ to I, it is straightforward to prove $\mathcal{I}_a$.
-\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
-\item The last step is by $r_2$ and the live messages are $\listsingle{\idmsf{10}{rsWr}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsWr}.
+\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis, we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
+\item The last step is by $r_2$, and the live messages are $\listsingle{\idmsf{10}{rsWr}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsWr}.
 \end{itemize}
 It is worth emphasizing that the invariant proof was straightforward since no other state transitions interfere with an atomic history.
 
@@ -1070,29 +1070,28 @@ Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be p
 
 \autoref{fig-use-atomic-inv} explains how to use an atomic invariant $\mathcal{I}_a$ while proving a conventional invariant $\mathcal{I}$ in the [TrsAtomic] case.
 The point is that we can employ both $(\mathcal{I}\ s_i)$ and $(\mathcal{I}_a\ \listof{m_i}\ s_i)$ to prove $(\mathcal{I}\ s_{i+1})$.
-For instance, we may want to have an invariant claiming that the M status uniquely exists, if any, within the system.
+For instance, we may want to have an invariant claiming that at most one node of the system has M status at a time.
 (We will indeed use this invariant in our case studies, although the exact statement is a bit more complex.)
-The predicate messages defined in \autoref{fig-ex-atomic-invariants} will play a crucial role here, \eg{} the one for \idmsf{8}{rsM} says that $C_1$ and $P$ both have the I status, which means that the state transition by $(r_2: C_2.\textrm{st} \leftarrow M)$ preserves the invariant.
+The predicate messages defined in \autoref{fig-ex-atomic-invariants} will play a crucial role here, \eg{} the one for \idmsf{8}{rsM} says that $C_1$ and $P$ both have I status, which means that the state transition by $(r_2: C_2.\textrm{st} \leftarrow M)$ preserves the invariant.
 
-The other three cases ([TrsSilent], [TrsIns], and [TrsOuts]) do not need any further information, since these cases induce just a single step.
+The other three cases ([TrsSilent], [TrsIns], and [TrsOuts]) do not need any further information, since each case induces just a single step.
 We will see more comprehensive uses of predicate messages in our case studies (\autoref{sec-case-study}).
 
-\section{The \hemiola{} Domain-Specific Language}
+\section{The Hemiola Domain-Specific Language}
 \label{sec-hemiola-dsl}
 
-As explained in \autoref{sec-sz-in-hemiola}, on top of serializability it is much easier to design and prove invariants.
-That being said, it will be still a large burden if a user has to prove the serializability per-protocol.
+As explained in \autoref{sec-sz-in-hemiola}, on top of serializability, it is much easier to design and prove invariants.
+That being said, it will still be a large burden if a user has to prove serializability per-protocol.
 
-In this section, we would like to provide \emph{minimal and abstract conditions} to prove serializability, in order not to prove it for each protocol.
-The conditions have been already mentioned with the motivating example in \autoref{sec-example} -- network topology and locking mechanisms, extracted from transient states of practical cache-coherence protocols.
+In this section, we would like to provide \emph{minimal and abstract conditions} to prove serializability, in order not to prove it directly for each protocol.
+The conditions have already been mentioned with the motivating example in \autoref{sec-example} -- network topology and locking mechanisms, extracted from transient states of practical cache-coherence protocols.
 
-While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from the conditions that are not coupled with any specific cache-coherence protocols}.
+While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}.
 
 In order to satisfy such conditions for free, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates}.
-We will present how the network topologies and the rule templates look like and explain the intuition why using these components implies serializability as well as the actual proof using a technique called \emph{commuting reductions}.
+We will present how the network topologies and the rule templates look and explain the intuition why using these components implies serializability, and we will sketch the actual proof using a technique called \emph{commuting reductions}.
 
 \subsection{The Domain-Specific Language}
-\label{sec-dsl}
 
 \subsubsection{Topology and Network Requirements}
 \label{sec-topo-net-reqs}
@@ -1112,11 +1111,11 @@ For example, the following tree definition will generate topology and channels f
 \label{sec-locking-mechanism}
 
 We saw in \autoref{sec-example} why fine-grained transient states are required to ensure safe interleavings in cache-coherence protocols.
-Revisiting the issue described in \autoref{fig-motive-2}, a child should be able to handle an invalidation request from the parent even if it is in a transient state (SM) and after the response it changes its transient state to IM.
+Revisiting the issue described in \autoref{fig-motive-2}, a child should be able to handle an invalidation request from the parent even if it is in a transient state (SM), and after the response it changes its transient state to IM.
 By looking at these transient states carefully, we have discovered that another necessary condition, other than the tree-topology condition, is the locking perspective from the transient states.
 
 \hemiola{} supports a general locking mechanism reflecting this discovery;
-instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more general} locking, just by looking at whether the message is from the parent or one of its children.
+instead of looking at the type of a message (\eg{} invalidation), the framework provides \emph{more-general} locking, just by looking at whether the message is from the parent or one of its children.
 This relaxed locking mechanism is then not coupled with any specific cache-coherence protocols but is still sufficient to prove serializability.
 
 \tikzset{
@@ -1140,7 +1139,7 @@ This relaxed locking mechanism is then not coupled with any specific cache-coher
     \node[draw,align=left] at (2.9, 0.4) {$P_1$ sets an uplock\\ when sending {\small $\textsf{rq2}$} to $P_2$};
     \node[draw,align=left] at (4.8, 1.7) {$P_2$ sets a downlock\\ when sending {\small $\overline{\textsf{rqs}}$} to children};
   \end{tikzpicture}
-  \caption{Locking mechanism in \hemiola{}}
+  \caption{Locking mechanism in Hemiola}
   \label{fig-locking}
 \end{figure}
 
@@ -1153,12 +1152,12 @@ On the contrary, a downlock is set when an object makes a downward request(s) to
 The object cannot make any further downward requests while downlocked.
 
 Now every cache object defined in \hemiola{} does not need to set transient states to consider all combinations among stable statuses;
-instead of it, the framework suggests to maintain the cache status and to set a proper lock.
+instead, the framework helps maintain the cache status and claim proper locks.
 For example, instead of setting a transient state SM, it is now desirable to maintain its status S and to set an uplock to record it just made the upward request.
 (The framework provides even more, actually, by guiding users to employ the \emph{rule templates}, introduced in the next section, that automatically set proper locks.)
 
-Each object defined in \hemiola{} has a semantic \emph{lock state}, a finite map from a lock type (uplock or downlock) to lock information: the original request message, the original requestor index, and requestee indices that are expected to get responses from.
-In cache-coherence protocols, each lock corresponds to a miss status holding register (MSHR), a very well-known register used within a cache.
+Each object defined in \hemiola{} has a semantic \emph{lock state}, a finite map from a lock type (uplock or downlock) to lock information: the original request message, the original requestor index, and requestee indices from which we expect to get responses.
+In the common terminology of cache-coherence protocols, each lock corresponds to a miss status holding register (MSHR).
 An MSHR is set when a cache miss happens and the miss triggers further requests to obtain a proper status and up-to-date data.
 As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whether to handle certain requests and in storing information needed to handle them properly.
 
@@ -1310,10 +1309,10 @@ As with \hemiola{} lock holders, MSHRs play a crucial role both in deciding whet
   \label{fig-rule-templates}
 \end{figure}
 
-In order to establish the topology/network requirements and the locking mechanism automatically, \hemiola{} provides rule templates that make state transitions within the conditions.
-\autoref{fig-rule-templates} presents the nine rule templates supported in \hemiola{}.
+\hemiola{} provides a set of rule templates for describing protocols in a way that satisfies the serializability conditions by-construction.
+\autoref{fig-rule-templates} presents the nine rule templates.
 Each diagram has the form $\ppo{P}{O}{Q}$ and arrows with the circles ($\circ$ and $\bullet$) and the labels representing requests (\msgsfsm{rq(s)}) and responses (\msgsfsm{rs(s)}).
-It means that the rule template is for an object $O$, requires input messages ($\circ$) with the the message types determined by the label, has a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
+It means that the rule template is for an object $O$, requires input messages ($\circ$) with the message types determined by the label, has a precondition $P$, performs a state transition $Q$, and generates output messages ($\bullet$).
 
 $\uled$, $\dled$, $\ulfree$, and $\dlfree$ in a precondition indicate that the object should be uplocked, downlocked, uplock-free, and downlock-free, respectively.
 $\setul$, $\setdl$, $\relul$, and $\reldl$ in a state transition indicate setting an uplock, setting a downlock, releasing an uplock, and releasing a downlock, respectively.
@@ -1516,17 +1515,16 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 %% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
-\label{sec-sz-guarantee}
 
 We now present our intuition and sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
-This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover the serializability conditions that can fit for cache-coherence protocols and proved it using reductions.
+This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
 
-We say that two adjacent state transitions \emph{commute} if the state transitions with the opposite order reach to the same state:
+We say that two adjacent state transitions \emph{commute} if the state transitions with the opposite order reach the same state:
 \begin{displaymath}
-  \semstep{S}{s_0}{l_0}{s_1} \to \semstep{S}{s_1}{l_1}{s_2} \to \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
+  \semstep{S}{s_0}{l_0}{s_1} \land \semstep{S}{s_1}{l_1}{s_2} \to \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
 \end{displaymath}
-We can naturally lift the definition to the one for histories to argue whether two histories commute or not.
+We can naturally lift the definition to one for histories to argue whether two histories commute or not.
 Our high-level intuition for the serializability proof is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
 More specifically, we will try to \emph{merge} any two separated atomic-history fragments by performing reductions.
 
@@ -1544,26 +1542,26 @@ We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{rquu}) to deno
 
 \autoref{fig-ex-sz-state-trs} shows the original legal interleaved history (top) and how reductions apply to it and make it sequential (bottom).
 In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we should perform a reduction either between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\blcircf{6}]$ or between $[\blcircf{6}]$ and $[\rdcircf{7}]$.
-We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
+We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$).
 
-Two state transitions trivially commute if 1) the object state transitions happen in the different objects and 2) input/output channels used for the transitions are all orthogonal to each others.
+Two state transitions trivially commute if 1) the object state transitions happen in different objects and 2) input/output channels used for the transitions are all orthogonal to each other.
 If either of the conditions does not hold, we may need to analyze more whether the transitions commute or not.
 In the first merge case, $[\blcircf{6}]$ can be pushed to the right (\ie{} \blcircf{6} and \rdcircf{7} commute).
 The object state transitions are straightforward to deal with, since they are orthogonal ($P$ for \blcircf{6} and $C_1$ for \rdcircf{7}).
 It is nontrivial to deal with the used channels, however, since the output of \blcircf{6} (\blmsgsm{rqI}) and the input of \rdcircf{7} (\rdmsgsm{rsM}) share the same channel $5$.
 \autoref{fig-ex-sz-comm} (top) depicts this case; we see \blcircf{6} and \rdcircf{7} still commute, since \rdcircfl{7}{rsdd} should take a ``response'' (\rdmsgsm{rsM}) while \blcircfl{6}{rqud} outputs a ``request'' (\blmsgsm{rqI}).
-It indicates that \blcircf{6} and \rdcircf{7} are involved with different messages in the same channel, thus not affecting the commutativity.
-After the merge, we obtain a new (less-interleaved) history after the reduction, shown in the middle of \autoref{fig-ex-sz-state-trs}.
+It indicates that \blcircf{6} and \rdcircf{7} are involved with different messages in the same channel, thus not affecting commutativity.
+After the merge, we obtain a new (less-interleaved) history, shown in the middle of \autoref{fig-ex-sz-state-trs}.
 
 Now we should merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$; in this case, \blcircf{2} can be pushed to the right.
-While this reduction is trivial in the sense of orthogonal objects and channels, the only nontrivial case is between \blcircf{2} and \rdcircf{4}, where the both rules are executed in $C_2$.
+While this reduction is trivial in the sense of orthogonal objects and channels, the only nontrivial case is between \blcircf{2} and \rdcircf{4}, where both rules are executed in $C_2$.
 These state transitions still commute, as shown in \autoref{fig-ex-sz-comm} (bottom), since \blcircf{2} cannot make any object state transition, according to the definition of the ``rquu'' rule template.
 After this merge we finally obtain the sequential history.
 
 How can we argue that the atomic-history fragments are always mergeable?
-As seen in the two cases in \autoref{fig-ex-sz-state-trs}, the reason for the mergeability \emph{comes only from what have been specified in the rule templates}.
+As we start to see in the two cases in \autoref{fig-ex-sz-state-trs}, mergeability \emph{follows from the rule templates}.
 While trying to merge two fragments, we especially look at the rule template used in the last state transition of the first fragment and figure out which state transitions can be performed between the two.
-For example, when checking the mergeability between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we find that \rdcircf{5} generates the output message \rdmsgsm{rsM}, and it blocks all the other transactions to go from $P$ to $C_1$, \eg{} \blcircf{6} was blocked until \rdcircf{7} consumes \rdmsgsm{rsM}.
+For example, when checking mergeability between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we find that \rdcircf{5} generates the output message \rdmsgsm{rsM}, and it blocks all the other transactions to go from $P$ to $C_1$, \eg{} \blcircf{6} was blocked until \rdcircf{7} consumes \rdmsgsm{rsM}.
 We can thus commute \blcircf{6} and \rdcircf{7} due to this blocking.
 In this sense, in proving serializability, we look at each rule template and characterize the allowed state transitions between two atomic-history fragments.
 
@@ -1587,6 +1585,7 @@ Also, the full mechanized Coq proof is in the supplementary material.
 In this section we specify, implement, and formally prove the correctness of hierarchical MSI and MESI protocols as case studies.
 They use directories to keep track of child statuses and use noninclusive caches that do not require the parent cache to contain all lines existing in children.
 We will see how \hemiola{} helps implement and prove these protocols, by taking full advantage of \autoref{thm-sz-guarantee}.
+\todo{Describe inclusive protocol.}
 
 \subsection{Design Principles}
 We start by summarizing the design principles we applied to both case studies.
@@ -1893,8 +1892,7 @@ We would like to present a practical usage of predicate messages in proving the 
 Suppose that an L1 cache (shown as {\color{mygray} $L_1$} in gray in the figure) requested to the parent to get the \stM{} status.
 When it finally handles the response \msgsfsm{rsM}, it should know all the other caches (except itself) have the logical \stI{} status to prove the exclusiveness invariant (denoted as {\color{mygray} $\{\objsinv{\lambda c. c \neq L_1}\}$}).
 This proof case can be supported using the predicate message for \msgsfsm{rsM}, stating \objsinv{\subtreec{C}} (outside of the subtree rooted to $C$) when the message goes to $C$.
-Since $L_1$ is the leaf node in the tree, it is trivial to prove $(\objsinv{\subtreec{L_1}} \to \objsinv{\lambda c. c \neq L_1})$.
-It is indeed the case where a predicate message helps prove a conventional invariant.
+Since $L_1$ is the leaf node in the tree, it is trivial to prove $(\objsinv{\subtreec{L_1}} \to \objsinv{\lambda c. c \neq L_1})$, so we see an example of a predicate message helping prove a conventional invariant.
 
 \autoref{fig-pred-msg-msi} also shows another case, where conventional invariants and predicate messages coordinate to prove a predicate message for the next state.
 When a child $C_i$ sends the invalidation response \msgsfsm{rsI}, it should know that all the caches inside the subtree of $C_i$ have been invalidated (denoted as {\color{myblue} \objsinv{\subtree{C_i}}}).
@@ -2095,7 +2093,7 @@ In order to implement asynchronous line accesses, the protocol compiler uses the
 A \hemiola{} rule execution corresponds to the executions of multiple stages in the pipeline, each of which takes part of the source-rule execution.
 Each earlier stage in the pipeline accepts the input message, (asynchronously) reads the line information, and checks the precondition and the MSHR conditions.
 The last stage then makes the state transition using the line read from the earlier stages, by requesting a write to the line.
-In order to make the execution of these pipeline-stage rules correct, as per usual pipeline, the pipeline has a stall logic to make concurrent partial executions for different line addresses correct.
+In order to make the execution of these pipeline-stage rules correct, as per standard hardware pipelines, the pipeline includes stall logic to make concurrent partial executions for different line addresses correct.
 Pipelining in the cache module is nontrivial but ubiquitous in real-world cache controllers.
 
 \paragraph{Compiling custom data structures}
@@ -2143,11 +2141,12 @@ We used Xilinx's Virtex-7 VC707 FPGA and its toolkit for synthesis.
 \autoref{fig-synthesis} shows the synthesis result of \bhemh{} and \bhemt{}.
 Each protocol uses a minimal clock length that can safely cover its critical path.
 Both \bhemh{} and \bhemt{} used less than 34.4\% ($\approx 104192/303600$) of lookup tables (LUTs), an FPGA unit for combinational circuits, and 7.3\% ($\approx 44294/607200$) of flip-flops (FFs), a unit for state~\cite{vc707}.
-Each protocol used just a right amount of BRAMs for data caches and information caches that contain status, directory bits, etc.
+Each protocol used just the right amount of BRAMs for data caches and information caches that contain status, directory bits, etc.
+\todo{Explain what ``just the right amount'' means.}
 
 In order to confirm that the implementations run on the FPGA correctly, we performed tandem verification covering over $10^9$ memory requests for each protocol, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
-Optimization and verification of the cache-controller design are nontrivial; the pipeline requires a correct stall logic, which is as sophisticated as the one in pipelined processors~\cite{comarch}.
-While the verification of the pipeline is one of our future-work directions, we see it as orthogonal to the verification of cache-coherence rptocols, which is what \hemiola{} focuses on.
+Optimization and verification of the cache-controller design are nontrivial; the pipeline requires correct stall logic, which is as sophisticated as the logic in pipelined processors~\cite{comarch}.
+While the verification of the pipeline is one of our future-work directions, we see it as orthogonal to the verification of cache-coherence protocols, which is what \hemiola{} focuses on.
 Interested readers are referred to \autoref{sec-appx-compiler-proof}, which describes the desired specification and refinement of a multiline implementation from the protocol compiler.
 
 \section{Discussion and Related Work}
@@ -2165,22 +2164,22 @@ The \hemiola{} language reifier and the protocol compiler (including the prebuil
 \paragraph{Model-checking cache-coherence protocols.}
 
 Model checking has long been widely used to verify cache-coherence protocols.
-Various model checkers like Murphi~\cite{murphi:Dill:1996}, SMV~\cite{smv:McMillan:1993}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-explosion issues.
+Various model checkers like Murphi~\cite{murphi:Dill:1996}, SMV~\cite{smv:McMillan:1993}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-space-explosion issues.
 
-In order to overcome the state explosion, model checkers has developed sound techniques such as compositional model checking, symmetry reduction, or data-type reduction, all of which help effectively reducing the state space~\cite{McMillan:1999}.
-Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
-In order to obtain effective noninterference lemmas, a number of approaches used the description of transactions (in the name of ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
+In order to overcome state-space explosion, model checkers have been developed featuring sound techniques such as compositional model checking, symmetry reduction, or data-type reduction~\cite{McMillan:1999}.
+Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
+In order to obtain effective noninterference lemmas, a number of approaches used descriptions in terms of transactions (called ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
 Instead of looking at each transaction, \hemiola{} provides serializability that guarantees noninterference among any transactions defined on top of the framework.
 
-In order to verify cache-coherence protocols with arbitrary number of cores (but not hierarchical), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
+In order to verify cache-coherence protocols with arbitrary numbers of cores (but no hierarchy), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
 Since \hemiola{} is built on Coq, we can take full advantage of parameterization, and indeed the framework supports verification of cache-coherence protocols with an arbitrary tree shape as a parameter.
 
 In order to increase scalability further, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
 However, these approaches face a common obstacle: because of the modularity requirement, it became hard to design and verify noninclusive protocols.
-\cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
+\cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state-space explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
 \cite{Opeoluwa:2016,Opeoluwa:2017} have developed the Neo theory as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
 They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} NCID~\cite{Zhao:2010}) but did not provide the actual design and proof.
-We provided the actual proofs of hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
+We provided the proofs of hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
 
 Another notable success of cache-coherence verification employed program synthesis to generate a protocol for a given atomic specification~\cite{Oswald:2018,Oswald:2020}.
 The synthesizer can generate various hierarchical protocols, each of which is nontrivial and more optimized than the procotols defined in \hemiola{}.
