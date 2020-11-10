@@ -165,7 +165,7 @@
 \newcommand{\idxOf}[1]{\ensuremath{#1.i}}
 
 \newcommand{\boolt}{\ensuremath{\mathbb{B}}}
-\newcommand{\propt}{\ensuremath{\mathbb{P}}}
+\newcommand{\propt}{\ensuremath{\mathbb{B}}}
 \newcommand{\hidt}{\ensuremath{\mathbb{I}}}
 \newcommand{\hidxt}{\ensuremath{\mathbb{I}}}
 \newcommand{\hvaluet}{\ensuremath{\mathbb{V}}}
@@ -319,10 +319,6 @@
 \section{Introduction}
 \label{sec-intro}
 
-%% \todo{Mention interleavings, noninterference lemmas used in model checking, and \hemiola{}'s contribution to establish the serializability guarantee as the most general form of the noninterference property, with a minimal set of abstract conditions that are not coupled with any specific cache-coherence protocols.}
-%% \todo{It looks better not to write the introduction like our approach is better than state-of-the-art model-checking techniques used in CCP. Let's rather say ``model checking has produced good techniques'' + ``theorem proving still suffers from dealing with interleavings'' + ``the benefit of theorem proving is that we can state and prove general theorems and reuse them repeatedly'' + ``so what is the general theorem for CCP?''}
-%% \todo{This phrase attracts me a lot: design the most general form of noninterference, discover the abstract conditions that are not coupled with any specific CCPs, and use it repeatedly for various case studies.}
-
 Cache-coherence protocols have been regarded as one of the greatest correctness challenges of the hardware world.
 Industry has most commonly used testing and bounded model checking for quality assurance of cache-coherence implementations, but these techniques are not sound and may miss subtle bugs.
 
@@ -366,7 +362,9 @@ We also demonstrate that the case-study protocols are indeed hardware-synthesiza
 To sum up, the contribution of this paper largely consists of two parts\footnote{All the code and proofs of the framework and the case studies are available in the supplementary material we provided for the paper submission.}:
 \begin{itemize}[leftmargin=*]
 \item We discover a minimal set of topology and lock conditions that ensures \emph{serializability}, extracted from usual cache-coherence protocol designs. We then identify a domain-specific protocol language, where every protocol defined in this language ensures serializability by construction, backed up with mechanized Coq proof (\autoref{sec-hemiola-dsl}). Lastly, we formalize how serializability helps prove correctness (refinement), by using the novel notion of \emph{predicate messages} in distributed protocols.
-\item Using the protocol language, we provide the complete correctness proofs of hierarchical MSI and MESI cache-coherence protocols (\autoref{sec-case-study}), for inclusive and noninclusive versions of the former and a noninclusive version of the latter. Ours are the first complete mechanized proofs for various hierarchical noninclusive cache-coherence protocols, and as a bonus they share a large segment of reusable proofs (including with inclusive variants).
+\item Using the protocol language, we provide the complete correctness proofs of three hierarchical cache-coherence protocols:
+  inclusive and noninclusive MSI protocols and a noninclusive MESI protocol (\autoref{sec-case-study}).
+  Ours are the first complete mechanized proofs for various hierarchical ``noninclusive'' cache-coherence protocols, and as a bonus they share a large segment of reusable proofs (including with the inclusive variant).
 \end{itemize}
 
 \section{A Motivating Example: MSI Directory Protocol with Two Caches}
@@ -595,8 +593,10 @@ We will also explain how this notion of serializability eases the burden of veri
 \paragraph{Notations.}
 Throughout this paper, we will use several notations for lists (sequences) and finite maps.
 An overline (\eg{} $\listof{l}$) denotes a list.
-$\listnil{}$, $(\listcons{h}{\listof{t}})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
+$\listnil{}$, $(\listcons{\listof{t}}{h})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
 $(\listdisj{\listof{l_1}}{\listof{l_2}})$ denote nil, cons, append, subtraction, and disjointness of lists, respectively.
+We use the opposite order to the convention for cons to present the natural left-to-right growth of a list as a sequence.
+Similarly, a list $[a; b; c]$ grows to the right, \ie{} $c$ is the head of the list.
 $\listconcat{\listof{l}}$ flattens the list of lists $\listof{l}$ with repeated concatenation.
 $\sizeof{\listof{l}}$ is the length of a list.
 Regarding a list of key-value pairs as a finite map, we override notations for lists.
@@ -698,7 +698,7 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
         \begin{array}{cc}
           \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}}
           & \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
-            & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{l_1}{\listof{l}}}{s_2}} \\
+            & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{\listof{l}}{l_1}}{s_2}} \\
           \multicolumn{2}{c}{\inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}}} \\
           \mbox{}\vspace{-5pt} \\ %% padding
         \end{array}
@@ -710,7 +710,7 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{map}
           \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{im}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{im}}}{\listof{\amsge{im}}}}}{28}{\listof{\amsge{im}}}}\\[15pt]
           \inference[AtomicCont:]{\atomic{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}
             & \msgIns{n} \neq \listnil
-            & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}{\listof{l}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+            & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\listof{l}}{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
           \mbox{}\vspace{-5pt} %% padding
         \end{array}
       \end{math}\\
@@ -782,9 +782,9 @@ It is also required that any state transition does not both dequeue and enqueue 
 The step semantics is naturally lifted to one for multiple steps, presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$, $s_0$, and $s_1$ are similar to ones in the step semantics, and $\listof{l}$ is a sequence of labels generated by executions of the steps.
 [StepsNil] serves the case where no state transitions happen.
 [StepsCons] is a natural inductive constructor that combines previous steps and a new one.
-Note that the latest label is added to the head, thus the last label in the sequence is the oldest one.
-(We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
-\todo{Refactor the paper so that we add new labels at the end!}
+%% Note that the latest label is added to the head, thus the last label in the sequence is the oldest one.
+%% (We found this convention convenient in Coq for usual reasons of functional-programming naturalness, and we stick with it in the paper version of the formalism to avoid transcription errors.)
+%% \todo{Refactor the paper so that we add new labels at the end!}
 
 We will sometimes call a sequence of labels a \emph{history}.
 We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds, where $\sysInit{S}$ is the initial state of the system $S$, constructed by composing all initial object states.
@@ -807,8 +807,8 @@ Finally we define a notion of correctness in \hemiola{}.
   \end{displaymath}
 \end{definition}
 
+%% \todo{Here and earlier, consider collapsing the distinction between $\boolt{}$ and $\propt{}$, to avoid confusing readers who don't speak type theory.}
 Trace refinement is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states.
-\todo{Here and earlier, consider collapsing the distinction between $\boolt{}$ and $\propt{}$, to avoid confusing readers who don't speak type theory.}
 \begin{definition}[Simulation]
   We call $(\sim): \hstt{} \times \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
   \begin{displaymath}
@@ -864,9 +864,9 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
     \begin{math}
       \small
       \begin{array}{rl}
-        h \triangleq & [\lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, {\sf rqI})}}{\listsingle{(7, {\sf rsI})}};\\
+        h \triangleq & [\lblInt{\idxOf{C_1}}{\idxOf{r_1}}{\listsingle{(1, {\sf rqWr})}}{\listsingle{(3, {\sf rqM})}};\\
           & \lblInt{\idxOf{P}}{\idxOf{r_2}}{\listsingle{(3, {\sf rqM})}}{\listsingle{(8, {\sf rqI})}};\\
-          & \lblInt{\idxOf{C_1}}{\idxOf{r_1}}{\listsingle{(1, {\sf rqWr})}}{\listsingle{(3, {\sf rqM})}}]\\
+          & \lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, {\sf rqI})}}{\listsingle{(7, {\sf rsI})}}]\\
       \end{array}
     \end{math}
   \end{tabular}
@@ -1585,7 +1585,6 @@ Also, the full mechanized Coq proof is in the supplementary material.
 In this section we specify, implement, and formally prove the correctness of hierarchical MSI and MESI protocols as case studies.
 They use directories to keep track of child statuses and use noninclusive caches that do not require the parent cache to contain all lines existing in children.
 We will see how \hemiola{} helps implement and prove these protocols, by taking full advantage of \autoref{thm-sz-guarantee}.
-\todo{Describe inclusive protocol.}
 
 \subsection{Design Principles}
 We start by summarizing the design principles we applied to both case studies.
@@ -2141,8 +2140,6 @@ We used Xilinx's Virtex-7 VC707 FPGA and its toolkit for synthesis.
 \autoref{fig-synthesis} shows the synthesis result of \bhemh{} and \bhemt{}.
 Each protocol uses a minimal clock length that can safely cover its critical path.
 Both \bhemh{} and \bhemt{} used less than 34.4\% ($\approx 104192/303600$) of lookup tables (LUTs), an FPGA unit for combinational circuits, and 7.3\% ($\approx 44294/607200$) of flip-flops (FFs), a unit for state~\cite{vc707}.
-Each protocol used just the right amount of BRAMs for data caches and information caches that contain status, directory bits, etc.
-\todo{Explain what ``just the right amount'' means.}
 
 In order to confirm that the implementations run on the FPGA correctly, we performed tandem verification covering over $10^9$ memory requests for each protocol, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
 Optimization and verification of the cache-controller design are nontrivial; the pipeline requires correct stall logic, which is as sophisticated as the logic in pipelined processors~\cite{comarch}.
@@ -2388,7 +2385,7 @@ Using the notion of continuity, we can also decide formally whether a given hist
   In a given system $S$, a sequence of histories $\listof{h}$ is \emph{interleaved} iff there exist two histories $h_1$ and $h_2$ in the sequence that are externally continuous and any history between the two is discontinuous to $h_1$:
   \begin{align*}
     \hitlv{S}{\listof{h}}\; \triangleq\quad & \exists h_1, h_2, \listof{h_1}, \listof{h_2}, \listof{h_3}. \\
-    & \listof{h} = \listof{h_3} + h_2 : \listof{h_2} + h_1 : \listof{h_1}\; \wedge \\
+    & \listof{h} = \listapp{\listcons{\listapp{\listcons{\listof{h_1}}{h_1}}{\listof{h_2}}}{h_2}}{\listof{h_3}}\; \wedge \\
     & \hextcont{S}{h_1}{h_2} \wedge (\forall h' \in \listof{h_2}.\; \hdiscont{h_1}{h'}).
   \end{align*}
   We also call a history $h$ interleaved (overrided as \hitlv{S}{h}) if we can find an interleaved sequence of histories $\listof{h_s}$ that satisfies $h = \listconcat{\listof{h_s}}$.
@@ -2414,10 +2411,10 @@ The \emph{nonconfluence} predicate removes this case, by claiming that any atomi
 \begin{definition}[Nonconfluence]
   A system $S$ is \emph{nonconfluent} iff any first non-external history, if exists, is interleaved (with an external atomic history):
   \begin{align*}
-    \sncf{S}\; \triangleq\quad & (\forall \listof{h}, h_0, s.\; \semsteps{S}{\sysInit{S}}{\listapp{h_0}{\listconcat{\listof{h}}}}{s}\\
+    \sncf{S}\; \triangleq\quad & (\forall \listof{h}, h_0, s.\; \semsteps{S}{\sysInit{S}}{\listapp{\listconcat{\listof{h}}}{h_0}}{s}\\
     & \wedge\; (\forall h \in \listof{h}.\; \extatomicShort{S}{h})\\
     & \wedge\; \neg(\extatomicShort{S}{h_0}))\\
-    & \to \hitlv{S}{(\listcons{h_0}{\listof{h}})},
+    & \to \hitlv{S}{(\listcons{\listof{h}}{h_0})},
   \end{align*}
   where \extatomicShort{S}{h} is a shorthand for $(\extatomic{S}{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$ for some \listof{\amsgi{im}} and \listof{\amsge{im}}.
 \end{definition}
@@ -2438,11 +2435,11 @@ The following definition of \emph{pushability} formally defines this property:
     \renewcommand{\arraystretch}{1.6}
     \begin{array}{l}
       \lpush{S}{h_1}{h_2}{h} \triangleq\\
-      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_2}{\listapp{h}{h_1}}}{s_2}
-      \to \semsteps{S}{s_1}{\listapp{h_2}{\listapp{h_1}{h}}}{s_2}.\\
+      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
+      \to \semsteps{S}{s_1}{\listapp{h}{\listapp{h_1}{h_2}}}{s_2}.\\
       \rpush{S}{h_1}{h_2}{h} \triangleq\\
-      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_2}{\listapp{h}{h_1}}}{s_2}
-      \to \semsteps{S}{s_1}{\listapp{h}{\listapp{h_2}{h_1}}}{s_2}.\\
+      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
+      \to \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h_2}{h}}}{s_2}.\\
     \end{array}
   \end{displaymath}
 \end{definition}
@@ -2454,8 +2451,8 @@ We could define mergeability directly using pushability, but we define and use t
     \renewcommand{\arraystretch}{1.9}
     \begin{array}{rrl}
       \hmgb{S}{h_1}{h_2} \triangleq & \forall s_1. & \semrch{S}{s_1} \to\\
-      & \forall \listof{h}, s_2. & \semsteps{S}{s_1}{\listapp{h_2}{\listapp{\listconcat{\listof{h}}}{h_1}}}{s_2} \to\\
-      & \exists \listof{h}_{\textrm{l}}, \listof{h}_{\textrm{r}}. & \semsteps{S}{s_1}{\listapp{\listconcat{\listof{h_{\textrm{r}}}}}{\listapp{h_2}{\listapp{h_1}{\listconcat{\listof{h_{\textrm{l}}}}}}}}{s_2}\\
+      & \forall \listof{h}, s_2. & \semsteps{S}{s_1}{\listapp{h_1}{\listapp{\listconcat{\listof{h}}}{h_2}}}{s_2} \to\\
+      & \exists \listof{h}_{\textrm{l}}, \listof{h}_{\textrm{r}}. & \semsteps{S}{s_1}{\listapp{\listconcat{\listof{h_{\textrm{l}}}}}{\listapp{h_1}{\listapp{h_2}{\listconcat{\listof{h_{\textrm{r}}}}}}}}{s_2}\\
       & & \wedge \sizeof{\listof{h}} = \sizeof{\listof{h_{\textrm{l}}}} + \sizeof{\listof{h_{\textrm{r}}}}.
     \end{array}
   \end{displaymath}
@@ -2512,11 +2509,11 @@ Nonconfluence is easier to prove than mergeability, simply by looking at the ini
   Now considering the first non-external atomic history in the definition of nonconfluence, the initial messages are internal and thus belong to one of the four categories.
 
   For the first three, the initial message is just a singleton.
-  Since the history $(\listapp{h_i}{\listconcat{\listof{h_e}}})$ is legal, at the time the initial message is consumed by $h_i$ it is in the semantic message state.
+  Since the history $(\listapp{\listconcat{\listof{h_e}}}{h_i})$ is legal, at the time the initial message is consumed by $h_i$ it is in the semantic message state.
   It is straightforward that the semantically live messages before $h_i$ is executed are all generated by $\listof{h_e}$; furthermore, we can prove that any live message before $h_i$ belongs to the live messages of an external atomic history in $\listof{h_e}$.
   Thus we should be able to find an external atomic history, say $h^0_e \in \listof{h_e}$, whose live messages contain the initial message.
   $(\hextcont{S}{h^0_e}{h_i})$ trivially holds by $h^0_e$ generating the initial message of $h_i$.
-  Therefore $\hitlv{S}{(\listapp{h_i}{\listconcat{\listof{h_e}}})}$ holds by definition.
+  Therefore $\hitlv{S}{(\listapp{\listconcat{\listof{h_e}}}{h_i})}$ holds by definition.
 
   The last category (multiple responses from children) is nontrivial, since there is a chance that the part of the messages is generated by an external atomic history and the other part is from another history.
   If we prove that the messages are from a single external atomic history, the nonconfluence is proven similarly to the first three cases.
@@ -2528,7 +2525,7 @@ Nonconfluence is easier to prove than mergeability, simply by looking at the ini
   We can use this fact to prove that any response to the parent after making the children requests is in the live messages of a non-external atomic history that took the corresponding request, since no other ongoing atomic histories can pass through the parent by the downlock.
   Say the response-generated atomic history $h^c_j$, where $j=0,1,\cdots$ matches each corresponding children request.
 
-  Since $\listof{h_e}$ does not contain any non-external atomic histories, the only possible case is that $h_e$ and $\listof{h^c_j}$ are merged together to form a single external atomic history, \ie{} $h^c_e \triangleq (\listapp{\sum_j h^c_j}{h_e})$ itself is the external atomic history whose live messages contain all the responses to the parent.
+  Since $\listof{h_e}$ does not contain any non-external atomic histories, the only possible case is that $h_e$ and $\listof{h^c_j}$ are merged together to form a single external atomic history, \ie{} $h^c_e \triangleq (\listapp{h_e}{\sum_j h^c_j})$ itself is the external atomic history whose live messages contain all the responses to the parent.
   It is trivial to hold $(\hextcont{S}{h^c_e}{h_i})$, and the rest of the proof is same as the other three cases.
 \end{proof}
 \renewcommand*{\proofname}{Proof}
