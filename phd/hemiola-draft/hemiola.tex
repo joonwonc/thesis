@@ -1515,6 +1515,7 @@ While the locking mechanism was explained in \autoref{sec-locking-mechanism}, we
 %% We believe this case provides evidence that a carefully predesigned locking mechanism helps with efficient locking placement.
 
 \subsection{Serializability Guarantee by the \hemiola{} DSL}
+\label{sec-sz-guarantee}
 
 We now present our intuition and sketch of the serializability proof for the protocols satisfying the topology/network condition (\autoref{sec-topo-net-reqs}) and the locking mechanism (\autoref{sec-locking-mechanism}).
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
@@ -2297,7 +2298,7 @@ The definition indicates that in order to obtain a serialized history, we should
 \label{sec-appx-sz-ext-labels}
 
 For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively.
-Recall that the serializability (defined in \autoref{sec-seq-sz}) does not require to preserve the behavior of a history, but the sequential history to reach to the same state.
+Recall that the serializability (defined in \autoref{sec-sz-in-hemiola}) does not require to preserve the behavior of a history, but the sequential history to reach to the same state.
 
 \tikzset{
   ->-/.style={
@@ -2488,7 +2489,7 @@ We are finally equipped with enough definitions to introduce a convenient genera
 We are now equipped with enough formalization and ready to prove the serializability guarantee in \hemiola{}.
 In this section, we provide the proof sketch of the serializability guarantee by \hemiola{}.
 (The full mechanized Coq proof is in the supplementary material.)
-Recalling the requirements from \autoref{sec-dsl}, a protocol should be defined on a tree topology (\ontree{S}{t}), and each rule should be defined using the rule templates (\goodrules{S}{t}).
+Recalling the requirements from \autoref{sec-hemiola-dsl}, a protocol should be defined on a tree topology (\ontree{S}{t}), and each rule should be defined using the rule templates (\goodrules{S}{t}).
 In order to prove serializability, we will use \autoref{thm-sz-when}, \ie{} nonconfluence and mergeability will be proven for the protocol defined with the \hemiola{} DSL.
 
 Nonconfluence is easier to prove than mergeability, simply by looking at the initial messages of the first non-external atomic history:
