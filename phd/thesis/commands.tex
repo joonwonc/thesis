@@ -1,0 +1,198 @@
+%% Commands --
+
+%% General commands
+\newcommand{\todo}[1]{\emph{\textcolor{red}{TODO: #1}}}
+\newcommand{\note}[1]{\emph{\textcolor{blue}{NOTE: #1}}}
+\newcommand{\panic}[1]{\textbf{\textcolor{red}{(#1)}}}
+
+\renewcommand{\subsectionautorefname}{section}
+\renewcommand{\subsubsectionautorefname}{section}
+
+\newcommand{\ie}{i.e.,}
+\newcommand{\eg}{e.g.,}
+\newcommand{\aka}{a.k.a.}
+
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+\renewcommand\qedsymbol{$\blacksquare$}
+
+%% Hemiola
+
+\newcommand{\hemiola}{Hemiola}
+
+\newcommand{\listof}[1]{\ensuremath{\overline{#1}}}
+\newcommand{\llistof}[1]{\ensuremath{\overline{\overline{#1}}}}
+\newcommand{\listtof}[1]{\ensuremath{\overline{#1}}}
+\newcommand{\listnil}{\ensuremath{\lbrack\rbrack}}
+\newcommand{\listcons}[2]{\ensuremath{#1 + #2}}
+\newcommand{\listsingle}[1]{\ensuremath{\lbrack #1 \rbrack}}
+\newcommand{\listapp}[2]{\ensuremath{#1 + #2}}
+\newcommand{\listsub}[2]{\ensuremath{#1 - #2}}
+\newcommand{\listdisj}[2]{\ensuremath{#1 \; \# \; #2}}
+\newcommand{\listconcat}[1]{\ensuremath{\oplus #1}}
+\newcommand{\sizeof}[1]{\ensuremath{|\, #1\, |}}
+
+\newcommand{\mapupd}[3]{\listapp{#1}{(#2, #3)}}
+\newcommand{\mapupds}[2]{\listapp{#1}{#2}}
+\newcommand{\mapsubs}[2]{\listsub{#1}{#2}}
+
+%% Stretchable squiggly arrows
+%% cf. https://tex.stackexchange.com/questions/75669/how-do-i-put-text-over-a-squiggly-arrow
+\newcommand{\squig}{{\scriptstyle\sim\mkern-3.9mu}}
+\newcommand{\lsquigend}{{\scriptstyle\lhd\mkern-3mu}}
+\newcommand{\rsquigend}{{\scriptstyle\rule{.1ex}{0ex}\rhd}}
+\newcounter{sqindex}
+\newcommand\squigs[1]{%
+  \setcounter{sqindex}{0}%
+  \whiledo {\value{sqindex}< #1}{\addtocounter{sqindex}{1}\squig}%
+}
+\newcommand\rsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\squigs{#2}\rsquigend}{\scriptscriptstyle\text{#1\,}}}%
+}
+\newcommand\lsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\lsquigend\squigs{#2}}{\scriptscriptstyle\text{\,#1}}}%
+}
+
+\newcommand{\idxOf}[1]{\ensuremath{#1.i}}
+
+\newcommand{\boolt}{\ensuremath{\mathbb{B}}}
+\newcommand{\propt}{\ensuremath{\mathbb{P}}}
+\newcommand{\hidt}{\ensuremath{\mathbb{I}}}
+\newcommand{\hidxt}{\ensuremath{\mathbb{I}}}
+\newcommand{\hvaluet}{\ensuremath{\mathbb{V}}}
+\newcommand{\hmsgt}{\ensuremath{\mathbb{M}}}
+\newcommand{\hostt}{\ensuremath{\mathbb{O}}}
+\newcommand{\hidmt}{\ensuremath{\mathbb{IM}}}
+%% \newcommand{\hprect}{\ensuremath{\mathcal{P}}}
+%% \newcommand{\htrst}{\ensuremath{\mathcal{T}}}
+
+\newcommand{\hsysIn}[1]{\ensuremath{\listof{#1_{\textrm{in}}}}}
+\newcommand{\hsysRq}[1]{\ensuremath{\listof{#1_{\textrm{rq}}}}}
+\newcommand{\hsysRs}[1]{\ensuremath{\listof{#1_{\textrm{rs}}}}}
+\newcommand{\hsys}[4]{\ensuremath{\tuple{#1, #2, #3, #4}}}
+\newcommand{\hsyss}[2]{\hsys{#1}{\hsysIn{#2}}{\hsysRq{#2}}{\hsysRs{#2}}}
+\newcommand{\hsysInA}[1]{\ensuremath{#1.\hsysIn{i}}}
+\newcommand{\hsysRqA}[1]{\ensuremath{#1.\hsysRq{i}}}
+\newcommand{\hsysRsA}[1]{\ensuremath{#1.\hsysRs{i}}}
+
+\newcommand{\hsysobjs}[1]{\ensuremath{#1.\listof{O}}}
+\newcommand{\hobjrules}[1]{\ensuremath{#1.\listof{r}}}
+
+\newcommand{\msgbuild}[3]{\tuple{#1, #2, #3}}
+\newcommand{\msgty}{\ensuremath{\textsf{ty}}}
+\newcommand{\msgid}{\ensuremath{\textsf{id}}}
+\newcommand{\msgval}{\ensuremath{\textsf{val}}}
+\newcommand{\mtypeOf}[1]{#1.\msgty{}}
+\newcommand{\midOf}[1]{#1.\msgid{}}
+\newcommand{\mvalOf}[1]{#1.\msgval{}}
+\newcommand{\idmbuild}[2]{\ensuremath{(#1, #2)}}
+
+\newcommand{\ruleprec}{\ensuremath{\textsf{prec}}}
+\newcommand{\ruletrs}{\ensuremath{\textsf{trs}}}
+\newcommand{\rprecOf}[1]{#1.\ruleprec{}}
+\newcommand{\rtrsOf}[1]{#1.\ruletrs{}}
+
+\newcommand{\msgIns}[1]{\listof{#1^{\textrm{ins}}}}
+\newcommand{\msgOuts}[1]{\listof{#1^{\textrm{outs}}}}
+\newcommand{\midxIns}[1]{\listof{\idxOf{#1^{\textrm{ins}}}}}
+\newcommand{\midxOuts}[1]{\listof{\idxOf{#1^{\textrm{outs}}}}}
+
+\newcommand{\lblEmpty}{\ensuremath{l_\epsilon}}
+\newcommand{\lblIns}[1]{\ensuremath{l_{\textrm{in}}(#1)}}
+\newcommand{\lblOuts}[1]{\ensuremath{l_{\textrm{out}}(#1)}}
+\newcommand{\lblInt}[4]{\ensuremath{l_{\textrm{int}}(#1, #2, #3, #4)}}
+
+\newcommand{\hmpt}{\ensuremath{\mathcal{M}}}
+\newcommand{\hsttr}{\ensuremath{\listtof{\hostt} \ast \hmpt}}
+\newcommand{\hstt}{\ensuremath{\mathbb{S}}}
+\newcommand{\hst}[2]{\ensuremath{\tuple{#1, #2}}}
+\newcommand{\hstm}[2]{\ensuremath{\left\langle\begin{array}{l}#1,\\ #2 \end{array}\right\rangle}}
+
+\newcommand{\objInit}[1]{\ensuremath{#1_{\textsf{init}}}}
+\newcommand{\sysInit}[1]{\ensuremath{#1_{\textsf{init}}}}
+
+\newcommand{\disj}[2]{\ensuremath{#1 \; \# \; #2}}
+\newcommand{\nodup}[1]{\ensuremath{\textsf{List.NoDup}\: #1}}
+\newcommand{\heads}[1]{\ensuremath{#1.\textsf{hds}}}
+
+\newcommand{\semstep}[4]{\ensuremath{#2 \xrightarrow[#1]{#3} #4}}
+\newcommand{\semsteps}[4]{\ensuremath{#2 \xRightarrow[#1]{#3} #4}}
+\newcommand{\semrch}[2]{\ensuremath{#1 \Rightarrow #2}}
+\newcommand{\semleg}[2]{\ensuremath{#1 \xRightarrow{#2} \bullet}}
+\newcommand{\sembeh}[2]{\ensuremath{#1 \Downarrow #2}}
+\newcommand{\behOf}[1]{\ensuremath{\lfloor #1 \rfloor}}
+
+\newcommand{\refines}[2]{\ensuremath{#1 \sqsubseteq #2}}
+
+\newcommand{\enqMsgs}[2]{\mapupds{#1}{#2}}
+\newcommand{\deqMsgs}[2]{\mapsubs{#1}{#2}}
+
+%% Serializability
+
+\newcommand{\atomic}[3]{\ensuremath{#1 \stackrel{#2}{\squigs{3}\rsquigend} #3}}
+\newcommand{\atomicLong}[4]{\ensuremath{#1 \stackrel{#2}{\squigs{#3}\rsquigend} #4}}
+\newcommand{\extatomic}[4]{\ensuremath{#1 \vdash #2 \stackrel{#3}{\squigs{3}\rsquigend}_{\textsf{ext}} #4}}
+\newcommand{\extatomicLong}[5]{\ensuremath{#1 \vdash #2 \stackrel{#3}{\squigs{#4}\rsquigend}_{\textsf{ext}} #5}}
+\newcommand{\extatomicShort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
+\newcommand{\trsn}[2]{\ensuremath{#1 \sswarrow #2}}
+
+\newcommand{\extatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
+\newcommand{\intatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{int}}}}
+
+\newcommand{\amsgi}[1]{\ensuremath{#1^{\textrm{init}}}}
+\newcommand{\amsge}[1]{\ensuremath{#1^{\textrm{end}}}}
+
+\newcommand{\hseq}[2]{\ensuremath{\mathsf{Sequential}\ #1\ #2}}
+\newcommand{\hsrzl}[2]{\ensuremath{\mathsf{Serializable}\ #1\ #2}}
+\newcommand{\hsrz}[1]{\ensuremath{\mathsf{Serializable}\ #1}}
+
+\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{s} #2}}
+\newcommand{\hsseq}[3]{\ensuremath{#1 \parallel_{#3} #2}}
+
+%% Visualization of messages/histories
+
+\newcommand*\rdrecsm[1]{
+  \adjustbox{raise=.1ex, trim=2.3pt 0pt 0pt 0pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myred]
+      (char) {\scriptsize\sffamily\bf #1};}}
+}
+\newcommand*\blrecsm[1]{
+  \adjustbox{raise=.1ex, trim=2.3pt 0pt 0pt 0pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myblue]
+      (char) {\scriptsize\sffamily\bf #1};}}
+}
+
+\newcommand*\rdcircf[1]{
+  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myred, text=white]
+      (char) {\tiny\sffamily #1};}}
+}
+\newcommand*\blcircf[1]{
+  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
+    \tikz[baseline=(char.base)]{
+      \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myblue, text=white]
+      (char) {\tiny\sffamily #1};}}
+}
+
+\newcommand{\rdrecmsg}[2]{{\color{myred}\rdrecsm{#1}{\sf #2}}}
+\newcommand{\rdrecmsgsm}[2]{\rdrecmsg{#1}{\small #2}}
+\newcommand{\blrecmsg}[2]{{\color{myblue}\blrecsm{#1}{\sf #2}}}
+\newcommand{\blrecmsgsm}[2]{\blrecmsg{#1}{\small #2}}
+
+\newcommand{\msgsf}[1]{\ensuremath{\textsf{#1}}}
+\newcommand{\msgsfsm}[1]{{\small\ensuremath{\textsf{#1}}}}
+\newcommand{\rdmsg}[1]{{\color{myred}\msgsf{#1}}}
+\newcommand{\rdmsgsm}[1]{{\color{myred}\msgsfsm{#1}}}
+\newcommand{\blmsg}[1]{{\color{myblue}\msgsf{#1}}}
+\newcommand{\blmsgsm}[1]{{\color{myblue}\msgsfsm{#1}}}
+\newcommand{\idmsf}[2]{\idmbuild{#1}{\textsf{#2}}}
+\newcommand{\spredmsg}[3]{\ensuremath{#1 \vdash #2\{#3\}}}
+\newcommand{\predmsg}[2]{\ensuremath{#1\{#2\}}}
+
+\newcommand{\rulelbl}[2]{\ensuremath{#1:(#2)}}
+\newcommand{\rdrulelbl}[2]{{\small\color{myred}\rulelbl{#1}{#2}}}
+\newcommand{\blrulelbl}[2]{{\small\color{myblue}\rulelbl{#1}{#2}}}
+
+%% -- End of Commands

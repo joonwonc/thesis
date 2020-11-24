@@ -1,0 +1,83 @@
+%% Packages --
+
+\usepackage{xcolor}
+\definecolor{mordantred19}{rgb}{0.68, 0.05, 0.0}
+\definecolor{forestgreen}{rgb}{0.13, 0.55, 0.13}
+\definecolor{mediumtealblue}{rgb}{0.0, 0.33, 0.71}
+\definecolor{dimgray}{rgb}{0.41, 0.41, 0.41}
+\definecolor{brickred}{rgb}{0.8, 0.25, 0.33}
+\definecolor{htmlcssgreen}{rgb}{0.0, 0.5, 0.0}
+
+\colorlet{myred}{mordantred19}
+\colorlet{mygreen}{forestgreen}
+\colorlet{myblue}{mediumtealblue}
+\colorlet{mygray}{dimgray}
+
+\usepackage{booktabs}
+\usepackage[labelfont=bf]{caption}
+\usepackage{subcaption}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{semantic}
+\usepackage{stmaryrd}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=brickred,
+  citecolor=htmlcssgreen
+}
+\usepackage{tikz}
+\usetikzlibrary{arrows,decorations.markings}
+\pgfdeclarelayer{bg} % declare background layer
+\pgfsetlayers{bg,main} % set the order of the layers (main is the standard layer)
+
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
+%% \usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{adjustbox}
+\usepackage{ifthen}
+\usepackage{colortbl}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
+  emph={fun, assert, Definition, Rule, rule, Endrule, endrule, using, template, accepts, holding, release, from, me, requires, transition, ltac},
+  emphstyle={\bfseries\color{mygreen}},
+  %% backgroundcolor=\color{backcolour},
+  %% commentstyle=\color{codegreen},
+  %% keywordstyle=\color{magenta},
+  %% numberstyle=\tiny\color{codegray},
+  %% stringstyle=\color{codepurple},
+  breakatwhitespace=false,
+  %% breaklines=true,
+  %% captionpos=b,
+  belowcaptionskip=8pt,
+  keepspaces=true,
+  numbers=left,
+  numbersep=5pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  frame=single,
+  xleftmargin=0.03\columnwidth,
+  xrightmargin=0.03\columnwidth,
+}
+\def\slstinline{\lstinline[basicstyle=\ttfamily\small]}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{definition}[theorem]{Definition}
+
+%% -- End of Packages

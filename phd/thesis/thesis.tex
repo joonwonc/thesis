@@ -23,14 +23,14 @@
 %% \def\all{all}
 %% \ifx\files\all \typeout{Including all files.} \else \typeout{Including only \files.} \includeonly{\files} \fi
 
+\include{packages}
+\include{commands}
+
+\renewcommand{\arraystretch}{1.5}
+
 \begin{document}
 
 \include{cover}
-
-% Some departments (e.g. 5) require an additional signature page.  See
-% signature.tex for more information and uncomment the following line if
-% applicable.
-% \include{signature}
 
 \pagestyle{plain}
 \tableofcontents
@@ -40,5 +40,10 @@
 \listoftables
 
 \maketitle
+
+\include{chap1}
+
+\bibliographystyle{plain}
+\bibliography{bib}
 
 \end{document}

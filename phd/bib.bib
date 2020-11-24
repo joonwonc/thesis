@@ -11,11 +11,12 @@ edition = {5th}
 @INPROCEEDINGS{bluespec,
   author={R. {Nikhil}},
   booktitle={Proceedings. Second ACM and IEEE International Conference on Formal Methods and Models for Co-Design, 2004. MEMOCODE '04.},
-  title={Bluespec System Verilog: efficient, correct {RTL} from high level specifications},
+  title={Bluespec System Verilog: efficient, correct RTL from high level specifications},
   year={2004},
   volume={},
   number={},
   pages={69-70},
+  doi={10.1109/MEMCOD.2004.1459818}
 }
 
 @article{kami,
@@ -37,6 +38,23 @@ edition = {5th}
  publisher = {ACM},
  address = {New York, NY, USA},
  keywords = {formal verification, hardware, proof assistants},
+}
+
+@inproceedings{koika,
+author = {Bourgeat, Thomas and Pit-Claudel, Cl\'{e}ment and Chlipala, Adam and Arvind},
+title = {The Essence of Bluespec: A Core Language for Rule-Based Hardware Design},
+year = {2020},
+isbn = {9781450376136},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3385412.3385965},
+doi = {10.1145/3385412.3385965},
+booktitle = {Proceedings of the 41st ACM SIGPLAN Conference on Programming Language Design and Implementation},
+pages = {243--257},
+numpages = {15},
+keywords = {Semantics, Hardware Description Language, Compiler Correctness},
+location = {London, UK},
+series = {PLDI 2020}
 }
 
 @inproceedings{fesi,
@@ -75,6 +93,19 @@ edition = {5th}
  keywords = {computation sequence, deadlock free, indivisible, interruptible, parallel program, process, reduction, semaphore, verification method},
 }
 
+@InProceedings{equivalence,
+author="Brookes, Stephen D.
+and Rounds, William C.",
+editor="Diaz, Josep",
+title="Behavioural equivalence relations induced by programming logics",
+booktitle="Automata, Languages and Programming",
+year="1983",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="97--108",
+isbn="978-3-540-40038-7"
+}
+
 @book{sz1,
  author = {Bernstein, Philip A. and Hadzilacos, Vassco and Goodman, Nathan},
  title = {Concurrency Control and Recovery in Database Systems},
@@ -96,7 +127,7 @@ edition = {5th}
 @misc{ccbug,
   year = {2013},
   month = {July},
-  title = {A cache coherency bug in {CCI}-400 made the coherence disabled in {S}amsung {G}alaxy {S}4},
+  title = {A cache coherency bug in CCI-400 made the coherence disabled in Samsung Galaxy S4},
   url = {https://www.extremetech.com/computing/162090-samsung-looks-to-correct-past-mistake-with-updated-exynos-5-octa-5420-arm-chip},
 }
 
@@ -106,22 +137,15 @@ edition = {5th}
   year={2016}
 }
 
-@article{Zhang:2019,
-author = {Zhang, Sizhuo and Wright, Andrew and Bourgeat, Thomas},
-title = {Composable Building Blocks to Open Up Processor Design},
-year = {2019},
-issue_date = {May 2019},
-publisher = {IEEE Computer Society Press},
-address = {Washington, DC, USA},
-volume = {39},
-number = {3},
-issn = {0272-1732},
-url = {https://doi.org/10.1109/MM.2019.2910012},
-doi = {10.1109/MM.2019.2910012},
-journal = {IEEE Micro},
-month = may,
-pages = {47--55},
-numpages = {9}
+@INPROCEEDINGS{Zhang:2019,
+  author={S. {Zhang} and A. {Wright} and T. {Bourgeat} and A. {Arvind}},
+  booktitle={2018 51st Annual IEEE/ACM International Symposium on Microarchitecture (MICRO)},
+  title={Composable Building Blocks to Open up Processor Design},
+  year={2018},
+  volume={},
+  number={},
+  pages={68-81},
+  doi={10.1109/MICRO.2018.00015}
 }
 
 @phdthesis{thesis:Zhang:2019,
@@ -146,7 +170,7 @@ pages = {241--252},
 numpages = {12},
 keywords = {multicore, directory-less protocol, simple cache coherence, multiple writers, dynamic write policy, self-invalidation},
 location = {Minneapolis, Minnesota, USA},
-series = {PACT ’12}
+series = {PACT '12}
 }
 
 @inproceedings{Dave:2007,
@@ -167,7 +191,7 @@ series = {PACT ’12}
 
 @inproceedings{Dave:2005,
  author = {Dave, N. and Ng, M. C. and Arvind},
- title = {Automatic Synthesis of Cache-coherence Protocol Processors Using {B}luespec},
+ title = {Automatic Synthesis of Cache-coherence Protocol Processors Using Bluespec},
  booktitle = {Proceedings of the 2Nd ACM/IEEE International Conference on Formal Methods and Models for Co-Design},
  series = {MEMOCODE '05},
  year = {2005},
@@ -201,7 +225,7 @@ isbn="978-3-319-21668-3"
 
 @inproceedings{Chajed:2018,
  author = {Chajed, Tej and Kaashoek, M. Frans and Lampson, Butler and Zeldovich, Nickolai},
- title = {Verifying Concurrent Software Using Movers in {CSPEC}},
+ title = {Verifying Concurrent Software Using Movers in CSPEC},
  booktitle = {Proceedings of the 12th USENIX Conference on Operating Systems Design and Implementation},
  series = {OSDI'18},
  year = {2018},
@@ -217,7 +241,7 @@ isbn="978-3-319-21668-3"
 
 @article{Hawblitzel:2017,
  author = {Hawblitzel, Chris and Howell, Jon and Kapritsos, Manos and Lorch, Jacob R. and Parno, Bryan and Roberts, Michael L. and Setty, Srinath and Zill, Brian},
- title = {{I}ron{F}leet: Proving Safety and Liveness of Practical Distributed Systems},
+ title = {IronFleet: Proving Safety and Liveness of Practical Distributed Systems},
  journal = {Commun. ACM},
  issue_date = {July 2017},
  volume = {60},
@@ -282,7 +306,7 @@ url={http://hdl.handle.net/1721.1/106096}
 @misc{cachebench,
   year = {2003},
   month = {May},
-  title = {Cache Performance for {SPEC} {CPU}2000 Benchmarks},
+  title = {Cache Performance for SPEC CPU2000 Benchmarks},
   url = {https://research.cs.wisc.edu/multifacet/misc/spec2000cache-data},
 }
 
@@ -295,7 +319,7 @@ url={http://hdl.handle.net/1721.1/106096}
 
 @inproceedings{Zhao:2010,
 author = {Zhao, Li and Iyer, Ravi and Makineni, Srihari and Newell, Don and Cheng, Liqun},
-title = {{NCID}: A Non-Inclusive Cache, Inclusive Directory Architecture for Flexible and Efficient Cache Hierarchies},
+title = {NCID: A Non-Inclusive Cache, Inclusive Directory Architecture for Flexible and Efficient Cache Hierarchies},
 year = {2010},
 isbn = {9781450300445},
 publisher = {Association for Computing Machinery},
@@ -330,7 +354,7 @@ series = {ASIA CCS '16}
 @misc{intel-non-inclusive,
   year = {2018},
   month = {December},
-  title = {6th {G}en {I}ntel\textsuperscript{\textregistered} {C}ore\textsuperscript{\texttrademark} {X}-{S}eries {P}rocessor {F}amily {D}atasheet, Vol. 1},
+  title = {6th Gen Intel\textsuperscript{\textregistered} Core\textsuperscript{\texttrademark} X-Series Processor Family Datasheet, Vol. 1},
   url = {https://www.intel.com/content/www/us/en/products/processors/core/6th-gen-x-series-datasheet-vol-1.html},
 }
 
@@ -354,7 +378,7 @@ series = {ASIA CCS '16}
 
 @inproceedings{murphi:Dill:1996,
  author = {Dill, David L.},
- title = {The {M}urphi Verification System},
+ title = {The Murphi Verification System},
  booktitle = {Proceedings of the 8th International Conference on Computer Aided Verification},
  series = {CAV '96},
  year = {1996},
@@ -369,7 +393,7 @@ series = {ASIA CCS '16}
 
 @book{tla:Lamport:2002,
  author = {Lamport, Leslie},
- title = {Specifying Systems: The {TLA}+ Language and Tools for Hardware and Software Engineers},
+ title = {Specifying Systems: The TLA+ Language and Tools for Hardware and Software Engineers},
  year = {2002},
  isbn = {032114306X},
  publisher = {Addison-Wesley Longman Publishing Co., Inc.},
@@ -378,7 +402,7 @@ series = {ASIA CCS '16}
 
 @article{Joshi:2003,
  author = {Joshi, Rajeev and Lamport, Leslie and Matthews, John and Tasiran, Serdar and Tuttle, Mark and Yu, Yuan},
- title = {Checking Cache-Coherence Protocols with {TLA}+},
+ title = {Checking Cache-Coherence Protocols with TLA+},
  journal = {Form. Methods Syst. Des.},
  issue_date = {March 2003},
  volume = {22},
@@ -451,13 +475,15 @@ series = {ASIA CCS '16}
  keywords = {cache coherence protocols, design automation, hardware synthesis},
 }
 
-@inproceedings{Oswald:2020,
- author = {Oswald, Nicolai and Nagarajan, Vijay and Sorin, Daniel J.},
- title = {{H}iera{G}en: Automatically Generating Hierarchical Cache Coherence Protocols from Atomic Specifications},
- booktitle = {Proceedings of the 47th Annual International Symposium on Computer Architecture},
- series = {ISCA '20},
- year = {2020},
- note = {to appear},
+@INPROCEEDINGS{Oswald:2020,
+  author={N. {Oswald} and V. {Nagarajan} and D. J. {Sorin}},
+  booktitle={2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)},
+  title={HieraGen: Automated Generation of Concurrent, Hierarchical Cache Coherence Protocols},
+  year={2020},
+  volume={},
+  number={},
+  pages={888--899},
+  doi={10.1109/ISCA45697.2020.00077}
 }
 
 @phdthesis{Chen:2008,
@@ -490,36 +516,13 @@ note = {AAI3322423}
  keywords = {Abstraction/refinement, Assume-guarantee reasoning, Explicit state model checking, Hierarchical cache coherence protocols},
 }
 
-@inproceedings{smv:Jhala:2001,
-author="Jhala, Ranjit and McMillan, Kenneth L.",
-editor="Berry, G{\'e}rard
-and Comon, Hubert
-and Finkel, Alain",
-title="Microarchitecture Verification by Compositional Model Checking",
-bookTitle="Computer Aided Verification: 13th International Conference, Paris, France, July 18--22, 2001 Proceedings",
-year="2001",
-publisher="Springer",
-address="Berlin, Heidelberg",
-pages="396--410",
-isbn="978-3-540-44585-2",
-doi="10.1007/3-540-44585-4_40",
-url="http://dx.doi.org/10.1007/3-540-44585-4_40"
-}
-
-@inproceedings{smv:Lungu:2007,
- author = {Lungu, Anita and Sorin, Daniel J.},
- title = {Verification-Aware Microprocessor Design},
- booktitle = {Proceedings of the 16th International Conference on Parallel Architecture and Compilation Techniques},
- series = {PACT '07},
- year = {2007},
- isbn = {0-7695-2944-5},
- pages = {83--93},
- numpages = {11},
- url = {http://dx.doi.org/10.1109/PACT.2007.79},
- doi = {10.1109/PACT.2007.79},
- acmid = {1299112},
- publisher = {IEEE Computer Society},
- address = {Washington, DC, USA},
+@book{smv:McMillan:1993,
+author = {McMillan, Kenneth L.},
+title = {Symbolic Model Checking},
+year = {1993},
+isbn = {0792393805},
+publisher = {Kluwer Academic Publishers},
+address = {USA}
 }
 
 @inproceedings{Opeoluwa:2016,
@@ -553,11 +556,109 @@ location = {Cambridge, Massachusetts},
 series = {MICRO-50 '17}
 }
 
+@InProceedings{McMillan:1999,
+author="McMillan, K. L.",
+editor="Pierre, Laurence and Kropf, Thomas",
+title="Verification of Infinite State Systems by Compositional Model Checking",
+booktitle="Correct Hardware Design and Verification Methods",
+year="1999",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="219--237",
+isbn="978-3-540-48153-9"
+}
+
+@inproceedings{flow:Talupur:2008,
+author = {Talupur, Murali and Tuttle, Mark R.},
+title = {Going with the Flow: Parameterized Verification Using Message Flows},
+year = {2008},
+isbn = {9781424427352},
+publisher = {IEEE Press},
+booktitle = {Proceedings of the 2008 International Conference on Formal Methods in Computer-Aided Design},
+articleno = {10},
+numpages = {8},
+location = {Portland, Oregon},
+series = {FMCAD '08}
+}
+
+@INPROCEEDINGS{flow:OLeary:2009,
+author={J. {O'Leary} and M. {Talupur} and M. R. {Tuttle}},
+booktitle={2009 Formal Methods in Computer-Aided Design},
+title={Protocol verification using flows: An industrial experience},
+year={2009},
+volume={},
+number={},
+pages={172-179},
+doi={10.1109/FMCAD.2009.5351126}}
+
+@InProceedings{flow:Sethi:2014,
+author="Sethi, Divjyot and Talupur, Muralidhar and Malik, Sharad",
+editor="Cassez, Franck and Raskin, Jean-Fran{\c{c}}ois",
+title="Using Flow Specifications of Parameterized Cache Coherence Protocols for Verifying Deadlock Freedom",
+booktitle="Automated Technology for Verification and Analysis",
+year="2014",
+publisher="Springer International Publishing",
+address="Cham",
+pages="330--347",
+isbn="978-3-319-11936-6"
+}
+
+@inproceedings{Zhang:2010,
+author = {Zhang, Meng and Lebeck, Alvin R. and Sorin, Daniel J.},
+title = {Fractal Coherence: Scalably Verifiable Cache Coherence},
+year = {2010},
+isbn = {9780769542997},
+publisher = {IEEE Computer Society},
+address = {USA},
+url = {https://doi.org/10.1109/MICRO.2010.11},
+doi = {10.1109/MICRO.2010.11},
+booktitle = {Proceedings of the 2010 43rd Annual IEEE/ACM International Symposium on Microarchitecture},
+pages = {471--482},
+numpages = {12},
+keywords = {cache coherence, formal verification, multicore},
+series = {MICRO '43}
+}
+
+@INPROCEEDINGS{Zhang:2014,
+  author={M. {Zhang} and J. D. {Bingham} and J. {Erickson} and D. J. {Sorin}},
+  booktitle={2014 IEEE 20th International Symposium on High Performance Computer Architecture (HPCA)},
+  title={PVCoherence: Designing flat coherence protocols for scalable verification},
+  year={2014},
+  volume={},
+  number={},
+  pages={392-403},
+  doi={10.1109/HPCA.2014.6835949}}
+
+@inproceedings{McMillan:2001,
+author = {McMillan, Kenneth L.},
+title = {Parameterized Verification of the FLASH Cache Coherence Protocol by Compositional Model Checking},
+year = {2001},
+isbn = {3540425411},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+booktitle = {Proceedings of the 11th IFIP WG 10.5 Advanced Research Working Conference on Correct Hardware Design and Verification Methods},
+pages = {179--195},
+numpages = {17},
+series = {CHARME '01}
+}
+
+@InProceedings{Chou:2004,
+author="Chou, Ching-Tsun and Mannava, Phanindra K. and Park, Seungjoon",
+editor="Hu, Alan J. and Martin, Andrew K.",
+title="A Simple Method for Parameterized Verification of Cache Coherence Protocols",
+booktitle="Formal Methods in Computer-Aided Design",
+year="2004",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="382--398",
+isbn="978-3-540-30494-4"
+}
+
 %% Cache-coherence verification: theorem proving
 
 @inproceedings{Park:1996,
  author = {Park, Seungjoon and Dill, David L.},
- title = {Verification of {FLASH} Cache Coherence Protocol by Aggregation of Distributed Transactions},
+ title = {Verification of FLASH Cache Coherence Protocol by Aggregation of Distributed Transactions},
  booktitle = {Proceedings of the Eighth Annual ACM Symposium on Parallel Algorithms and Architectures},
  series = {SPAA '96},
  year = {1996},
@@ -574,7 +675,7 @@ series = {MICRO-50 '17}
 
 @inproceedings{Moore:1998,
  author = {Moore, J. Strother},
- title = {An {ACL}2 Proof of Write Invalidate Cache Coherence},
+ title = {An ACL2 Proof of Write Invalidate Cache Coherence},
  booktitle = {Proceedings of the 10th International Conference on Computer Aided Verification},
  series = {CAV '98},
  year = {1998},
@@ -606,7 +707,7 @@ isbn="978-3-319-21668-3"
 @INPROCEEDINGS{Li:2018,
 author={Y. {Li} and J. {Cao} and K. {Duan}},
 booktitle={2018 IEEE International Conference on Software Quality, Reliability and Security (QRS)},
-title={An Automatic Parameterized Verification of {FLASH} Cache Coherence Protocol},
+title={An Automatic Parameterized Verification of FLASH Cache Coherence Protocol},
 year={2018},
 volume={},
 number={},
@@ -650,4 +751,16 @@ month={July},}
  acmid = {3077651},
  publisher = {FMCAD Inc},
  address = {Austin, TX},
+}
+
+@InProceedings{ivy:McMillan:2020,
+author="McMillan, Kenneth L. and Padon, Oded",
+editor="Lahiri, Shuvendu K. and Wang, Chao",
+title="Ivy: A Multi-modal Verification Tool for Distributed Algorithms",
+booktitle="Computer Aided Verification",
+year="2020",
+publisher="Springer International Publishing",
+address="Cham",
+pages="190--202",
+isbn="978-3-030-53291-8"
 }

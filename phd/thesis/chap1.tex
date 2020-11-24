@@ -1,0 +1,272 @@
+\chapter{Protocol Transition Systems and Serializability}
+
+\section{Protocol Transition Systems}
+\label{sec-trs}
+
+\paragraph{Notations.}
+Throughout the thesis, we will use several notations for lists (sequences) and finite maps.
+An overline (\eg{} $\listof{l}$) denotes a list.
+$\llistof{l}$ denotes a list of lists.
+$\listnil{}$, $(\listcons{\listof{l}}{e})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
+$(\listdisj{\listof{l_1}}{\listof{l_2}})$ denote nil, single-element append, general append, subtraction, and disjointness of lists, respectively.
+We use the same operation $(+)$ for the single-element and general append.
+$\listconcat{\llistof{l}}$ flattens the list of lists $\llistof{l}$ with repeated concatenation.
+$\sizeof{\listof{l}}$ is the length of a list.
+
+Regarding a list of key-value pairs as a finite map, we override notations for lists.
+For example, $(\mapupds{M}{\listof{l}})$ updates multiple key-value pairs in a finite map $M$.
+Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single update for simplicity.
+
+We will use $\tuple{\cdot}$ to denote a struct and use a name (\eg{} $s.\textsf{fd}$) to access a field value.
+$(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{List.map}\ (\lambda s.\; s.\textsf{fd})\ \listof{s})$.
+
+\subsection{Syntax}
+\label{sec-syntax}
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{ID} & \msgid{} \in \hidxt{} \\
+        \textrm{Value} & \msgval{} \in \hvaluet{} \\
+        \textrm{Message} & m ::= \msgbuild{\msgty}{\msgid}{\msgval} \in \hmsgt{} \triangleq \boolt \ast \hidxt \ast \hvaluet \\
+        \textrm{Index} & i \in \hidxt{}\ \textrm{(for channels, objects, etc.)} \\
+        \textrm{Channel Index \& Message} & im ::= \idmbuild{i}{m} \in \hidmt \triangleq \hidxt \ast \hmsgt \\
+        \textrm{Object state} & o \in \hostt{} \\
+        \textrm{Rule precondition} & \ruleprec{} \in \hostt \times \listtof{\hidmt} \to \propt \\
+        \textrm{Rule transition} & \ruletrs{} \in \hostt \times \listtof{\hidmt} \to \hostt \times \listtof{\hidmt}\\
+      \end{array}
+    \end{math}\\
+    \hline
+    \begin{math}
+      \begin{array}{rl}
+        \textrm{Rule} & r ::= \tuple{i, \ruleprec{}, \ruletrs{}} \\
+        \textrm{Object} & O ::= \tuple{i, \objInit{o}, \listof{r}} \\
+        \textrm{System} & S ::= \hsyss{\listof{O}}{i} \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Protocol transition system}
+  \label{fig-trs-system}
+\end{figure}
+
+\hemiola{} uses formal protocol transition systems as an underlying basis for reasoning about cache-coherence protocols.
+The protocol transition systems faithfully formalize conventional message-passing systems, but they are more restrictive to exclude some behaviors that cannot happen in hardware.
+We will see such restrictions in detail while explaining the semantics in \autoref{sec-semantics}.
+
+\autoref{fig-trs-system} explains what such systems are.
+A \emph{message} $m$ is a communication unit, consisting of a Boolean message type, a message ID, and a value.
+A message type is false (true) for a request (response), respectively.
+A message ID is an enumeration of message kinds.
+We use \emph{value} to refer to each line in a cache or a memory.
+Note that a struct sometimes has an \emph{index} to distinguish it from the other components.
+A pair \idmbuild{i}{m} is used to represent a message $m$ residing in a channel with an index $i$.
+
+Rules make local state transitions within an object.
+A rule $r$ is a struct composed of its rule index, a precondition (\ruleprec{}), and a transition function (\ruletrs{}).
+Each rule has a unique index within an object.
+A precondition \ruleprec{} takes two arguments, a current object state and input messages (as a list of pairs \idmbuild{i}{m}), and decides whether the rule can be executed or not with the current state.
+A transition function takes the same arguments but returns the next object state and output messages (also as a list of \idmbuild{i}{m}).
+Note that our formalization of the protocol transition system is shallowly embedded in Coq, \eg{} precondition and transition definitions use native Coq function types.
+
+An object $O$ contains its object index (unique within a system), an initial state ($\objInit{o}$), and rules (\listof{r}) that make local state transitions within the object.
+The highest-level component is a system $S$, which contains information about objects and channels.
+It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
+The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
+It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system, \ie{} the interface of the cache-coherence protocol with processor cores, which will be explained in \autoref{sec-semantics}.
+
+\subsection{Semantics}
+\label{sec-semantics}
+
+\subsubsection{State-Transition Steps}
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \multicolumn{1}{|l|}{\textbf{Types:}} \\
+    \begin{tabular}{lr}
+      $\textrm{Message States}\ \ M \in \hidxt{} \to \listtof{\hmsgt}$ &
+      $\textrm{State}\ \ s \in \hstt{} ::= \tuple{\listof{o}, M}$ \\
+      \multicolumn{2}{l}{$\textrm{Label}\ \ l ::= \lblEmpty{}\; |\; \lblIns{\listof{im}}\; |\; \lblOuts{\listof{im}}\; |\; \lblInt{\idxOf{O}}{\idxOf{r}}{\listof{im}}{\listof{im}}$} \\
+    \end{tabular}\\
+    \multicolumn{1}{|l|}{\textbf{Step:}} \\
+    \begin{math}
+      \begin{array}{c}
+        \inference[StepSilent:]{}{\semstep{S}{s}{\lblEmpty{}}{s}}\bigskip\\
+        \inference[StepIns:]{\listof{im} \neq \listnil
+          & \listof{\idxOf{im}} \subseteq \hsysRqA{S}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblIns{\listof{im}}}
+          {\hst{\listof{o}}{\enqMsgs{M}{\listof{im}}}}}\bigskip \\
+        \inference[StepOuts:]{\listof{im} \neq \listnil
+          & \listof{im} \subseteq \heads{M}
+          & \listof{\idxOf{im}} \subseteq \hsysRsA{S}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblOuts{\listof{im}}}
+          {\hst{\listof{o}}{\deqMsgs{M}{\listof{im}}}}}\bigskip \\
+        \inference[StepInt:]{S = \hsyss{\listof{O}}{i}
+          & O \in S.\listof{O}
+          & r \in O.\listof{r}\smallskip \\
+          \midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}
+          & \listof{o}[\idxOf{O}] = o_1
+          & \msgIns{im} \subseteq \heads{M}\smallskip \\
+          r.p\enspace o_1\ \msgIns{im}
+          & r.t\ o_1\ \msgIns{im} = (o_2, \msgOuts{im})\smallskip \\
+          \midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}
+          & \disj{\midxIns{im}}{\midxOuts{im}}}{\semstep{S}
+          {\hst{\listof{o}}{M}}
+          {\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{im}}{\msgOuts{im}}}
+          {\hstm{\mapupd{\listof{o}}{\idxOf{O}}{o_2}}{\enqMsgs{\deqMsgs{M}{\msgIns{im}}}{\msgOuts{im}}}}}\medskip \\
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Step semantics in protocol transition systems}
+  \label{fig-trs-semantics-steps}
+\end{figure}
+
+\autoref{fig-trs-semantics-steps} describes the semantics for state-transition steps in a protocol transition system.
+A state transition (step) happens by a rule that takes input messages, makes an object-state transition, and generates output messages.
+The semantics for a step is presented as a judgment \semstep{S}{s_0}{l}{s_1}, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $l$ is a label generated by the state transition.
+The state of a system (in domain $\hstt{}$) is a pair of object states and message states.
+Object states are represented in a finite map from object indices to object states.
+Message states are also represented in a finite map from channel indices to ordered queues of messages.
+
+From now on, we assume that all the input and output messages used in the step definitions do not share the same channel, \ie{} $(\nodup{\listof{\idxOf{im}}})$.
+In other words, while taking inputs and generating outputs, each step case never accesses a channel twice.
+It may be possible (and practical) in conventional message-passing systems to dequeue multiple messages from the same queue or to enqueue multiple ones to the same queue.
+In hardware, however, this is never a practical usage of ordered channels (FIFOs).
+Particularly, in cache-coherence protocols, we cannot imagine any case accessing the same FIFO at least twice in the same clock cycle.
+
+Rule [StepSilent] represents the case where no state transition happens in the current step; an empty label (\lblEmpty{}) is generated in this case.
+A system may accept input messages from the external world.
+[StepIns] describes this case, where the external input messages (\listof{im}) should not be empty ($\listof{im} \neq \listnil$), and channels of the messages are valid ($\listof{\idxOf{im}} \subseteq \hsysRqA{S}$), \ie{} the input messages are all put to external-request channels.
+An external-inputs label $(\lblIns{\listof{im}})$ is generated in this case.
+[StepOuts] describes the opposite case, for output messages being released to the external world.
+In this case, in addition to the [StepIns] case, each output message should be in the head (the first element) of its residing channel ($\listof{im} \subseteq \heads{M}$).
+
+Lastly, [StepInt] deals with a state transition by a rule ($r$) in an object ($O$).
+It nondeterministically chooses an object and a rule in the object, checks that the precondition holds ($r.p\enspace (o_1, \msgIns{im})$), and applies the transition to update the state of the system ($r.t\enspace (o_1, \msgIns{im}) = (o_2, \msgOuts{im})$).
+An internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{im}}{\msgOuts{im}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
+Each input message should be from either an internal channel or an external-request one ($\midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}$) and should be the first element of the channel ($\msgIns{im} \subseteq \heads{M}$).
+On contrary to the input messages, each output message should be enqueued to either an internal channel or an external-response one ($\midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}$).
+Lastly, the channels of the input and output messages should be disjoint to each other ($\disj{\midxIns{im}}{\midxOuts{im}}$).
+Note that the semantics is based on ordered channels, so messages are \emph{enqueued} and \emph{dequeued} in each state-transition case.
+We use notations $\enqMsgs{M}{\listof{im}}$ and $\deqMsgs{M}{\listof{im}}$ for such operations.
+
+%%       \multicolumn{1}{l}{\textbf{(c) Atomic histories:}} \\
+%%       \begin{math}
+%%         \begin{array}{c}
+%%           \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{im}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{im}}}{\listof{\amsge{im}}}}}{28}{\listof{\amsge{im}}}}\\[15pt]
+%%           \inference[AtomicCont:]{\atomic{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}
+%%             & \msgIns{n} \neq \listnil
+%%             & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\listof{l}}{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\
+%%           \mbox{}\vspace{-5pt} %% padding
+%%         \end{array}
+%%       \end{math}\\
+%%       \hline
+%%       \multicolumn{1}{l}{\textbf{(d) Transactions:}} \\
+%%       \begin{math}
+%%         \arraycolsep=5pt
+%%         \begin{array}{cc}
+%%           \begin{array}{c}
+%%             \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\[5pt]
+%%             \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{im}}}}} \\[5pt]
+%%             \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{im}}}}} \\[5pt]
+%%             \mbox{}\vspace{-5pt} %% padding
+%%           \end{array} &
+%%           \begin{array}{l}
+%%             \textrm{\footnotesize TrsAtomic:} \\
+%%             \inference[]{\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}}{\trsn{S}{\listof{l}}}
+%%           \end{array} \\
+%%         \end{array}
+%%       \end{math}\\
+%%     \end{tabular}\\
+%%     \hline
+%%   \end{tabular}
+%%   \caption{Steps, behaviors, atomic histories, and transactions in protocol transition systems}
+%%   \label{fig-trs-semantics}
+%% \end{figure}
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \multicolumn{1}{|l|}{\textbf{Steps and behaviors:}} \\
+    \begin{math}
+      \arraycolsep=10pt
+      \begin{array}{cc}
+        \inference[StepsNil:]{}{\semsteps{S}{s}{\listnil{}}{s}}
+        & \inference[StepsCons:]{\semsteps{S}{s_0}{\listof{l}}{s_1}
+          & \semstep{S}{s_1}{l_1}{s_2}}{\semsteps{S}{s_0}{\listcons{\listof{l}}{l_1}}{s_2}}\medskip \\
+      \end{array}
+    \end{math}\\
+    \begin{tabular}{c}
+      \inference[Behavior:]{\semsteps{S}{\sysInit{S}}{\listof{l}}{s}}{\sembeh{S}{\behOf{\listof{l}}}}\medskip\\
+    \end{tabular}\\
+    \hline
+  \end{tabular}
+  \caption{Multiple transition steps and behaviors in protocol transition systems}
+  \label{fig-trs-semantics-steps-beh}
+\end{figure}
+
+The step semantics is naturally lifted to one for multiple steps, as shown in \autoref{fig-trs-semantics-steps-beh}.
+It is presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $\listof{l}$ is a \emph{sequence of labels} generated by executions of the steps.
+[StepsNil] serves the case where no state transitions happen, and no labels are generated in this case.
+[StepsCons] is a natural inductive constructor that combines previous steps (\semsteps{S}{s_0}{\listof{l}}{s_1}) and a new one (\semstep{S}{s_1}{l_1}{s_2}).
+The label by the new step is appended to the last of the label sequence of the previous steps.
+
+Throughout the thesis, we will now call a sequence of labels a \emph{history}.
+We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds, where $\sysInit{S}$ is the initial state of the system $S$, constructed by composing all initial object states.
+We use a simpler notation $\semrch{S}{s}$ for reachable states.
+We also say that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
+We write $\semleg{S}{\listof{l}}$ to assert that a history is legal.
+
+\subsubsection{Remarks on the transition steps in hardware}
+
+\todo{Move to the Background section, maybe?}
+
+%% It is worth discussing whether the transition-step definitions defined so far are appropriate for describing behaviors in hardware.
+%% While only a single rule is executed and makes a state transition,
+
+It is worth noting that we take for granted that rules are executed atomically, even when multiple rules are executed at the same time.
+Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serialization (also known as ``one-rule-at-a-time semantics'') for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
+
+\subsubsection{Behaviors and correctness}
+
+A system $S$ has a behavior $\behOf{\listof{l}}$, denoted as \sembeh{S}{\behOf{\listof{l}}}, if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior] in \autoref{fig-trs-semantics-steps-beh}).
+Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
+We call such a sequence of labels a \emph{trace}.
+In other words, a trace only consists of external-inputs and external-outputs labels.
+
+Finally we define trace refinement as a notion of correctness in protocol transition systems:
+\begin{definition}[Trace Refinement]
+  A system $I$ (``implementation'') trace-refines another system $S$ (``specification''), written as $\refines{I}{S}$, iff every trace of $I$ is also a trace of $S$:
+  \begin{displaymath}
+    \refines{I}{S} \triangleq \forall \listof{t}.\; \sembeh{I}{\listof{t}} \to \sembeh{S}{\listof{t}}.
+  \end{displaymath}
+\end{definition}
+
+Trace refinement is one of the well-known correctness criteria to claim that the external (observable) behavior of a given implementation is within the behavior boundary of the specification.
+In other words, by proving trace refinement, we can say that the implementation does not go wrong in terms of the specification.
+
+How do we prove trace refinement for a given implementation and a spec?
+It is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states:
+\begin{definition}[Simulation]
+  We call $(\sim): \hstt{} \times \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff 1) the relation holds for the initial states and 2) a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
+  \begin{displaymath}
+    \begin{array}{rl}
+      1) & \sysInit{I} \sim \sysInit{S},\\
+      2) & \forall s_0, s_1, l.\; \semstep{I}{s_0}{l}{s_1} \to \forall t_0.\; s_0 \sim t_0 \to \exists t_1.\; \semstep{S}{t_0}{l}{t_1} \wedge s_1 \sim t_1.
+    \end{array}
+  \end{displaymath}
+\end{definition}
+
+It is also well-known that simulation directly implies trace refinement~\cite{equivalence}, which is proven simply by induction on state-transition steps:
+\begin{theorem}[Simulation implies trace refinement]
+  If there is a simulation $(\sim)$ between two systems $I$ and $S$, then \refines{I}{S}.
+\end{theorem}
