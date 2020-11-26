@@ -1,7 +1,23 @@
-\chapter{Protocol Transition Systems and Serializability}
+\part{Protocol Transition Systems and Serializability}
 
-\section{Protocol Transition Systems}
+\chapter{Protocol Transition Systems}
 \label{sec-trs}
+
+The very first task to verify cache-coherence protocols in a theorem prover is to define an underlying state-transition system formally.
+Formalization of such a system typically consists of its formal syntax and semantics.
+Additionally, if we want to verify a program defined in the system, a correctness criterion should be established as well.
+In this chapter, we provide the formal definition of the state-transition system for cache-coherence protocols, called \emph{protocol transition systems}.
+
+\section{Cache-Coherence Protocol as a Message-Passing System}
+
+%% It is worth discussing whether the transition-step definitions defined so far are appropriate for describing behaviors in hardware.
+%% While only a single rule is executed and makes a state transition,
+
+It is worth noting that we take for granted that rules are executed atomically, even when multiple rules are executed at the same time.
+Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serialization (also known as ``one-rule-at-a-time semantics'') for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
+
+\section{Syntax}
+\label{sec-syntax}
 
 \paragraph{Notations.}
 Throughout the thesis, we will use several notations for lists (sequences) and finite maps.
@@ -19,9 +35,6 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
 
 We will use $\tuple{\cdot}$ to denote a struct and use a name (\eg{} $s.\textsf{fd}$) to access a field value.
 $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{List.map}\ (\lambda s.\; s.\textsf{fd})\ \listof{s})$.
-
-\subsection{Syntax}
-\label{sec-syntax}
 
 \begin{figure}[t]
   \centering
@@ -78,10 +91,10 @@ It consists of objects (\listof{O}) and channel indices for internal messages (\
 The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
 It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system, \ie{} the interface of the cache-coherence protocol with processor cores, which will be explained in \autoref{sec-semantics}.
 
-\subsection{Semantics}
+\section{Semantics}
 \label{sec-semantics}
 
-\subsubsection{State-Transition Steps}
+\subsection{State-Transition Steps}
 
 \begin{figure}[t]
   \centering
@@ -226,17 +239,7 @@ We use a simpler notation $\semrch{S}{s}$ for reachable states.
 We also say that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
 We write $\semleg{S}{\listof{l}}$ to assert that a history is legal.
 
-\subsubsection{Remarks on the transition steps in hardware}
-
-\todo{Move to the Background section, maybe?}
-
-%% It is worth discussing whether the transition-step definitions defined so far are appropriate for describing behaviors in hardware.
-%% While only a single rule is executed and makes a state transition,
-
-It is worth noting that we take for granted that rules are executed atomically, even when multiple rules are executed at the same time.
-Here we appeal to a tradition of hardware-description approaches that guarantee rule-level serialization (also known as ``one-rule-at-a-time semantics'') for this kind of design~\cite{fesi,kami,Murali:2015,Dave:2005,Dave:2007}.
-
-\subsubsection{Behaviors and correctness}
+\subsection{Behaviors and correctness}
 
 A system $S$ has a behavior $\behOf{\listof{l}}$, denoted as \sembeh{S}{\behOf{\listof{l}}}, if there exists an execution of steps that generates $\listof{l}$, starting with the initial state of $S$ ([Behavior] in \autoref{fig-trs-semantics-steps-beh}).
 Here the $\behOf{\cdot}$ operation filters out silent ($l_\epsilon$) and internal ($l_{\textrm{int}}$) labels so only the external parts remain.
@@ -257,7 +260,7 @@ In other words, by proving trace refinement, we can say that the implementation 
 How do we prove trace refinement for a given implementation and a spec?
 It is usually proven by establishing a \emph{simulation} relation between the implementation and the spec states:
 \begin{definition}[Simulation]
-  We call $(\sim): \hstt{} \times \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff 1) the relation holds for the initial states and 2) a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
+  We call a relation between two states $(\sim): \hstt{} \times \hstt{} \to \propt{}$ a simulation between the systems $I$ and $S$ iff 1) the relation holds for the initial states and 2) a step in $S$ exists for every step in $I$, which generates the same external label and preserves the relation:
   \begin{displaymath}
     \begin{array}{rl}
       1) & \sysInit{I} \sim \sysInit{S},\\
@@ -270,3 +273,22 @@ It is also well-known that simulation directly implies trace refinement~\cite{eq
 \begin{theorem}[Simulation implies trace refinement]
   If there is a simulation $(\sim)$ between two systems $I$ and $S$, then \refines{I}{S}.
 \end{theorem}
+
+\chapter{Serializability in Protocol Transition Systems}
+\label{sec-sz-in-hemiola}
+
+\section{Cache-Coherence Protocol as a Distributed-System Protocol}
+
+\section{From Atomic Histories to Serializability}
+
+\subsection{Atomic histories}
+
+\subsection{Transactions}
+
+\subsection{Sequential histories and serializability}
+
+\section{Predicate Messages in Atomic Histories}
+
+\subsection{Invariants and predicate messages}
+
+\subsection{Predicate messages in atomic histories}
