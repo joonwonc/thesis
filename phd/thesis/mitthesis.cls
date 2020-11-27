@@ -42,7 +42,7 @@
 %
 %Revision 1.2  92/04/22  13:12:02  epeisach
 %Fixes for 1991 course 6 requirements
-%Phrase "and to grant others the right to do so" has been added to 
+%Phrase "and to grant others the right to do so" has been added to
 %permission clause
 %Second copy of abstract is not counted as separate pages so numbering works
 %out
@@ -52,7 +52,7 @@
 
 %
 % LaTeX format for theses at MIT
-% Based on "Specifications for Thesis Preparation" 
+% Based on "Specifications for Thesis Preparation"
 
 % `vi' and `upcase' options by Krishna Sethuraman - krishna@athena.mit.edu
 % Margins and heading types by Peter Nuth  - nuth@ai.mit.edu
@@ -64,17 +64,17 @@
 %  for dull, boring thesis format:
 %	\documentclass[12pt]{mitthesis}
 %       \pagestyle{plain}
-% OR for fast drafts: 
+% OR for fast drafts:
 %	\documentclass[11pt,singlespace,draft]{mitthesis}
 %	\pagestyle{drafthead}
 % OR for Tech Reports:
-%	\documentclass[12pt,twoside]{mitthesis}	
+%	\documentclass[12pt,twoside]{mitthesis}
 %	\pagestyle{headings}
 % OR
 %  some other combination...
 %
 %%%% New options:
-% 
+%
 % Option `twoside':
 %   Good for producing Tech Reports.
 %   The default is single-sided printing, which is what M.I.T. wants on the
@@ -85,13 +85,13 @@
 %   Double-spaced theses are the default.
 %   That is what M.I.T. asks for in the formal specifications.
 %
-% 	Note that MIT does not REQUIRE all theses to be double-spaced anymore.
-% 	Someone in the library system said that it's OK to be single-spaced.
-% 	(Regardless of what the specs. say...)
-%   To get singlespacing in an area - Use  the 'singlespace' environment. 
+%       Note that MIT does not REQUIRE all theses to be double-spaced anymore.
+%       Someone in the library system said that it's OK to be single-spaced.
+%       (Regardless of what the specs. say...)
+%   To get singlespacing in an area - Use  the 'singlespace' environment.
 %
 % Option `draft':
-%   Puts `overfull' boxes at the end of lines that are too long. 
+%   Puts `overfull' boxes at the end of lines that are too long.
 %
 % Pagestyle `drafthead':
 %   Puts the date and the label ``*DRAFT*'' in the footer.
@@ -101,25 +101,25 @@
 %%%% Parameters to initialize for boilerplate page:
 %
 %	\title{Mixed Circular Cylindrical Shells}
-% 	\author{J. Casey Salas}
-% 	\prevdegrees{B.S., University of California (1978) \\
+%       \author{J. Casey Salas}
+%       \prevdegrees{B.S., University of California (1978) \\
 %		     S.M., Massachusetts Institute of Technology (1981)}
-% 	\department{Department of Electrical Engineering and Computer Science}
-% 	\degree{Doctor of Philosophy}
+%       \department{Department of Electrical Engineering and Computer Science}
+%       \degree{Doctor of Philosophy}
 %% If the thesis is for two degrees simultaneously, list them both
 %% separated by \and like this:
-% 	\degree{Doctor of Philosophy \and Master of Science}
-% 	\degreemonth{February}
-% 	\degreeyear{1987}
-% 	\thesisdate{December 10, 1986}
+%       \degree{Doctor of Philosophy \and Master of Science}
+%       \degreemonth{February}
+%       \degreeyear{1987}
+%       \thesisdate{December 10, 1986}
 %% If the thesis is copyright by the Institute, leave this line out and
 %% the standard copyright line will be used instead.
-% 	\copyrightnotice{J. Casey Salas, 1986}
+%       \copyrightnotice{J. Casey Salas, 1986}
 %% If there is more than one supervisor, use the \supervisor command
 %% once for each.
-% 	\supervisor{John D. Galli}{Director, Sound Instrument Laboratory}
+%       \supervisor{John D. Galli}{Director, Sound Instrument Laboratory}
 %% This is the department committee chairman, not the thesis committee chairman
-% 	\chairman{Arthur C. Smith}
+%       \chairman{Arthur C. Smith}
 %		 {Chairman, Departmental Committee on Graduate Students}
 %% Make the titlepage based on the above information.  If you need
 %% something special and can't use the standard form, you can specify
@@ -136,22 +136,22 @@
 %% format of the page, you can use the abstract environment, which puts
 %% the word "Abstract" at the beginning and single spaces its text.
 %
-% 	\begin{abstractpage}
+%       \begin{abstractpage}
 %	    Abstract goes here.
 %	\end{abstractpage}
 %
-%%%%%%%% Newer additions 
+%%%%%%%% Newer additions
 %
-% documentclass options - 
+% documentclass options -
 % vi		For MIT course VI or VIII thesis - will copyright the thesis to
-% 		you while giving MIT permission to copy and distribute it.
+%               you while giving MIT permission to copy and distribute it.
 % upcase	Will put much of the cover page in uppercase, as per the
-% 		example on page 17 of the *Specifications for Thesis
-% 		Preparation*, (revised 1989)
+%               example on page 17 of the *Specifications for Thesis
+%               Preparation*, (revised 1989)
 % Also added ``All Rights Reserved'' to default copyright notice.
 %
 %%%%%%%%%%%
-% 
+%
 % Documentclass options (vi and upcase) and changes to copyright notice
 %	Copyright (c) 1990, by Krishna Sethuraman.
 %
@@ -163,7 +163,7 @@
 % Permission to copy all or part of this work is granted, provided
 % that the copies are not made or distributed for resale, and that
 % the copyright notice and this notice are retained.
-% 
+%
 % THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
 % WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
 % INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
@@ -175,10 +175,10 @@
 
 \def\mystretch{1.5}		% Double spacing hack
 \DeclareOption{doublespace}{}	% This is default
-				% So we do not read this style twice
+                                % So we do not read this style twice
 \DeclareOption{singlespace}{		% If he explicitly wants single spacing
     \typeout{Single spaced}
-    \def\mystretch{1}}	
+    \def\mystretch{1}}
 
 %% `vi' and `upcase' document style options.  Krishna Sethuraman (1990)
 \newcount\vithesis
@@ -186,7 +186,7 @@
 \vithesis=0
 
 \DeclareOption{upcase}{\typeout{Uppercase cover page.}
-	\gdef\choosecase#1{\uppercase\expandafter{#1}}}
+        \gdef\choosecase#1{\uppercase\expandafter{#1}}}
 \def\choosecase#1{#1}
 
 %% leftblank option by Kevin Fu
@@ -209,7 +209,7 @@
 % with 2e.  setspace is a replacement which is 2e-compliant.
 
 % Read the doublespace style that we got from Rochester:
-%\input setdoublespace.sty 		
+%\input setdoublespace.sty
 
 \def\baselinestretch{\mystretch}	% Double spacing hack
 
@@ -220,7 +220,7 @@
 %	into 1in margin.
 %  Draft mode brings the header back down.
 
-\setlength{\oddsidemargin}{0.25in}	% 1.25in left margin 
+\setlength{\oddsidemargin}{0.25in}	% 1.25in left margin
 \setlength{\evensidemargin}{0.25in}	% 1.25in left margin (even pages)
 \setlength{\topmargin}{0.0in}		% 1in top margin
 \setlength{\textwidth}{6.0in}		% 6.0in text - 1.25in rt margin
@@ -232,8 +232,8 @@
 % We only need them in page styles that USE headers and footers.
     % If we have a header, it must be 1in from top of page.
 \def\pulldownheader{			% Shift header down 1in from top
-    \addtolength{\topmargin}{\headheight}	
-    \addtolength{\topmargin}{\headsep}	
+    \addtolength{\topmargin}{\headheight}
+    \addtolength{\topmargin}{\headsep}
     \addtolength{\textheight}{-\headheight}
     \addtolength{\textheight}{-\headsep}
 }
@@ -241,7 +241,7 @@
 \def\pullupfooter{				% Shift footer up
     \addtolength{\textheight}{-\footskip}
 %    \addtolength{\textheight}{-\footheight}  %footheight doesn't
-%    						exist in 2e
+%                                               exist in 2e
 }
 
 %%%%%%%  End of margins and formatting params %%%
@@ -250,9 +250,9 @@
 
 % Draft mark on the right side of left pages (outside)
 % this mark is also the only one visible on single sided.
-\newcommand{\draftrmark}{**DRAFT**} 
+\newcommand{\draftrmark}{**DRAFT**}
 % Draft mark on the left side of right pages (outside)
-\newcommand{\draftlmark}{**DRAFT**} % 
+\newcommand{\draftlmark}{**DRAFT**} %
 
 % Macros to make changing the Draft easier
 \newcommand{\drmark}[1]{\renewcommand{\draftrmark}{#1}}
@@ -270,9 +270,9 @@
     \def\@evenhead{\rm \thepage\hfil \sl \leftmark}
     \def\@oddhead{\hbox{}\sl \rightmark \hfil \rm\thepage}
     \def\chaptermark##1{\markboth {\uppercase{\ifnum \c@secnumdepth >\m@ne
-	\@chapapp\ \thechapter. \ \fi ##1}}{}}
+        \@chapapp\ \thechapter. \ \fi ##1}}{}}
     \def\sectionmark##1{\markright {\uppercase{\ifnum \c@secnumdepth >\z@
-	\thesection. \ \fi ##1}}}
+        \thesection. \ \fi ##1}}}
     \pulldownheader				% Bring header down from edge
     \pullupfooter				% Bring footer up
 }
@@ -282,14 +282,14 @@
     \def\@oddfoot{\rm \today \hfil \sc \draftrmark}
     \def\@oddhead{\hbox{}\sl \rightmark \hfil \rm\thepage}
     \def\chaptermark##1{\markright {\uppercase{\ifnum \c@secnumdepth >\m@ne
-	\@chapapp\ \thechapter. \ \fi ##1}}}
+        \@chapapp\ \thechapter. \ \fi ##1}}}
     \pulldownheader				% Bring header down from edge
     \pullupfooter				% Bring footer up
 }
 \fi
 
 % I redefine these formats that were defined in report.sty
-% Definition of 'headings' page style 
+% Definition of 'headings' page style
 %  Note the use of ##1 for parameter of \def\chaptermark inside the
 %  \def\ps@headings.
 %
@@ -301,9 +301,9 @@
     \def\@evenhead{\rm \thepage\hfil \sl \leftmark}	% Left heading.
     \def\@oddhead{\hbox{}\sl \rightmark \hfil \rm\thepage}	% Right heading.
     \def\chaptermark##1{\markboth {\uppercase{\ifnum \c@secnumdepth >\m@ne
-	\@chapapp\ \thechapter. \ \fi ##1}}{}}	
+        \@chapapp\ \thechapter. \ \fi ##1}}{}}
     \def\sectionmark##1{\markright {\uppercase{\ifnum \c@secnumdepth >\z@
-	\thesection. \ \fi ##1}}}
+        \thesection. \ \fi ##1}}}
     \pulldownheader				% Bring header down from edge
 }
 \else						% If one-sided printing.
@@ -312,12 +312,12 @@
     \def\@evenfoot{}		%     No feet.
     \def\@oddhead{\hbox {}\sl \rightmark \hfil \rm\thepage}	% Heading.
     \def\chaptermark##1{\markright {\uppercase{\ifnum \c@secnumdepth >\m@ne
-	\@chapapp\ \thechapter. \ \fi ##1}}}
+        \@chapapp\ \thechapter. \ \fi ##1}}}
     \pulldownheader				% Bring header down from edge
 }
 \fi
 
-% Redefinition of 'myheadings' page style.  
+% Redefinition of 'myheadings' page style.
 %
 \def\ps@myheadings{\let\@mkboth\@gobbletwo
     \def\@oddfoot{}
@@ -327,7 +327,7 @@
     \def\@evenhead{\rm \thepage\hfil\sl\leftmark\hbox {}}	%
     \def\@oddhead{\hbox{}\sl\rightmark \hfil \rm\thepage}	%
     \pulldownheader				% Bring header down from edge
-}						
+}
 
 % Redefine '/chapter' to always start on an odd page.
 % Should make no difference in singleside mode.
@@ -387,7 +387,7 @@
 % \copyrightnoticetext with that argument, preceeded by a copyright
 % symbol and followed by ``All rights reserved.'' and the standard
 % permission notice.
-% 
+%
 % If you use the 'vi' option, \copyrightnoticetext is used to set the
 % copyright to ``(C) Your Name, Current Year in Roman Numerals.''
 % followed by the permission notice.
@@ -399,7 +399,7 @@
 \def\copyrightnotice#1{\copyrightnoticetext{\copyright\ #1.  All rights
 reserved.\par\permission}}
 
-% Occacionally you will need to exactly specify the text of the 
+% Occacionally you will need to exactly specify the text of the
 % copyright notice.  The \copyrightnoticetext command is then useful.
 \long\def\copyrightnoticetext#1{\gdef\@copyrightnotice{#1}}
 \def\@copyrightnotice{\copyright\ \Mit\ \@degreeyear.  All rights reserved.}
@@ -415,7 +415,7 @@ reserved.\par\permission}}
 %% or just
 %%\@degreeyear}}
 \typeout{Copyright given to author,
-	permission to copy/distribute given to MIT.}
+        permission to copy/distribute given to MIT.}
 \else \typeout{Thesis document copyright MIT unless otherwise (manually) specified}
 \fi
 
@@ -432,14 +432,14 @@ reserved.\par\permission}}
 % we build the appropriate boxes for the titlepage and
 % the abstractpage as the user makes multiple calls
 % to \supervisor
-\newbox\@titlesupervisor 	\newbox\@abstractsupervisor
+\newbox\@titlesupervisor        \newbox\@abstractsupervisor
 
 \def\supervisor#1#2{\setbox\@titlesupervisor\vbox
   {\unvbox\@titlesupervisor \vskip 10pt% plus 1fil minus 1fil
   \def\baselinestretch{1}\large
   \signature{Certified by}{#1 \\ #2 \\ Thesis Supervisor}}
   \setbox\@abstractsupervisor\vbox{\unvbox\@abstractsupervisor
-  \vskip\baselineskip \def\baselinestretch{1}\@normalsize 
+  \vskip\baselineskip \def\baselinestretch{1}\@normalsize
   \par\noindent Thesis Supervisor: #1 \\ Title: #2}}
 
 % department chairman, not thesis committee chairman
@@ -457,7 +457,7 @@ by\par
 \par
 \choosecase{Submitted to the} \choosecase{\@department} \\
 \choosecase{in partial fulfillment of the requirements for the}
-\choosecase{\@degreeword} 
+\choosecase{\@degreeword}
 \choosecase{of}
 \par
 \choosecase{\@degree}
@@ -532,4 +532,3 @@ requirements for the \@degreeword\ of \\
 
 \def\abstract{\subsection*{Abstract}\small\def\baselinestretch{1}\@normalsize}
 \def\endabstract{\par}
-
