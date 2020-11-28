@@ -19,7 +19,7 @@
 
 \newcommand{\hemiola}{Hemiola}
 
-\newcommand{\listof}[1]{\ensuremath{\overline{#1}}}
+\renewcommand{\listof}[1]{\ensuremath{\overline{#1}}}
 \newcommand{\llistof}[1]{\ensuremath{\overline{\overline{#1}}}}
 \newcommand{\listtof}[1]{\ensuremath{\overline{#1}}}
 \newcommand{\listnil}{\ensuremath{\lbrack\rbrack}}
@@ -196,3 +196,106 @@
 \newcommand{\blrulelbl}[2]{{\small\color{myblue}\rulelbl{#1}{#2}}}
 
 %% -- End of Commands
+
+%% TikZ templates --
+
+\tikzset{
+  pics/skeleton-pcc/.style n args={3}{
+    code = {
+      \node at (0, 0.2) {#1};
+      \node at (-1.5, -1.5) {#2};
+      \node at (1.5, -1.5) {#3};
+      % between P and C_1
+      \draw [line width=0.2mm, <-<] (-0.6, -0.3) -- (-1.5, -1.2);
+      \draw [line width=0.2mm, <-<] (-0.4, -0.3) -- (-1.3, -1.2);
+      \draw [line width=0.2mm, >->] (-0.2, -0.3) -- (-1.1, -1.2);
+      % between P and C_2
+      \draw [line width=0.2mm, >->] (0.6, -0.3) -- (1.5, -1.2);
+      \draw [line width=0.2mm, <-<] (0.4, -0.3) -- (1.3, -1.2);
+      \draw [line width=0.2mm, <-<] (0.2, -0.3) -- (1.1, -1.2);
+    }
+  },
+  skeleton-ex1/.pic = { % C_1 external
+    \draw [line width=0.2mm, <-<] (-1.6, -1.8) -- (-1.6, -2.3);
+    \draw [line width=0.2mm, >->] (-1.4, -1.8) -- (-1.4, -2.3);
+  },
+  skeleton-ex2/.pic = { % C_2 external
+    \draw [line width=0.2mm, >->] (1.6, -1.8) -- (1.6, -2.3);
+    \draw [line width=0.2mm, <-<] (1.4, -1.8) -- (1.4, -2.3);
+  },
+  skeleton-midx-e1/.pic = {
+    % C_1 external
+    \node at (-1.6, -2.45) {\tiny $1$};
+    \node at (-1.4, -2.45) {\tiny $2$};
+  },
+  skeleton-midx-e2/.pic = {
+    % C_2 external
+    \node at (1.6, -2.45) {\tiny $10$};
+    \node at (1.4, -2.45) {\tiny $9$};
+  },
+  skeleton-midx-pc1/.pic = {
+    % between P and C_1
+    \node at (-0.65, -0.15) {\tiny $3$};
+    \node at (-0.45, -0.15) {\tiny $4$};
+    \node at (-0.25, -0.15) {\tiny $5$};
+  },
+  skeleton-midx-pc2/.pic = {
+    % between P and C_2
+    \node at (0.65, -0.15) {\tiny $8$};
+    \node at (0.45, -0.15) {\tiny $7$};
+    \node at (0.25, -0.15) {\tiny $6$};
+  }
+}
+
+\tikzset{
+  pics/skeleton-pcce1/.style n args={3}{
+    code = {
+      \pic at (0, 0) {skeleton-pcc={#1}{#2}{#3}};
+      \pic at (0, 0) {skeleton-ex1};
+    }
+  },
+  pics/skeleton-pcce2/.style n args={3}{
+    code = {
+      \pic at (0, 0) {skeleton-pcc={#1}{#2}{#3}};
+      \pic at (0, 0) {skeleton-ex2};
+    }
+  },
+  pics/skeleton-pcce12/.style n args={3}{
+    code = {
+      \pic at (0, 0) {skeleton-pcc={#1}{#2}{#3}};
+      \pic at (0, 0) {skeleton-ex1};
+      \pic at (0, 0) {skeleton-ex2};
+    }
+  },
+  pics/skeleton-pc/.style n args={2}{
+    code = {
+      \node at (0, 0) {#1};
+      \node at (0, -1.5) {#2};
+      % between P and C
+      \draw [<-<] (-0.2, -0.3) -- (-0.2, -1.2);
+      \draw [<-<] (0, -0.3) -- (0, -1.2);
+      \draw [>->] (0.2, -0.3) -- (0.2, -1.2);
+      % C external
+      \draw [<-<] (-0.1, -1.8) -- (-0.1, -2.3);
+      \draw [>->] (0.1, -1.8) -- (0.1, -2.3);
+    }
+  }
+}
+
+\tikzset{
+  spec/.pic = {
+    \node at (0, 0) {$\textrm{Spec}(v)$};
+    % C_1 external
+    \draw [<-<] (-0.4, -0.3) -- (-0.5, -0.8);
+    \draw [>->] (-0.2, -0.3) -- (-0.3, -0.8);
+    %% \node at (-0.5, -0.95) {\tiny $1$};
+    %% \node at (-0.3, -0.95) {\tiny $2$};
+    % C_2 external
+    \draw [>->] (0.4, -0.3) -- (0.5, -0.8);
+    \draw [<-<] (0.2, -0.3) -- (0.3, -0.8);
+    %% \node at (0.5, -0.95) {\tiny $10$};
+    %% \node at (0.3, -0.95) {\tiny $9$};
+  }
+}
+
+%% -- End of TikZ templates
