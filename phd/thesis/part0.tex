@@ -7,6 +7,167 @@
 \subsection{In a nutshell}
 \label{sec-nutshell}
 
+Before introducing our proposed method to design and prove cache-coherence protocols more structurally, we provide a simple yet motivating example to explain the typical challenges.
+For simplicity, in this section, we will consider a protocol protecting only \emph{a single memory location}.
+We will see it is still nontrivial to design and verify a correct protocol.
+
+The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
+In other words, if the system is coherent, then it should behave like an atomic memory.
+This behavior inclusion is formally defined as \emph{refinement}, which will be introduced in \autoref{sec-semantics}.
+The correctness of a cache-coherence protocol is sometimes shown by proving representative invariants, not talking about the relation to the desired spec.
+The single-writer/multiple-reader (SWMR) invariant and the data-value invariant~\cite{ccbook:2020} are classic choices; in proving the refinement of a protocol, these invariants (or similar ones) must be proven.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
+    \pic at (0, 0) {skeleton-midx-e1};
+    \pic at (0, 0) {skeleton-midx-e2};
+    \pic at (0, 0) {skeleton-midx-pc1};
+    \pic at (0, 0) {skeleton-midx-pc2};
+    \node at (3.0, -1) {$\sqsubseteq$};
+    \pic at (4.5, -0.7) {spec};
+  \end{tikzpicture}
+  \caption{A simple MSI directory protocol and its spec}
+  \label{fig-motive-1}
+\end{figure}
+
+\autoref{fig-motive-1} shows caches and communication channels for a simple directory-based MSI protocol (LHS of $\sqsubseteq$).
+Since we deal with only a single memory location, the specification (RHS of $\sqsubseteq$) is a single-value ($v$) container with atomic read and write.
+There are three caches ($P$, $C_1$, and $C_2$) in the implementation, and each of them has its own status (M, S, or I) and data ($v$).
+The status of a cache represents a permission on its local replica.
+In this MSI protocol, an object can read/write the data with the M (``modified'') status, only read with S (``shared''), and cannot read/write with I (``invalid'').
+The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
+For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
+
+Objects communicate through ordered channels, shown as $(\rightarrowtail)$ in the figure, where each of it has a unique index (shown as a natural number in the figure).
+$C_1$ and $C_2$ have channels to receive and respond to external requests (from processor cores).
+There are three types of channels between a parent and a child: a single channel for parent-to-child messages and two channels for child-to-parent requests and responses, respectively.
+It is natural to wonder why two separate channels are required from a child to a parent; we will see the reason very soon.
+Note that channels are depicted in a logical way; the actual hardware implementation may use different hardware components (\eg{} finite-capacity FIFOs or buses) that can simulate ordered channels.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
+    % C_1 external
+    \pic at (0, 0) {skeleton-midx-e1};
+    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{a}{rqWr}}},color=myred] at (-1.8, -2.35) {$\bullet$};
+    % C_2 external
+    \pic at (0, 0) {skeleton-midx-e2};
+    \node[label={[label distance=-6pt,myblue]left:{\blrecmsgsm{e}{rqWr}}},color=myblue] at (1.6, -2.35) {$\bullet$};
+    % Between P and C_1
+    \pic at (0, 0) {skeleton-midx-pc1};
+    \node[label={[label distance=-6pt,myred]left:{\rdrecmsgsm{b}{rqM}}},color=myred] at (-1.1, -0.8) {$\bullet$};
+    % Between P and C_2
+    \pic at (0, 0) {skeleton-midx-pc2};
+    \node[label={[label distance=-9pt,myred]below right:{\rdrecmsgsm{d}{rsI}}},color=myred] at (0.9, -0.8) {$\bullet$};
+    \node[label={[label distance=-9pt,myred]above right:{\rdrecmsgsm{c}{rqI}}},color=myred] at (1.1, -0.8) {$\bullet$};
+    \node[label={[label distance=-9pt,myblue]below left:{\blrecmsgsm{f}{rqM}}},color=myblue] at (0.7, -0.8) {$\bullet$};
+
+    % Curves
+    \draw [->,color=myred] (-2.95, -2.05) to[out=90,in=-110] node {\rdcircf{1}} (-2.35, -1.05);
+    \draw [->,color=myred] (-2.25, -0.5) to[out=70,in=110,distance=2cm] node {\rdcircf{3}} (1.7, -0.2);
+    \draw [->,color=myred] (2.2, -0.7) to[out=-40,in=-40,distance=1.2cm] node {\rdcircf{4}} (2.0, -1.1);
+    \draw [->,color=myblue] (0.7, -2.0) to[out=90,in=-45] node {\blcircf{2}} (0.3, -1.4);
+
+  \end{tikzpicture}
+  \caption{Rule-execution cases in the simple MSI protocol}
+  \label{fig-motive-2}
+\end{figure}
+
+\autoref{fig-motive-2} depicts some example state-transition cases depending on statuses of the caches.
+All the caches run concurrently, repeatedly executing \emph{rules} that define local state transitions.
+A rule may take some messages from input channels, perform a state transition, and put messages in output channels.
+A rule may also have a precondition, blocking use of that rule when the precondition does not hold.
+$\rdcircf{1}$ shows the case where a child $C_1$ takes an external request (\rdrecmsgsm{a}{rqWr}) to write data, but it does not have M status and thus further requests to the parent (\rdrecmsgsm{b}{rqM}) to get the permission.
+At this moment, in many cache-coherence protocol designs, $C_1$ changes its status to a \emph{transient state} SM to record its current status (S) and the next expected status (M).
+This transient state also functions as a \emph{lock} not to allow any further external requests for the value.
+
+Due to the concurrent execution of the caches, we might have another rule executed at the same time.
+$\blcircf{2}$ is executed concurrently with $\rdcircf{1}$, where $C_2$ also takes an external request (\blrecmsgsm{e}{rqWr}) with the same purpose, thus requests \blrecmsgsm{f}{rqM} to the parent as well.
+Since $\rdcircf{1}$ and $\blcircf{2}$ happened at the same time, now the parent $P$ needs to decide which request to deal with.
+Suppose that it decided to handle \rdrecmsgsm{b}{rqM} first.
+
+$\rdcircf{3}$ presents the next execution by $P$, taking the input message \rdrecmsgsm{b}{rqM} and making an \emph{invalidation} request (\rdrecmsgsm{c}{rqI}) to the other child $C_2$ to change its status to I.
+This invalidation request is required, since when a child has M the others should not be able to read/write the data.
+The parent, at this moment, changes its directory status to a transient state (named $S^D$ in some textbooks) to disallow any other requests from the children.
+For instance, the parent should not handle \blrecmsgsm{f}{rqM}, since otherwise it will handle two ``\msgsf{rqM}''s simultaneously, which might lead to an incoherent state -- two M statuses in the caches.
+
+Lastly, $\rdcircf{4}$ shows the case that $C_2$ handles the invalidation request (\rdrecmsgsm{c}{rqI}).
+A number of corner cases should be handled carefully in this case:
+\begin{itemize}[leftmargin=*]
+\item Since $C_2$ requested \blrecmsgsm{f}{rqM}, it has a transient state SM when \rdrecmsgsm{c}{rqI} arrives. It should still be able to handle this invalidation request even in the transient state (while not allowing any external requests). In this case $C_2$ accepts \rdrecmsgsm{c}{rqI} and changes its transient state to IM. We see that transient states should be fine-grained enough to distinguish which requests to handle.
+\item Due to the existence of \blrecmsgsm{f}{rqM}, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take \blrecmsgsm{f}{rqM} since it has been locked (in a transient state) after making an invalidation request. It cannot take \rdrecmsgsm{d}{rsI} as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
+\end{itemize}
+
+A so-called three-channel system has been widely used and regarded as a good choice to make the design correct and live~\cite{Murali:2015,thesis:Murali:2016}.
+While there are other possible correct topology and network settings, the cases shown in \autoref{fig-motive-2} at least demonstrate that it is nontrivial to construct one of them.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \pic at (0, 0) {skeleton-pcce12={$P(S, v, S_{\tuple{1, 2}})$}{$C_1(S, v)$}{$C_2(S, v)$}};
+    % C_1 external
+    \pic at (0, 0) {skeleton-midx-e1};
+    \node[label={[label distance=-6pt,myred]right:{\rdrecmsgsm{i}{rsWr}}},color=myred] at (-1.6, -2.35) {$\bullet$};
+    % C_2 external
+    \pic at (0, 0) {skeleton-midx-e2};
+    % Between P and C_1
+    \pic at (0, 0) {skeleton-midx-pc1};
+    \node[label={[label distance=-12pt,myred]below right:{\rdrecmsgsm{g}{rsM}}},color=myred] at (-0.9, -1.0) {$\bullet$};
+    \node[color=myblue] at (-0.5, -0.6) {$\bullet$};
+    \node at (-1.5, -0.3) {\blrecmsgsm{h}{rqI}};
+    \draw [densely dashed,color=myblue,line width=0.3pt] (-0.5, -0.6) to[out=170,in=-10] (-1.1, -0.3);
+
+    \node[color=myblue] at (-0.8, -0.7) {$\bullet$};
+    \node at (-2.5, -0.5) {\blrecmsgsm{j}{rsI}};
+    \draw [densely dashed,color=myblue,line width=0.3pt] (-0.8, -0.7) to[out=190,in=-10] (-2.05, -0.5);
+
+    % Between P and C_2
+    \pic at (0, 0) {skeleton-midx-pc2};
+    \node[label={[label distance=-9pt,myred]above right:{\rdrecmsgsm{d}{rsI}}},color=myred] at (0.9, -0.8) {$\bullet$};
+    \node[color=myblue] at (0.7, -0.8) {$\bullet$};
+    \node at (2.0, 0.2) {\blrecmsgsm{f}{rqM}};
+    \draw [densely dashed,color=myblue,line width=0.3pt] (0.7, -0.8) to[out=70,in=210] (1.5, 0.1);
+
+    % Curves
+    \draw [->,color=myred] (1.05, -0.5) to[out=180,in=60] node {\rdcircf{5}} (-0.6, -1.1);
+    \draw [->,color=myred] (-0.6, -1.5) to[out=-90,in=80] node {\rdcircf{7}} (-0.8, -2.2);
+    \draw [->,color=myblue] (2.0, 0.4) to[out=130,in=80,distance=1.5cm] node {\blcircf{6}} (-1.5, -0.1);
+    \draw [->,color=myblue] (-1.5, -0.5) to[out=245,in=-115,distance=0.9cm] node {\blcircf{8}} (-2.5, -0.8);
+    \draw [->,color=myblue] (-2.5, -0.3) to[out=90,in=-100] (-2.0, 0.7);
+    \node[color=myblue] at (-2.0, 1.1) {$\vdots$};
+
+  \end{tikzpicture}
+  \caption{Rule-execution cases, continued}
+  \label{fig-motive-3}
+\end{figure}
+
+\autoref{fig-motive-3} presents further rule-execution cases right after \autoref{fig-motive-2}.
+After $\rdcircf{4}$ responds with \rdrecmsgsm{d}{rsI}, $P$ can take it to respond back to $C_1$.
+$\rdcircf{5}$ exactly presents this step, taking \rdrecmsgsm{d}{rsI} and responding back to $C_1$ with \rdrecmsgsm{g}{rsM}.
+At this moment $P$ changes its status to $P(I, \cdot, M_{(1)})$ (from the transient state $S^D$) to record that it no longer has the coherent value and just granted $C_1$ the M status.
+Since the transient state acts like a lock, this status change can be also regarded as a lock release, so that now $P$ can handle some other requests.
+
+$\blcircf{6}$ is the next transition step by $P$ to accept a new request.
+\blrecmsgsm{f}{rqM} has been waiting for the transient state of $P$ to be released, and $\blcircf{6}$ finally takes it and sends an invalidation request to $C_1$.
+
+Looking at the message channel $5$, the one for parent-to-child messages (from $P$ to $C_1$), there are two messages, \rdrecmsgsm{g}{rsM} and \blrecmsgsm{h}{rqI}, that are waiting for $C_1$ to handle them.
+A single parent-to-child channel affects the correctness of the protocol in this case.
+If we had two separated downward channels, one for requests and the other for responses, $C_1$ could handle \blrecmsgsm{h}{rqI} first, changes its status to I, handles \rdrecmsgsm{g}{rsM} later, and changes its status to M again.
+Since it sent the invalidation response to the parent, eventually $C_2$ will also get the M status, which leads to an incoherent state.
+Therefore, it is crucial to have a single parent-to-child channel so that \rdrecmsgsm{g}{rsM} blocks \blrecmsgsm{h}{rqI} to be handled first.
+After $C_1$ takes \rdrecmsgsm{g}{rsM} and responds back to the processor core with \rdrecmsgsm{i}{rsWr}, presented as $\rdcircf{7}$, it can subsequently take the invalidation request \blrecmsgsm{h}{rqI} and responds with \blrecmsgsm{j}{rsI}, as shown in $\blcircf{8}$.
+
+As examined in \autoref{fig-motive-2} and \autoref{fig-motive-3}, in a cache-coherence protocol, transient states and network channels play a crucial role in making \emph{interleavings} correct.
+Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \rdcircf{4}]$ as an execution flow in \autoref{fig-motive-2} -- we will call it a \emph{transaction} in later sections -- to handle the original external request \rdrecmsgsm{a}{rqWr}, we see that no further executions could happen after $\blcircf{2}$, which is for the other request \blrecmsgsm{e}{rqWr}.
+As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} from further processing.
+Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf{3}]$ was not spuriously affected by $\blcircf{6}$ or $\blcircf{8}$, thanks to the correct channel setting.
+
+If proper locking (by transient states) and topology are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
+That is exactly what \hemiola{} provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates}, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
+
 \subsection{Design space}
 
 \section{Verification of Cache-Coherence Protocols}

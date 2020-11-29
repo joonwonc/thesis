@@ -20,7 +20,7 @@ The correctness proof of a cache-coherence protocol heavily relies on the formal
 An incorrect formalization can lead to a protocol unprovable.
 It is also a part of trusted computing base (TCB); one must read through the formalization and be convinced that it is fair.
 The formalization of a message-passing system varies by its purpose.
-For instance, in order to reason about software distributed-system protocols, one may want to add Byzantine fault models~\cite{byzantine} to the formalization.
+For instance, in order to reason about software distributed protocols, one may want to add Byzantine fault models~\cite{byzantine} to the formalization.
 
 A cache-coherence protocol also requires its specific assumptions on top of a message-passing system.
 First of all, each channel should be ordered; it is used practically, and the correctness of the protocol depends on it.
@@ -261,21 +261,29 @@ It is also well-known that simulation directly implies trace refinement~\cite{eq
 \chapter{Serializability in Protocol Transition Systems}
 \label{sec-sz-def}
 
+Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness that originated with databases and distributed systems.
+While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed separately in sequence.
+In this section, we provide the formal definition of serializability on top of a protocol transition system and explain how it eases the burden of designing and proving conventional invariants.
 
+\section{Cache-Coherence Protocol as a Distributed Protocol}
 
-The very first task to verify cache-coherence protocols in a theorem prover is to define an underlying state-transition system formally.
-Formalization of such a system typically consists of its formal syntax and semantics.
-Additionally, if we want to verify a program defined in the system, a correctness criterion should be established as well.
-In this chapter, we provide the formal definition of the state-transition system for cache-coherence protocols, called \emph{protocol transition systems}.
+We already explored in \autoref{sec-nutshell} with a concrete example that the cache objects in a cache-coherent memory system handles multiple requests from the processor cores concurrently, in a distributed way.
+We also learned that transactions to handle such requests are interleaved, so ensuring safe interleaving is crucial in designing and proving a cache-coherence protocol.
 
+A very well-known approach to ensuring safe interleavings is to prove \emph{noninterference}, which claims that no other state transitions affect state relevant to an ongoing transaction spuriously.
+Not constrained to the cache-coherence protocols, noninterference has been developed and employed in some computer systems including concurrent software and distributed systems.
+Model checkers have always been in favor of employing noninterference lemmas.
+The lemmas are often described explicitly by the user (guided by intuition) or discovered automatically (typically guided by counterexamples).
+The established style of noninterference reasoning, though, has an inherent weakness: it requires explicit lemma statements per-protocol.
+Another issue is that even though these lemmas are stated and proven, it is hard to be sure if the lemmas are enough to resolve all possible interleavings in the system.
 
-\section{Cache-Coherence Protocol as a Distributed-System Protocol}
-
-
+Another well-known approach is to prove \emph{serializability}, which claims that the overall state transition of any interleaved transactions can be interpreted as if they are executed serially, \ie{} \emph{atomically in some order with no interleaving}.
+Serializability has been actively developed and used in database systems and software distribued systems.
+To our knowledge, the notion of serializability has not been used to verify cache-coherence protocols.
+Instead of stating noninterference lemmas coupled to each protocol, which is a conventional approach to the verification of cache-coherence protocols, in \hemiola{} we try to find general conditions that ensures serializability, \emph{extracted and abstracted} from practical protocols, so the conditions can apply to various protocols.
 
 \section{From Atomic Histories to Serializability}
 
-Serializability informally says that the overall state transition of any interleaved transactions can be interpreted as if they are executed sequentially.
 In order to obtain the formal definition of serializability, we should define each basic term first -- transactions, sequential executions, etc.
 In this section, we provide all the formal definitions required to define serializability, starting with atomic histories.
 
@@ -362,7 +370,6 @@ A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{
     \end{math}
   \end{tabular}
   \caption{An example of an atomic history}
-  \vspace{-5pt}
   \label{fig-ex-atomic-history}
 \end{figure}
 
@@ -389,7 +396,7 @@ We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
 
 Note that an external-inputs label and an atomic history are regarded as separate transactions.
 In other words, accepting an external request (or releasing an external response) is regarded as a transaction separated from the atomic history handling the request (generating the response), respectively.
-This design choice gives more serializable histories in a given system, where the property is still meaningful enough to use it to verify distributed-system protocols.
+This design choice gives more serializable histories in a given system, where the property is still meaningful enough to use it to verify distributed protocols.
 We will see why this relaxed definition is a better choice right in the next section (\autoref{sec-seq-sz}).
 
 \subsection{Sequential histories and serializability}
@@ -477,7 +484,6 @@ The same notation \predmsg{\msgid{}}{\mathcal{I}} will be used most commonly to 
           {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
   \caption{Interference breaks a predicate message}
-  \vspace{-5pt}
   \label{fig-ex-pred-msg-fail}
 \end{figure}
 
