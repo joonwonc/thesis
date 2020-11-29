@@ -259,49 +259,74 @@ It is also well-known that simulation directly implies trace refinement~\cite{eq
 \end{theorem}
 
 \chapter{Serializability in Protocol Transition Systems}
-\label{sec-sz-in-hemiola}
+\label{sec-sz-def}
+
+
+
+The very first task to verify cache-coherence protocols in a theorem prover is to define an underlying state-transition system formally.
+Formalization of such a system typically consists of its formal syntax and semantics.
+Additionally, if we want to verify a program defined in the system, a correctness criterion should be established as well.
+In this chapter, we provide the formal definition of the state-transition system for cache-coherence protocols, called \emph{protocol transition systems}.
+
 
 \section{Cache-Coherence Protocol as a Distributed-System Protocol}
 
+
+
 \section{From Atomic Histories to Serializability}
+
+Serializability informally says that the overall state transition of any interleaved transactions can be interpreted as if they are executed sequentially.
+In order to obtain the formal definition of serializability, we should define each basic term first -- transactions, sequential executions, etc.
+In this section, we provide all the formal definitions required to define serializability, starting with atomic histories.
+
+\subsection{Atomic histories}
 
 \begin{figure}[t]
   \centering
-  \begin{tabular}{|c|}
-    \hline
-    \multicolumn{1}{|l|}{\textbf{(c) Atomic histories:}} \\
-    \begin{math}
-      \begin{array}{c}
-        \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{im}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{im}}}{\listof{\amsge{im}}}}}{28}{\listof{\amsge{im}}}}\\[25pt]
-        \inference[AtomicCont:]{\atomic{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}
-          & \msgIns{n} \neq \listnil
-          & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\listof{l}}{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\[25pt]
-      \end{array}
-    \end{math}\\
-    \hline
-    \multicolumn{1}{|l|}{\textbf{(d) Transactions:}} \\
-    \begin{math}
-      \arraycolsep=5pt
-      \begin{array}{cc}
+  \begin{subfigure}[b]{\columnwidth}
+    \centering
+    \begin{tabular}{|c|}
+      \hline
+      \begin{math}
         \begin{array}{c}
-          \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\[10pt]
-          \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{im}}}}} \\[10pt]
-          \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{im}}}}} \\[15pt]
-        \end{array} &
-        \begin{array}{l}
-          \textrm{\footnotesize TrsAtomic:} \\
-          \inference[]{\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}}{\trsn{S}{\listof{l}}}
-        \end{array} \\
-      \end{array}
-    \end{math}\\
-    \hline
-  \end{tabular}\\
+          \inference[AtomicStart:]{}{\atomicLong{\listof{\amsgi{im}}}{\listsingle{\lblInt{\idxOf{O}}{\idxOf{r}}{\listof{\amsgi{im}}}{\listof{\amsge{im}}}}}{28}{\listof{\amsge{im}}}}\\[25pt]
+          \inference[AtomicCont:]{\atomic{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}
+            & \msgIns{n} \neq \listnil
+            & \msgIns{n} \subseteq \listof{\amsge{im}}}{\atomicLong{\listof{\amsgi{im}}}{\listcons{\listof{l}}{\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{n}}{\msgOuts{n}}}}{28}{(\listapp{\listsub{\listof{\amsge{im}}}{\msgIns{n}}}{\msgOuts{n}}})} \\[25pt]
+        \end{array}
+      \end{math}\\
+      \hline
+    \end{tabular}
+    \caption{Atomic histories}
+    \label{fig-atomic-hst}
+  \end{subfigure}\medskip\\
+  \begin{subfigure}[b]{\columnwidth}
+    \centering
+    \begin{tabular}{|c|}
+      \hline
+      \begin{math}
+        \begin{array}{cc}
+          \begin{array}{c}
+            \inference[TrsSilent:]{}{\trsn{S}{\listsingle{\lblEmpty{}}}} \\[10pt]
+            \inference[TrsIns:]{}{\trsn{S}{\listsingle{\lblIns{\listof{im}}}}} \\[10pt]
+            \inference[TrsOuts:]{}{\trsn{S}{\listsingle{\lblOuts{\listof{im}}}}} \\[15pt]
+          \end{array} &
+          \begin{array}{l}
+            \textrm{\footnotesize TrsAtomic:} \\
+            \inference[]{\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}}}{\trsn{S}{\listof{l}}}
+          \end{array} \\
+        \end{array}
+      \end{math}\\
+      \hline
+    \end{tabular}
+    \caption{Transactions}
+    \label{fig-transaction}
+  \end{subfigure}
   \caption{Atomic histories and transactions in protocol transition systems}
   \label{fig-atomic-trs}
 \end{figure}
 
-\subsection{Atomic histories}
-In order to define serializability formally, we first provide basic definitions of atomic histories and transactions, presented in \autoref{fig-atomic-trs}.
+\autoref{fig-atomic-trs} provides basic definitions of atomic histories and transactions.
 A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$ with \emph{initial messages} $\listof{\amsgi{im}}$ and \emph{live messages} $\listof{\amsge{im}}$.
 [AtomicStart] initializes a history with an internal label.
 [AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label \emph{should be from the live messages of the previous atomic history}.
@@ -352,21 +377,24 @@ Note that an atomic history does not need to be a completed transaction.
 The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response sent on an external channel.
 
 We call a history \emph{externally atomic} if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$); we denote it as $(\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}})$.
+The history $h$ in the example is externally atomic, satisfying a predicate \extatomic{S}{\listsingle{(1,\textsf{rqWr})}}{h}{\listsingle{(7,\textsf{rsI})}}, since the initial message $(1, \textsf{rqWr})$ is an external request (from a processor core attached to $C_1$).
 An externally atomic history records the way the system responded to some set of messages received from the outside world.
 
 \subsection{Transactions}
 
-Transactions are the next level of abstraction, defined by the final rules in \autoref{fig-atomic-trs}.
+Transactions are the next level of abstraction, presented in \autoref{fig-transaction}.
 A transaction is either a single silent label ([TrsSilent]), a single external inputs label ([TrsIns]), a single external outputs label ([TrsOuts]), or an externally atomic history ([TrsAtomic]).
 In other words, the permitted atomic execution steps, in this transactional semantics, are arrival of new messages from the outside world, release of messages to the outside world, or uninterrupted execution of an atomic history.
 We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
 
-Note that an external-inputs label and an atomic history are regarded as separate transactions; this relaxed design choice is due to our eventual goal, trace refinement.
-In order to prove trace refinement, we should preserve the \emph{order of external labels} while reasoning over histories.
-In particular, we do not want a serialized history having a different trace from the original history.
-A key soundness proof of \hemiola{} will reason with reorderings of internal steps and thus atomic histories, but we will leave external labels untouched, manifestly preserving trace orders.
+Note that an external-inputs label and an atomic history are regarded as separate transactions.
+In other words, accepting an external request (or releasing an external response) is regarded as a transaction separated from the atomic history handling the request (generating the response), respectively.
+This design choice gives more serializable histories in a given system, where the property is still meaningful enough to use it to verify distributed-system protocols.
+We will see why this relaxed definition is a better choice right in the next section (\autoref{sec-seq-sz}).
 
 \subsection{Sequential histories and serializability}
+\label{sec-seq-sz}
+
 With a clear notion of transactions, we can easily define sequential histories and serializability.
 
 \begin{definition}[Sequential Histories and Serializability]\mbox{}\vspace{-8pt}\\
@@ -388,39 +416,64 @@ With a clear notion of transactions, we can easily define sequential histories a
   \label{def-sz}
 \end{definition}
 
+Suppose that an object $C$ in a system $S$ takes two external requests, say $\textsf{rq}_1$ and $\textsf{rq}_2$, in-order from the same channel and finishes handling $\textsf{rq}_2$ earlier than $\textsf{rq}_1$.
+Even if $C$ should start handling $\textsf{rq}_1$ first because the channel is ordered, this case may happen when $\textsf{rq}_1$ requires further treatment by other objects while $C$ can take $\textsf{rq}_2$ and respond immediately to the corresponding external channel.
+We may have the following legal history $h$ in $S$ for this kind of scenario:
+\begin{displaymath}
+  h = \listcons{{\color{myred}\lblIns{\listsingle{(i_{\textrm{rq}},\textsf{rq}_1)}}}}{\listcons{{\color{myblue}\lblIns{\listsingle{(i_{\textrm{rq}},\textsf{rq}_2)}}}}{\listapp{h_a}{\listcons{{\color{myblue}\lblOuts{\listsingle{(i_{\textrm{rs}},\textsf{rs}_2)}}}}{{\color{myred}\lblOuts{\listsingle{(i_{\textrm{rs}},\textsf{rs}_1)}}}}}}},
+\end{displaymath}
+where $i_{\textrm{rq}}$ (and $i_{\textrm{rs}}$) is the external-request (external-response) channel, respectively.
+If we had not separated the external labels from an atomic history and regard the combined history as a transaction, then we cannot sequentialize $h$, \ie{} separating the {\color{myred}red} and {\color{myblue}blue} transactions, thus $h$ is not serializable.
+However, it is still meaningful if we can just sequentialize the internal processes of $\textsf{rq}_1$ and $\textsf{rq}_2$ (presented as $h_a$) to have two separated atomic histories.
+The next section will explain how we benefit from this serializability definition.
+Lastly, note that this relaxed definition is still safe in that it does not require preserving the order of the trace.
+
 \section{Predicate Messages in Atomic Histories}
 
 Now we discuss how to exploit our notion of serializability: how does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.
 However, we can bridge the gap by using serializability to help prove \emph{invariants} (which only concern reachable states), since a simulation -- which implies trace refinement -- proof usually requires a number of invariants of the implementation.
 
-We call $\mathcal{I}: \hstt{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}\ s$.
+We start by defining a conventional notion of an invariant:
+\begin{definition}[Invariants]
+  We call $\mathcal{I}: \hstt{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}(s)$.
+\end{definition}
+
 In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``some important property holds whenever the system includes a certain message in a certain channel.''
 We call such an invariant a \emph{predicate message}, formally defined as following:
-\begin{displaymath}
-  \spredmsg{S}{im}{P} \triangleq \forall s.\; \semrch{S}{s} \to im \in s.M \to P\; s.
-\end{displaymath}
-We will write just \predmsg{im}{P} when the system $S$ is clear from context, also often using an even-shorter version \predmsg{\msgid{}}{P} (considering only those messages with a given ID) when it is not ambiguous.
+\begin{definition}[Predicate Messages]
+  A predicate message, denoted as \spredmsg{S}{im}{P}, is an invariant over a system $S$ that additionally requires $im$, a pair of a residing channel and a message, to be in the system:
+  \begin{displaymath}
+    \spredmsg{S}{im}{\mathcal{I}} \triangleq \forall s.\; \semrch{S}{s} \to im \in s.M \to \mathcal{I}(s).
+  \end{displaymath}
+  \label{def-pred-msg}
+\end{definition}
 
-\begin{figure}[t]
+We will write just \predmsg{im}{\mathcal{I}} when the system $S$ is clear from context.
+We will use an even-shorter version \predmsg{m}{\mathcal{I}} when the residing channel is not ambiguous.
+The same notation \predmsg{\msgid{}}{\mathcal{I}} will be used most commonly to define a predicate message that holds for every message with a given ID (\msgid{}) with the clear residing channel.
+
+\begin{figure}[h]
   \centering
   \begin{tikzpicture}
     \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
     % C_1 external
     \pic at (0, 0) {skeleton-midx-e1};
-    \node[label={[label distance=-6pt,myred]right:{\msgsfsm{rsWr}}},color=myred] at (-1.4, -2.05) {$\bullet$};
+    \node[label={[label distance=-6pt,myred]right:{\msgsfsm{rsWr}}},color=myred] at (-1.6, -2.25) {$\bullet$};
     % Between P and C_1
     \pic at (0, 0) {skeleton-midx-pc1};
-    \node[label={[label distance=-9pt,myred]below right:{\msgsfsm{rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
+    \node[label={[label distance=-11pt,myred]below right:{\msgsfsm{rsM}}},color=myred] at (-0.7, -0.8) {$\bullet$};
     % Between P and C_2
     \pic at (0, 0) {skeleton-midx-pc2};
-    \node[label={[label distance=-6pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}??}},color=myblue] at (1, -0.7) {$\bullet$};
+    \node[label={[label distance=-4pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}??}},color=myblue] at (1.1, -0.8) {$\bullet$};
 
     % Curves
-    \draw [->,color=myred] (-0.6, -1.15) to[out=225,in=90] node[below right=-3pt] {\rdrulelbl{r_1}{C_1.\textrm{st} \leftarrow M}} (-1.2, -1.85);
+    \draw [->,color=myred] (-0.7, -1.15) to[out=225,in=90] (-1.2, -1.95);
+    \node at (1.2, -2.4) {\rdrulelbl{r_1}{C_1.\textrm{st} \leftarrow M}};
+    \draw [densely dashed,color=myred,line width=0.3pt] (-0.95, -1.55) to[out=-30,in=90] (0, -2.2);
 
     % Legends
-    \draw (2.3, -1.4) rectangle (5.0, -2.0) node[pos=.5]
+    \draw (3.0, -1.6) rectangle (6.4, -2.4) node[pos=.5]
           {\small $O.\textrm{st} \triangleq (s.\listof{o})[\idxOf{O}].\textrm{st}$};
   \end{tikzpicture}
   \caption{Interference breaks a predicate message}
@@ -429,8 +482,9 @@ We will write just \predmsg{im}{P} when the system $S$ is clear from context, al
 \end{figure}
 
 \autoref{fig-ex-pred-msg-fail} presents an example of a predicate message.
-Recalling the example protocol from \autoref{sec-example}, when the system has a message of a kind \blmsg{rsM}, we expect the parent and the other child (who is not the requestor) to have I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
+Recalling the example protocol from \autoref{sec-nutshell}, when the system has a message of a kind \blmsg{rsM}, we expect the parent and the other child (who is not the requestor) to have I status (like {\color{myblue} $\{C_1.\textrm{st} = I \wedge P.\textrm{st} = I\}$} in the figure).
 However, the predicate is broken when a state transition happens \emph{by another transaction}; for instance, the predicate no longer holds if a state transition happens by {\color{myred} $r_1 \in C_1$}, which takes an input {\color{myred} \idmsf{5}{rsM}} and updates the status of $C_1$ to M.
+From now on, we will use a brief notation like $\rdrulelbl{r_1}{C_1.\textrm{st} \leftarrow M}$ to denote a rule with some commands.
 
 Investigating this corner case carefully, we can find that actually no two different \msgsf{rsM} messages can be in the system at the same time.
 This finding implies that now the predicate message for \msgsf{rsM} should have a much-more-complicated form, which considers \emph{all possible noninterference cases}.
@@ -455,7 +509,7 @@ Serializability guarantees exactly that simplification, and \hemiola{} provides 
 
 Our novel approach to employing predicate messages in atomic histories begins with formalizing the notion of \emph{atomic invariants}:
 \begin{definition}[Atomic Invariants]
-  $\mathcal{I}_a: \listtof{\hidmt{}} \times \hstt{} \to \propt{}$ is called an \emph{atomic invariant} iff $(\mathcal{I}_a\ \listof{im_o}\; s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{im_i}}{h}{\listof{im_o}}$.
+  $\mathcal{I}_a: \listtof{\hidmt{}} \times \hstt{} \to \propt{}$ is called an atomic invariant iff $\mathcal{I}_a\, (\listof{im_o}, s_1)$ holds for any atomic history $h$ with $\semsteps{S}{s_0}{h}{s_1}$ and $\atomic{\listof{im_i}}{h}{\listof{im_o}}$.
   \label{def-atomic-invariant}
 \end{definition}
 \noindent Note that an atomic invariant takes the live messages ($\listof{im_o}$) from an atomic history as an additional argument, compared with ordinary invariants.
@@ -467,67 +521,75 @@ Our novel approach to employing predicate messages in atomic histories begins wi
       \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
       % C_2 external
       \pic at (0, 0) {skeleton-midx-e2};
-      \node[label={[label distance=-6pt,myblue]right:{\msgsfsm{rsWr}}},color=myblue] at (1.6, -2.05) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]right:{\msgsfsm{rsWr}}},color=myblue] at (1.8, -2.15) {$\bullet$};
       % Between P and C_1
       \pic at (0, 0) {skeleton-midx-pc1};
-      \node[label={[label distance=-6pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}}},color=myblue] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]right:{\small\predmsg{\msgsf{rsM}}{C_1.\textrm{st} = I \wedge P.\textrm{st} = I}}},color=myblue] at (1.1, -0.8) {$\bullet$};
       % Between P and C_2
       \pic at (0, 0) {skeleton-midx-pc2};
-      \node[label={[label distance=-9pt,myblue]below right:{\msgsfsm{rqI}}},color=myblue] at (-0.6, -0.7) {$\bullet$};
-      \node[label={[label distance=-9pt,myblue]above left:{\small\predmsg{\msgsf{rsI}}{C_1.\textrm{st} = I}}},color=myblue] at (-0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myblue]below right:{\msgsfsm{rqI}}},color=myblue] at (-0.7, -0.8) {$\bullet$};
+      \node[label={[label distance=-9pt,myblue]above left:{\small\predmsg{\msgsf{rsI}}{C_1.\textrm{st} = I}}},color=myblue] at (-0.9, -0.8) {$\bullet$};
 
       % Curves
-      \draw [->,color=myblue] (-0.5, -1.2) to[out=-130,in=-120,distance=1.4cm] node[below] {\blrulelbl{r_1}{C_1.\textrm{st} \leftarrow I}} (-1.8, -0.7);
-      \draw [->,color=myblue] (-1.6, -0.2) to[out=65,in=110,distance=1.3cm] node[above] {\blrulelbl{r_p}{P.\textrm{st} \leftarrow I}} (1.4, -0.4);
-      \draw [->,color=myblue] (1.7, -1.0) to[out=-90,in=90] node[right=3pt] {\blrulelbl{r_2}{C_2.\textrm{st} \leftarrow M}} (2.1, -1.8);
+      \draw [->,color=myblue] (-0.6, -1.3) to[out=-130,in=-120,distance=1.8cm] node[below] {\blrulelbl{r_1}{C_1.\textrm{st} \leftarrow I}} (-1.8, -0.7);
+      \draw [->,color=myblue] (-1.6, -0.2) to[out=65,in=110,distance=1.6cm] node[above] {\blrulelbl{r_p}{P.\textrm{st} \leftarrow I}} (1.4, -0.5);
+      \draw [->,color=myblue] (1.8, -1.1) to[out=-90,in=90] node[right=3pt] {\blrulelbl{r_2}{C_2.\textrm{st} \leftarrow M}} (2.2, -1.9);
     \end{tikzpicture}\\
     \hline
-    \mbox{}\vspace{-8pt} \\ %% padding
     \begin{math}
       \begin{array}{rcrcl}
         \mathcal{I}_a\; s\; \listof{im_o} & \triangleq & ((4, \textsf{rsI}) \in \listof{im_o} & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I)\; \wedge\\
-        & & ((8, \textsf{rsM}) \in \listof{im_o} & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I\\
-        & & & & \wedge\; (s.\listof{o})[\idxOf{P}].\textrm{st} = I)\\
+        & & ((8, \textsf{rsM}) \in \listof{im_o} & \to & (s.\listof{o})[\idxOf{C_1}].\textrm{st} = I \wedge (s.\listof{o})[\idxOf{P}].\textrm{st} = I)
       \end{array}
     \end{math}
   \end{tabular}
   \caption{Predicate messages defined as an atomic invariant}
-  \vspace{-5pt}
   \label{fig-ex-atomic-invariants}
 \end{figure}
 
 \autoref{fig-ex-atomic-invariants} shows an example of predicate messages defined in an atomic history, formalized as an atomic invariant.
-$\mathcal{I}_a$ shows how predicate messages are formalized into an atomic invariant; it is basically a conjunction of predicates, where each predicate has a form of $(im \in \listof{im_o} \to P\ s)$, claiming that the predicate $P$ holds when $im$ is in \emph{the live messages} $\listof{im_o}$.
-%% (Compare this with the conventional definition of the predicate message described in \autoref{}).
+$\mathcal{I}_a$ shows how predicate messages are formalized into an atomic invariant; it is basically a conjunction of predicates, where each predicate has a form of $(im \in \listof{im_o} \to P(s))$, claiming that the predicate $P$ holds when $im$ is in \emph{the live messages} $\listof{im_o}$.
+Compare this form with the original definition of predicate messages, defined in \autoref{def-pred-msg}, where $(im \in s.M)$ is replaced with $(im \in \listof{im_o})$, thus avoiding possible interference by other messages.
+
 We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic history (in the figure) step-by-step:
 \begin{itemize}[leftmargin=*]
 \item The initial step of the atomic history is the one by $r_1$. The live messages are $\listsingle{\idmsf{4}{rsI}}$. Since $r_1$ changes the status of $C_1$ to I, it is straightforward to prove $\mathcal{I}_a$.
 \item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis, we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
 \item The last step is by $r_2$, and the live messages are $\listsingle{\idmsf{10}{rsWr}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsWr}.
 \end{itemize}
-It is worth emphasizing that the invariant proof was straightforward since no other state transitions interfere with an atomic history.
+It is worth emphasizing again that the invariant proof was straightforward since no other state transitions interfere with an atomic history.
 
 How do atomic invariants help prove conventional invariants?
 If the system $S$ is serializable, by its definition, for every reachable state $s$ with a history $h$ (\semsteps{S}{\sysInit{S}}{h}{s}), there is a sequential history $h_\textrm{seq}$ that reaches the same state (\semsteps{S}{\sysInit{S}}{h_\textrm{seq}}{s}).
-Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be proven by inducting on each transaction, not on each step.
+Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be proven \emph{by showing that any transaction preserves it}.
 
-\begin{figure}[h]
+\begin{figure}[t]
   \centering
   \begin{tabular}{|c|}
     \hline
     \begin{tikzpicture}
       \node[anchor=west] at (-1.7, 2) {{\small Atomic invariant:}};
-      \node[anchor=west] at (1.12, 2) {$(\mathcal{I}_a\ \listof{m_i}\ s_i) \to (\mathcal{I}_a\ \listof{m_{i+1}}\ s_{i+1})$};
-      \draw [->] (2.7, 1.7) -- (3.1, 1.3);
+      \node[anchor=east] at (4.0, 2) {$\mathcal{I}_a\, (\listof{m_i}, s_i)$};
+      \node[anchor=west] at (4.5, 2) {$\mathcal{I}_a\, (\listof{m_{i+1}}, s_{i+1})$};
+      \draw [->, line width=0.6pt] (4.05, 2) -- (4.45, 2);
+      \draw [->, line width=0.6pt] (4.05, 1.7) -- (4.45, 1.3);
+
       \node[anchor=west] at (-1.7, 1) {{\small Conventional invariant:}};
-      \node[anchor=west] at (1.68, 1) {$(\mathcal{I}\ s_i) \to (\mathcal{I}\ s_{i+1})$};
-      \node at (2.5, 0.55) {$\vdots$};
-      \node at (3.4, 0.55) {$\vdots$};
+      \node[anchor=east] at (4.0, 1) {$\mathcal{I}(s_i)$};
+      \node[anchor=west] at (4.5, 1) {$\mathcal{I}(s_{i+1})$};
+      \draw [->, line width=0.6pt] (4.05, 1) -- (4.45, 1);
+
+      \node[anchor=east] at (3.9, 0.55) {$\vdots$};
+      \node[anchor=west] at (4.6, 0.55) {$\vdots$};
+
       \node[anchor=west] at (-1.7, 0) {{\small Steps:}};
-      \node[anchor=west] at (0, 0) {$\to s_0 \to \cdots \to s_i \to s_{i+1} \to \cdots \to s_n \to$};
-      \node at (2.95, -0.5) {{\small (Atomic history)}};
-      \draw [dotted, line width=1pt] (0.7, -0.25) to[out=-90,in=0] (1.7, -0.5);
-      \draw [dotted, line width=1pt] (5.2, -0.25) to[out=-90,in=-180] (4.2, -0.5);
+      \node[anchor=east] at (4.0, 0) {$s_0 \to \cdots \to s_i$};
+      \node[anchor=west] at (4.5, 0) {$s_{i+1} \to \cdots \to s_n$};
+      \draw [->, line width=0.6pt] (4.05, 0) -- (4.45, 0);
+
+      \node at (4.25, -0.6) {{\small (Atomic history)}};
+      \draw [dotted, line width=1pt] (1.6, -0.3) to[out=-90,in=0] (2.6, -0.6);
+      \draw [dotted, line width=1pt] (7.1, -0.3) to[out=-90,in=-180] (5.9, -0.6);
     \end{tikzpicture}\\
     \hline
   \end{tabular}
@@ -535,11 +597,12 @@ Since $h_\textrm{seq}$ is a concatenation of transactions, an invariant can be p
   \label{fig-use-atomic-inv}
 \end{figure}
 
+The three induction cases ([TSilent], [TIns], and [TOuts]) do not need any special treatment, since each case induces just a single step.
+The [TAtomic] case, however, requires coordination with atomic invariants.
+In other words, we can employ both conventional/atomic invariants ($\mathcal{I}$ and $\mathcal{I}_a$) to prove the ones for the next state ($s_{i+1}$):
 \autoref{fig-use-atomic-inv} explains how to use an atomic invariant $\mathcal{I}_a$ while proving a conventional invariant $\mathcal{I}$ in the [TrsAtomic] case.
-The point is that we can employ both $(\mathcal{I}\ s_i)$ and $(\mathcal{I}_a\ \listof{m_i}\ s_i)$ to prove $(\mathcal{I}\ s_{i+1})$.
+The point is that we can employ both $\mathcal{I}(s_i)$ and $\mathcal{I}_a\, (\listof{m_i}, s_i)$ to prove $\mathcal{I}(s_{i+1})$.
 For instance, we may want to have an invariant claiming that at most one node of the system has M status at a time.
-(We will indeed use this invariant in our case studies, although the exact statement is a bit more complex.)
+We will indeed use this invariant in our case studies, although the exact statement is a bit more complex.
 The predicate messages defined in \autoref{fig-ex-atomic-invariants} will play a crucial role here, \eg{} the one for \idmsf{8}{rsM} says that $C_1$ and $P$ both have I status, which means that the state transition by $(r_2: C_2.\textrm{st} \leftarrow M)$ preserves the invariant.
-
-The other three cases ([TrsSilent], [TrsIns], and [TrsOuts]) do not need any further information, since each case induces just a single step.
 We will see more comprehensive uses of predicate messages in our case studies (\autoref{sec-case-study}).
