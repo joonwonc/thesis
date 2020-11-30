@@ -144,20 +144,20 @@ While there are other possible correct topology and network settings, the cases 
   \label{fig-motive-3}
 \end{figure}
 
-\autoref{fig-motive-3} presents further rule-execution cases right after \autoref{fig-motive-2}.
-After $\rdcircf{4}$ responds with \rdrecmsgsm{d}{rsI}, $P$ can take it to respond back to $C_1$.
-$\rdcircf{5}$ exactly presents this step, taking \rdrecmsgsm{d}{rsI} and responding back to $C_1$ with \rdrecmsgsm{g}{rsM}.
-At this moment $P$ changes its status to $P(I, \cdot, M_{(1)})$ (from the transient state $S^D$) to record that it no longer has the coherent value and just granted $C_1$ the M status.
-Since the transient state acts like a lock, this status change can be also regarded as a lock release, so that now $P$ can handle some other requests.
+\autoref{fig-motive-3} presents some additional rule-execution cases right after $\rdcircf{4}$ in \autoref{fig-motive-2}.
+After $\rdcircf{4}$ responds with \rdrecmsgsm{d}{rsI}, now $P$ can take it to respond back to $C_1$.
+$\rdcircf{5}$ presents this step, taking \rdrecmsgsm{d}{rsI} and responding back to $C_1$ with \rdrecmsgsm{g}{rsM}.
+At this moment $P$ changes its status to $P(I, ?, M_{(1)})$ (from the transient state $S^D$) to record that it no longer has the coherent value and just granted $C_1$ the M status.
+Since the transient state also functions like a lock, this status change can be also regarded as a lock release, so that $P$ can handle some other requests.
 
 $\blcircf{6}$ is the next transition step by $P$ to accept a new request.
 \blrecmsgsm{f}{rqM} has been waiting for the transient state of $P$ to be released, and $\blcircf{6}$ finally takes it and sends an invalidation request to $C_1$.
 
-Looking at the message channel $5$, the one for parent-to-child messages (from $P$ to $C_1$), there are two messages, \rdrecmsgsm{g}{rsM} and \blrecmsgsm{h}{rqI}, that are waiting for $C_1$ to handle them.
+Looking at the message channel $5$, the one for parent-to-child messages (from $P$ to $C_1$), there are two messages, \rdrecmsgsm{g}{rsM} and \blrecmsgsm{h}{rqI}, residing in the channel.
 A single parent-to-child channel affects the correctness of the protocol in this case.
 If we had two separated downward channels, one for requests and the other for responses, $C_1$ could handle \blrecmsgsm{h}{rqI} first, changes its status to I, handles \rdrecmsgsm{g}{rsM} later, and changes its status to M again.
 Since it sent the invalidation response to the parent, eventually $C_2$ will also get the M status, which leads to an incoherent state.
-Therefore, it is crucial to have a single parent-to-child channel so that \rdrecmsgsm{g}{rsM} blocks \blrecmsgsm{h}{rqI} to be handled first.
+Therefore, it is crucial to have a single parent-to-child channel so that \rdrecmsgsm{g}{rsM} \emph{blocks} \blrecmsgsm{h}{rqI} to be handled first.
 After $C_1$ takes \rdrecmsgsm{g}{rsM} and responds back to the processor core with \rdrecmsgsm{i}{rsWr}, presented as $\rdcircf{7}$, it can subsequently take the invalidation request \blrecmsgsm{h}{rqI} and responds with \blrecmsgsm{j}{rsI}, as shown in $\blcircf{8}$.
 
 As examined in \autoref{fig-motive-2} and \autoref{fig-motive-3}, in a cache-coherence protocol, transient states and network channels play a crucial role in making \emph{interleavings} correct.

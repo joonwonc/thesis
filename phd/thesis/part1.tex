@@ -267,19 +267,21 @@ In this section, we provide the formal definition of serializability on top of a
 
 \section{Cache-Coherence Protocol as a Distributed Protocol}
 
-We already explored in \autoref{sec-nutshell} with a concrete example that the cache objects in a cache-coherent memory system handles multiple requests from the processor cores concurrently, in a distributed way.
-We also learned that transactions to handle such requests are interleaved, so ensuring safe interleaving is crucial in designing and proving a cache-coherence protocol.
+We already explored in \autoref{sec-nutshell} with a concrete example that the cache objects in a cache-coherent memory system handle multiple requests from the processor cores concurrently, in a distributed way.
+We also learned that transactions to handle such requests are interleaved, so it is crucial in designing and proving a cache-coherence protocol to ensure safe interleavings.
 
-A very well-known approach to ensuring safe interleavings is to prove \emph{noninterference}, which claims that no other state transitions affect state relevant to an ongoing transaction spuriously.
-Not constrained to the cache-coherence protocols, noninterference has been developed and employed in some computer systems including concurrent software and distributed systems.
+A very well-known approach to ensuring safe interleavings is to prove \emph{noninterference}, which basically claims that no other state transitions spuriously affect state relevant to an ongoing transaction.
+Not constrained to the cache-coherence protocols, noninterference has been developed and employed in verifying various computer systems including concurrent software and distributed systems.
+
 Model checkers have always been in favor of employing noninterference lemmas.
 The lemmas are often described explicitly by the user (guided by intuition) or discovered automatically (typically guided by counterexamples).
 The established style of noninterference reasoning, though, has an inherent weakness: it requires explicit lemma statements per-protocol.
 Another issue is that even though these lemmas are stated and proven, it is hard to be sure if the lemmas are enough to resolve all possible interleavings in the system.
 
 Another well-known approach is to prove \emph{serializability}, which claims that the overall state transition of any interleaved transactions can be interpreted as if they are executed serially, \ie{} \emph{atomically in some order with no interleaving}.
-Serializability has been actively developed and used in database systems and software distribued systems.
-To our knowledge, the notion of serializability has not been used to verify cache-coherence protocols.
+Serializability has been mainly developed and used in database systems and software distribued systems.
+Regarding a cache-coherence protocol as a distributed protocol, one of the main topics of this thesis is to demonstrate that serializability can be also employed to prove the protocol.
+To our knowledge, the notion of serializability has not been used to provide a formal correctness proof of a cache-coherence protocol.
 Instead of stating noninterference lemmas coupled to each protocol, which is a conventional approach to the verification of cache-coherence protocols, in \hemiola{} we try to find general conditions that ensures serializability, \emph{extracted and abstracted} from practical protocols, so the conditions can apply to various protocols.
 
 \section{From Atomic Histories to Serializability}
