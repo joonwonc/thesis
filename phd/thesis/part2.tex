@@ -332,14 +332,244 @@ This transaction kind is one of the longest-running in cache-coherence protocols
 
 \chapter{Serializability Guarantee by \hemiola{}}
 
-While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}.
+In this chapter, we provide the proof of serializability in \hemiola{}.
+As introduced in \autoref{sec-hemiola-dsl}, the proof largely requires the two conditions: the tree topology with the three channel kinds (introduced in \autoref{sec-topo-net-reqs}) and the locking mechanism (introduced in \autoref{sec-locking-mechanism}).
+Since the \hemiola{} DSL with the rule templates faithfully follows such conditions, we can also say that just using the DSL ensures serializability.
+While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}, \eg{} the DSL does not mention anything about cache-coherence protocols.
 
-In order to satisfy such conditions for free, \hemiola{} limits protocols primarily by dictating network topologies and locking disciplines and by forcing rules to be defined using \emph{rule templates}.
-We will present how the network topologies and the rule templates look and explain the intuition why using these components implies serializability, and we will sketch the actual proof using a technique called \emph{commuting reductions}.
+In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
+This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
 
 \section{The Intuition: Separation by Topology, Network, and Locks}
+\label{sec-sz-pf-intuition}
+
+\newcommand{\commstep}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
+\newcommand{\commhst}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
+
+We first present our intuition of how commuting reductions are used in the serializability proof; in order for it, we need to formalize commuting reductions first.
+The most basic commuting reduction happens between two adjacent state-transition steps:
+\begin{definition}[Commutativity of steps]
+  Two adjacent state-transition steps commute, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
+  \begin{displaymath}
+    \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})} \triangleq \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
+  \end{displaymath}
+\end{definition}
+We will write just $\commstep{l_0}{l_1}$ when the system $S$ and the transition-step adjacency (\ie{} existence of the intermediate state $s_1$) are clear from context.
+
+We can naturally lift the definition to one for histories to argue whether two histories commute or not:
+\begin{definition}[Commutativity of histories]
+  Two adjacent histories commute, denoted as \commstep{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semstep{S}{s_1}{h_1}{s_2})}, if the state transitions with the opposite order reach the same state:
+  \begin{displaymath}
+    \commhst{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semsteps{S}{s_1}{h_1}{s_2})} \triangleq \exists s_1'.\; \semsteps{S}{s_0}{h_1}{s_1'} \wedge \semsteps{S}{s_1'}{h_0}{s_2}.
+  \end{displaymath}
+\end{definition}
+We overload the same notation for history commutativity.
+We will also use the shorter version $\commhst{h_0}{h_1}$ with clear context.
+
+Our high-level intuition for the serializability proof is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
+More specifically, we will try to \emph{merge} any two separated atomic-history fragments by performing reductions.
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{cc}
+    \begin{tikzpicture}
+      \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
+      % C_1 external
+      \pic at (0, 0) {skeleton-midx-e1};
+      \node[label={[label distance=-6pt,myred]left:{\small {\sf rqWr}}},color=myred] at (-1.8, -2.3) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]right:{\small {\sf rsWr}}},color=myred] at (-1.6, -2.3) {$\bullet$};
+      % Between P and C_1
+      \pic at (0, 0) {skeleton-midx-pc1};
+      \node[label={[label distance=-6pt,myred]left:{\small {\sf rqM}}},color=myred] at (-1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myred]below right:{\small {\sf rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
+      % Between P and C_2
+      \pic at (0, 0) {skeleton-midx-pc2};
+      \node[label={[label distance=-9pt,myred]below left:{\small {\sf rsI}}},color=myred] at (0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]right:{\small {\sf rqI}}},color=myred] at (1, -0.7) {$\bullet$};
+
+      % Curves
+      \draw [->,color=myred] (-2.3, -2.0) to[out=90,in=-90] node[left] {\rdcircflsm{1}{rquu}} (-1.8, -1.0);
+      \draw [->,color=myred] (-1.7, -0.4) to[out=70,in=110,distance=1.8cm] node[left=18pt] {\rdcircflsm{3}{rqud}} (1.4, -0.4);
+      \draw [->,color=myred] (1.6, -0.9) to[out=-50,in=-50,distance=1.9cm] node[below] {\rdcircflsm{4}{immu}} (0.5, -1.3);
+      \draw [->,color=myred] (0.4, -0.8) to[out=135,in=45,distance=0.6cm] (-0.3, -0.7);
+      \draw [densely dashed,color=myred,line width=0.3pt] (0, -0.35) to[out=90,in=-170] (1.6, 0.35);
+      \node at (2.0, 0.3) {\rdcircflsm{5}{rsud}};
+      \draw [->,color=myred] (-0.6, -1.1) to[out=225,in=90] node[below right] {\rdcircflsm{7}{rsdd}} (-1.1, -2.0);
+    \end{tikzpicture} &
+    \begin{tikzpicture}
+      \pic at (0, 0) {skeleton-pcce2={$P$}{$C_1$}{$C_2$}};
+      % C_2 external
+      \pic at (0, 0) {skeleton-midx-e2};
+      \node[label={[label distance=-6pt,myblue]right:{\small {\sf rsWr}}},color=myblue] at (1.8, -2.3) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]left:{\small {\sf rqWr}}},color=myblue] at (1.6, -2.3) {$\bullet$};
+      % Between P and C_1
+      \pic at (0, 0) {skeleton-midx-pc1};
+      \node[label={[label distance=-9pt,myblue]above left:{\small {\sf rsI}}},color=myblue] at (-0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-10pt,myblue]below right:{\small {\sf rqI}}},color=myblue] at (-0.6, -0.7) {$\bullet$};
+      % Between P and C_2
+      \pic at (0, 0) {skeleton-midx-pc2};
+      \node[label={[label distance=-6pt,myblue]right:{\small {\sf rsM}}},color=myblue] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myblue]below:{\small {\sf rqM}}},color=myblue] at (0.6, -0.7) {$\bullet$};
+
+      % Curves
+      \draw [->,color=myblue] (1.1, -2.0) to[out=90,in=-45] node[below left=-3pt] {\blcircflsm{2}{rquu}} (0.6, -1.3);
+      \draw [->,color=myblue] (0.4, -0.8) to[out=135,in=45,distance=0.5cm] (-0.3, -0.7);
+      \draw [densely dashed,color=myblue,line width=0.3pt] (0, -0.35) to[out=90,in=-170] (1.6, 0.35);
+      \node at (2.0, 0.3) {\blcircflsm{6}{rqud}};
+      \draw [->,color=myblue] (-0.6, -1.2) to[out=-135,in=-135,distance=2.1cm] node[below] {\blcircflsm{8}{immu}} (-1.4, -0.7);
+      \draw [->,color=myblue] (-1.1, -0.2) to[out=60,in=120,distance=1.7cm] node[left=18pt] {\blcircflsm{9}{rsud}} (1.4, -0.5);
+      \draw [->,color=myblue] (1.7, -0.95) to[out=-90,in=90] node[above right=-2pt] {\blcircflsm{10}{rsdd}} (2.3, -2.0);
+    \end{tikzpicture}
+  \end{tabular}
+  \caption{The two interleaving transactions}
+  \label{fig-ex-sz-trs}
+\end{figure}
+
+We elaborate this intuition more by using a concrete example.
+\autoref{fig-ex-sz-trs} shows two interleaving transactions in {\color{myred} red} and {\color{myblue} blue}, started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-nutshell}.
+We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{\textrm{rquu}}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{\textrm{rquu}} is a rule in $C_1$ using the ``rquu'' rule template, taking an input message \idmsf{1}{rqWr} and outputting \idmsf{3}{rqM}.
+
+We introduce each state transition here to understand the interleaving better:
+\begin{itemize}
+\item \rdcircfl{1}{rquu} and\blcircfl{2}{rquu}: forward \msgsfsm{rqM} to $P$ since $C_1$ (or $C_2$) does not have the M status.
+\item \rdcircfl{3}{rqud} and\blcircfl{6}{rqud}: $P$ makes an invalidation request to the other child ($C_2$ and $C_1$, respectively).
+\item \rdcircfl{4}{immu} and\blcircfl{8}{immu}: $C_2$ (or $C_1$) changes its status to I and responds with \msgsfsm{rsI} immediately.
+\item \rdcircfl{5}{rsud} and\blcircfl{9}{rsud}: the invalidation has finished so $P$ responds with \msgsfsm{rsM} to the original requestor.
+\item \rdcircfl{7}{rsdd} and\blcircfl{10}{rsdd}: $C_1$ (or $C_2$) takes the response and upgrades its status to M.
+\end{itemize}
+
+\begin{figure}[t]
+  \centering
+  \renewcommand{\arraystretch}{1.2}
+  \setlength\tabcolsep{2.5pt}
+  \begin{tabular}{c}
+    \multicolumn{1}{l}{
+      \begin{tikzpicture}
+        \node at (0, 0) {};
+        \node[anchor=west] at (2.3, 0.4) {{\small\it State transition timeline}};
+        \draw [>=stealth,->,line width=1pt] (2.3, 0) to (9, 0);
+    \end{tikzpicture}}\\
+    \begin{tabular}{c|ccccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & & & \rdcircf{7} & \blcircf{8} & & \\
+      \hline
+      $P$ & & & & \rdcircf{3} & & \rdcircf{5} & \blcircf{6} & & & \blcircf{9} & \\
+      \hline
+      $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & & & \blcircf{10} \\
+      \hline
+    \end{tabular}\\
+    \vspace{-10pt}\\
+    $\downarrow$ (merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}\,]$ and $[\rdcircf{7}\,]$ by commuting $\blcircf{6}$ and $\rdcircf{7}$)\\
+    \vspace{-10pt}\\
+    \begin{tabular}{c|ccccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & & \rdcircf{7} & & \blcircf{8} & & \\
+      \hline
+      $P$ & & & & \rdcircf{3} & & \rdcircf{5} & & \blcircf{6} & & \blcircf{9} & \\
+      \hline
+      $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & & & \blcircf{10} \\
+      \hline
+    \end{tabular}\\
+    \vspace{-10pt}\\
+    $\downarrow$ (merge $[\rdcircf{1}\,]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}\,]$ by commuting $[\blcircf{2}\,]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}\,]$)\\
+    \vspace{-10pt}\\
+    \begin{tabular}{c|ccccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & \rdcircf{7} & & & \blcircf{8} & & \\
+      \hline
+      $P$ & & & \rdcircf{3} & & \rdcircf{5} & & & \blcircf{6} & & \blcircf{9} & \\
+      \hline
+      $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & & & \blcircf{10} \\
+      \hline
+    \end{tabular}
+  \end{tabular}
+  \caption{Serialization of an interleaved history by reductions}
+  \label{fig-ex-sz-state-trs}
+\end{figure}
+
+\autoref{fig-ex-sz-state-trs} shows the original legal interleaved history (top) and how reductions apply to it and make it sequential (bottom).
+In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, either the commutation $\commhst{[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]}{[\blcircf{6}]}$ or $\commhst{[\blcircf{6}]}{[\rdcircf{7}]}$ should hold.
+We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
+
+Two state transitions trivially commute if 1) the object state transitions happen in different objects and 2) input/output channels used for the transitions are all orthogonal to each other.
+(We will formalize this intuition as a lemma in the actual serializability proof, shown in \autoref{sec-sz-proof}.)
+If either of the conditions does not hold, we may need to analyze more.
+
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \begin{tikzpicture}
+      % Alignment
+      \node at (-3.6, 0) {};
+      \node [anchor=north west,text width=2.5cm,inner sep=4pt,draw] at (-3.3, 0.4) {{\small \blmsgsm{rqI} and \rdmsgsm{rsM} are different, due to their message types.}};
+
+      \node at (0, 0.5) {$P$};
+      \node at (0, 0.15) {\tiny $5$};
+      \draw [line width=0.2mm, >->] (0, 0) -- (0, -1.2);
+      \node[label={[label distance=-4pt,myblue]right:{\small {\sf rqI}}},color=myblue] at (0, -0.4) {$\bullet$};
+      \node[label={[label distance=-4pt,myred]right:{\small {\sf rsM}}},color=myred] at (0, -0.8) {$\bullet$};
+      \node at (0, -1.5) {$C_1$};
+      % Curves
+      \draw [->,color=myblue] (1.1, 0.8) to[out=-135,in=90] node[below right] {\blcircflsm{6}{rqud}} (0.4, -0.1);
+      \draw [->,color=myred] (0.4, -1.1) to[out=-90,in=90] node[right] {\rdcircflsm{7}{rsdd}} (0.4, -1.7);
+    \end{tikzpicture}\medskip
+    \caption{Reduction by different message types}
+    \label{fig-ex-sz-comm-1}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.48\textwidth}
+    \begin{tikzpicture}
+      % Alignment
+      \node at (-3.5, 0) {};
+      \node [anchor=north west,text width=0.9cm,inner sep=4pt,draw] at (-2.5, -0.3) {{\small silent}};
+      \node [anchor=north west,text width=2.3cm,inner sep=4pt,draw] at (1.2, 0.4) {{\small \blmsgsm{rqM} and \rdmsgsm{rsI} use different channels.}};
+
+      \node at (0, 0.5) {$P$};
+      \node at (-0.2, 0.15) {\tiny $6$};
+      \node at (0, 0.15) {\tiny $7$};
+      \node at (0.2, 0.15) {\tiny $8$};
+      \draw [line width=0.2mm, <-<] (-0.2, 0) -- (-0.2, -1.2);
+      \draw [line width=0.2mm, <-<] (0, 0) -- (0, -1.2);
+      \draw [line width=0.2mm, >->] (0.2, 0) -- (0.2, -1.2);
+      \node[label={[label distance=-4pt,myblue]left:{\small {\sf rqM}}},color=myblue] at (-0.2, -0.4) {$\bullet$};
+      \node[label={[label distance=-2pt,myred]left:{\small {\sf rsI}}},color=myred] at (0, -0.8) {$\bullet$};
+      \node[label={[label distance=-4pt,myred]right:{\small {\sf rqI}}},color=myred] at (0.2, -0.8) {$\bullet$};
+      \node at (0, -1.5) {$C_2$};
+      % Curves
+      \draw [->,color=myblue] (-0.7, -1.9) to[out=110,in=-90] node[left] {\blcircflsm{2}{rquu}} (-0.9, -0.7);
+      \draw [->,color=myred] (0.6, -1.1) to[out=-90,in=-90,distance=1.4cm] node[right=5pt] {\rdcircflsm{4}{immu}} (-0.6, -1.1);
+    \end{tikzpicture}
+    \caption{Reduction by the rule-template properties}
+    \label{fig-ex-sz-comm-2}
+  \end{subfigure}
+  \caption{Nontrivial reduction cases}
+  \label{fig-ex-sz-comm}
+\end{figure}
+
+In the first merge case, $[\blcircf{6}]$ can be pushed to the right, \ie{} $(\commstep{\blcircf{6}}{\rdcircf{7}})$ holds.
+The object state transitions are straightforward to deal with, since they are orthogonal ($P$ for $\blcircf{6}$ and $C_1$ for $\rdcircf{7}$).
+It is nontrivial to deal with the used channels, however, since the output of $\blcircf{6}$ (\blmsgsm{rqI}) and the input of $\rdcircf{7}$ (\rdmsgsm{rsM}) share the same channel $5$.
+\autoref{fig-ex-sz-comm-1} depicts this case; we see $\blcircf{6}$ and $\rdcircf{7}$ still commute, since \rdcircfl{7}{rsdd} should take a ``response'' (\rdmsgsm{rsM}) while \blcircfl{6}{rqud} outputs a ``request'' (\blmsgsm{rqI}).
+It indicates that $\blcircf{6}$ and $\rdcircf{7}$ are involved with different messages in the same channel, thus not affecting commutativity.
+After the merge, we obtain a new (less-interleaved) history, shown in the middle of \autoref{fig-ex-sz-state-trs}.
+
+Now we should merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$; in this case, $\blcircf{2}$ can be pushed to the right.
+While this reduction is trivial in the sense of orthogonal objects and channels, the only nontrivial case is between $\blcircf{2}$ and $\rdcircf{4}$, where both rules are executed in $C_2$.
+These state transitions still commute, as shown in \autoref{fig-ex-sz-comm-2}, since $\blcircf{2}$ cannot make any object state transition, according to the definition of the ``rquu'' rule template.
+After this merge we finally obtain the sequential history.
+
+How can we argue that the atomic-history fragments are always mergeable?
+As we start to see in the two cases in \autoref{fig-ex-sz-state-trs}, mergeability \emph{follows from the rule templates}.
+While trying to merge two fragments, we especially look at the rule template used in the last state transition of the first fragment and figure out which state transitions can be performed between the two.
+For example, when checking mergeability between $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, we find that $\rdcircf{5}$ generates the output message \rdmsgsm{rsM}, and it blocks all the other transactions to go from $P$ to $C_1$, \eg{} $\blcircf{6}$ was blocked until $\rdcircf{7}$ consumes \rdmsgsm{rsM}.
+We can thus commute $\blcircf{6}$ and $\rdcircf{7}$ due to this blocking.
+In this sense, in proving serializability, we look at each rule template and characterize the allowed state transitions between two atomic-history fragments.
 
 \section{The Formal Proof of Serializability}
+\label{sec-sz-proof}
+
+Based on the intuitions from \autoref{sec-sz-pf-intuition}, in this section we provide the formal proof of serializability.
+The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among rule templates, left/right pushes, etc. -- and the serializability proof employing those intuitions.
+The highest-level theorem will simply claim that use of good topology and the rule templates automatically guarantees serializability.
 
 \subsection{Semi-sequential histories}
 
