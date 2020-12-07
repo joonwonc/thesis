@@ -385,7 +385,8 @@ This example shows that an atomic history intuitively captures a \emph{transacti
 Note that an atomic history does not need to be a completed transaction.
 The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response sent on an external channel.
 
-We call a history \emph{externally atomic} if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$); we denote it as $(\extatomic{S}{\listof{\amsgi{im}}}{\listof{l}}{\listof{\amsge{im}}})$.
+We call a history \emph{externally atomic} if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$), denoted as $(\extatomic{S}{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$.
+We sometimes use the shorter notation \extatomicShort{S}{h} for some \listof{\amsgi{im}} and \listof{\amsge{im}}.
 The history $h$ in the example is externally atomic, satisfying a predicate \extatomic{S}{\listsingle{(1,\textsf{rqWr})}}{h}{\listsingle{(7,\textsf{rsI})}}, since the initial message $(1, \textsf{rqWr})$ is an external request (from a processor core attached to $C_1$).
 An externally atomic history records the way the system responded to some set of messages received from the outside world.
 

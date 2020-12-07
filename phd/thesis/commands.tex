@@ -151,6 +151,13 @@
 \newcommand{\strsn}[2]{\ensuremath{#1 \rightslice_{s} #2}}
 \newcommand{\hsseq}[3]{\ensuremath{\mathsf{Sequential}_{\textrm{s}}\ #1\ #2\ #3}}
 
+\newcommand{\hcontsymb}{\ensuremath{\succ}}
+\newcommand{\hcont}[2]{\ensuremath{#1 \hcontsymb #2}}
+\newcommand{\hextcont}[3]{\ensuremath{#1 \vdash #2 \hcontsymb_{\textsf{ext}} #3}}
+\newcommand{\hdiscontsymb}{\ensuremath{\nsucc}}
+\newcommand{\hdiscont}[2]{\ensuremath{#1 \hdiscontsymb{} #2}}
+\newcommand{\hitlv}[2]{\ensuremath{\mathsf{Interleaved}\ #1\ #2}}
+
 %% Visualization of messages/histories
 
 \newcommand*\rdrecsm[1]{
