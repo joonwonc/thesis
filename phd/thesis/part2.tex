@@ -340,7 +340,7 @@ While conventional approaches to verifying cache-coherence protocols deal with t
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
 This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
 
-\section{The Intuition: Separation by Topology, Network, and Locks}
+\section{The Intuition: Merging Atomic-History Fragments}
 \label{sec-sz-pf-intuition}
 
 \newcommand{\commstep}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
@@ -459,7 +459,7 @@ We introduce each state transition here to understand the interleaving better:
       \hline
     \end{tabular}\\
     \vspace{-10pt}\\
-    $\downarrow$ (merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}\,]$ and $[\rdcircf{7}\,]$ by commuting $\blcircf{6}$ and $\rdcircf{7}$)\\
+    $\downarrow$ (merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$ by commuting $\blcircf{6}$ and $\rdcircf{7}$)\\
     \vspace{-10pt}\\
     \begin{tabular}{c|ccccccccccc}
       \hline
@@ -471,7 +471,7 @@ We introduce each state transition here to understand the interleaving better:
       \hline
     \end{tabular}\\
     \vspace{-10pt}\\
-    $\downarrow$ (merge $[\rdcircf{1}\,]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}\,]$ by commuting $[\blcircf{2}\,]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}\,]$)\\
+    $\downarrow$ (merge $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$ by commuting $[\blcircf{2}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}; \rdcircf{7}]$)\\
     \vspace{-10pt}\\
     \begin{tabular}{c|ccccccccccc}
       \hline
@@ -571,11 +571,170 @@ Based on the intuitions from \autoref{sec-sz-pf-intuition}, in this section we p
 The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among rule templates, left/right pushes, etc. -- and the serializability proof employing those intuitions.
 The highest-level theorem will simply claim that use of good topology and the rule templates automatically guarantees serializability.
 
+We will use the example of interleaving transactions shown in \autoref{fig-ex-sz-trs} throughout the proof for better understanding of the entire proof, referred to as the ``interleaving example.''
+
 \subsection{Semi-sequential histories}
+\label{sec-semi-seq-hst}
+
+In \autoref{sec-sz-pf-intuition} we briefly provided the intuition of making a history sequential by merging atomic-history fragments repeatedly.
+In order to employ the intuition in the actual proof, we need to show that \emph{finitely many} reductions suffice.
+For example, while merging two atomic-history fragments, if we happen to separate the other fragment between the two, we will never be sure whether the merging process will be finished with the sequential history or not.
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{|c|}
+    \hline
+    \begin{math}
+      \begin{array}{cc}
+        \inference[STSilent:]{}{\strsn{S}{\listsingle{\lblEmpty{}}}} &
+        \inference[STIns:]{}{\strsn{S}{\listsingle{\lblIns{\listof{m}}}}} \\[20pt]
+        \inference[STOuts:]{}{\strsn{S}{\listsingle{\lblOuts{\listof{m}}}}} &
+        \inference[STAtomic:]{\atomic{\listof{\amsgi{m}}}{\listof{l}}{\listof{\amsge{m}}}}{\strsn{S}{\listof{l}}} \\[20pt]
+      \end{array}
+    \end{math}\\
+    \hline
+  \end{tabular}
+  \caption{Semi-transactions}
+  \label{fig-semi-trs}
+\end{figure}
+
+What would be the way to say \emph{how much} a given history is sequentialized?
+Semi-transactions are defined in order to have a quantitative progress measure for reductions.
+The definition, given in \autoref{fig-semi-trs}, is almost the same as for (ordinary) transactions, except that an atomic history does not need to be external.
+Thanks to this relaxation, any atomic-history fragment is a semi-transaction.
+
+Semi-sequential histories are also defined in a similar way:
+\begin{definition}[Semi-Sequential Histories]
+  A history $h$ is \emph{semi-sequential} with \emph{degree} $n$ iff the history is a concatenation of $n$ semi-transactions.
+  \begin{displaymath}
+    \hsseq{S}{h}{n} \triangleq \exists\, \listof{t}.\; \sizeof{\listof{t}} = n \wedge (\forall t \in \listof{t}.\; \strsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
+  \end{displaymath}
+\end{definition}
+The only difference from sequential histories is that we \emph{count} the number of semi-transactions.
+In our interleaving example, looking at the original interleaved history shown in \autoref{fig-ex-sz-state-trs}, we can find the following semi-transactions in-order: $[\rdcircf{1}]$, $[\blcircf{2}]$, $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$, $[\blcircf{6}]$, $[\rdcircf{7}]$, and $[\blcircf{8}; \blcircf{9}; \blcircf{10}]$.
+In this case, the degree of a semi-sequential history is $6$, the number of semi-transactions.
+Note that the degree of a semi-sequential history is not uniquely determined.
+In the example, when regarding $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ to the three separate single-label atomic histories -- $[\rdcircf{3}]$, $[\rdcircf{4}]$, and $[\rdcircf{5}]$ -- then we obtain another semi-sequential history with degree $8$.
+
+This definition indicates that in order to obtain a serialized history, we should perform reductions to \emph{decrease the count as much as possible}.
+\hemiola{} employs theorems that reflects this intuition:
+\begin{theorem}
+  \label{thm-sseq-default}
+  Given a system $S$, a legal history is always semi-sequential:
+  \begin{displaymath}
+    \forall h.\; \semleg{S}{h} \to \exists n.\; \hsseq{S}{h}{n}.
+  \end{displaymath}
+\end{theorem}
+\begin{proof}
+  The proof is straightforward, since by definition any single-label history is a semi-transaction, and thus any history is semi-sequential, \ie{} $\forall h.\; \hsseq{S}{h}{\sizeof{h}}$.
+\end{proof}
+
+\begin{theorem}[Semi-sequentiality and serializability]
+  \label{thm-sseq-sz}
+  If $S$ satisfies the following property, then $S$ is serializable:
+  \begin{align*}
+    \forall h, n, s.\; & \semsteps{S}{\sysInit{S}}{h}{s} \land \hsseq{S}{h}{n} \to \\
+    & \hseq{S}{h}\; \vee\\
+    & \exists h_r, m.\; \semsteps{S}{\sysInit{S}}{h_r}{s} \wedge \hsseq{S}{h_r}{m} \wedge m < n.
+  \end{align*}
+\end{theorem}
+\begin{proof}
+  The proof employs the well-foundness of the less-than operator ($<$) for natural numbers.
+  For a given history $h$ in a system $S$, we can find an initial number $n$ that satisfies $\hsseq{S}{h}{n}$ (by \autoref{thm-sseq-default}).
+  Now by the given property, $h$ is either already sequential or reduces to $h_r$ with the degree $m < n$.
+  Therefore, finite iteration of the property will eventually reduce the history to a sequential history.
+\end{proof}
 
 \subsection{Reduction of external input/output labels}
+\label{sec-red-ext-labels}
+
+For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively.
+Recall that the serializability (\autoref{def-seq-sz}) does not require the sequential history to preserve the behavior of a history, but to reach to the same state.
+
+The following two dual theorems are enough to push all external labels:
+\begin{theorem}
+  \label{thm-push-ext-labels}
+  In any legal history in the system $S$, the first external-input (or the last external-output) label can be pushed to the first (or the last) of the history, respectively:
+  \begin{displaymath}
+    \forall s_0, s_1, \listof{h_0}, im, \listof{h_1}.\;
+    \mathsf{NoExtIns}(\listof{h_0}) \to
+    \semsteps{S}{s_0}{\listapp{\listcons{\listof{h_0}}{\lblIns{im}}}{\listof{h_1}}}{s_1} \to
+    \semsteps{S}{s_0}{\listapp{\lblIns{im}}{\listapp{\listof{h_0}}{\listof{h_1}}}}{s_1}\ \textrm{and}
+  \end{displaymath}
+  \begin{displaymath}
+    \forall s_0, s_1, \listof{h_0}, im, \listof{h_1}.\;
+    \mathsf{NoExtOuts}(\listof{h_1}) \to
+    \semsteps{S}{s_0}{\listapp{\listcons{\listof{h_0}}{\lblOuts{im}}}{\listof{h_1}}}{s_1} \to
+    \semsteps{S}{s_0}{\listapp{\listapp{\listof{h_0}}{\listof{h_1}}}{\lblOuts{im}}}{s_1},
+  \end{displaymath}
+  where $\mathsf{NoExtIns}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblIns{im}$ and
+  $\mathsf{NoExtOuts}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblOuts{im}$.
+\end{theorem}
+\begin{proof}
+  By definition it suffices to prove \commhst{\listof{h_0}}{\listsingle{\lblIns{im}}}.
+  Since $\mathsf{NoExtIns}(\listof{h_0})$, each label in $\listof{h_0}$ is a silent, external-output, or internal label.
+  It is trivial that a silent label and an external-input label commute, since the silent label makes no state transition.
+  An external-output label and an external-input label also commute, since they use different channels.
+  Commutativity between an internal label and an external-input label is relatively nontrivial, since an internal label may dequeue some external inputs.
+  They still commute, however, since dequeue of an external-input label means there is already an external input message in the channel, and the external-input label adds a different message to the system.
+  The proof for the external-output label is almost same as the one for the external-input label.
+\end{proof}
+
+\tikzset{
+  ->-/.style={
+    decoration={
+      markings,
+      mark=at position #1 with {\arrow{>}}},
+    postaction={decorate}
+  }
+}
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \draw[->-=0.5] (-0.8, 0) -- (-0.4, 0);
+    \draw[fill=myred, text=white] (0,0) circle [radius=0.4] node {$l^0_{\textrm{in}}$};
+    \draw[->-=0.5] (0.4, 0) -- (0.8, 0);
+    \draw[fill=mygray, text=white] (1.2,0) circle [radius=0.4] node {$l^0_{\textrm{int}}$};
+    \draw[->-=0.5] (1.6, 0) -- (2.0, 0);
+    \draw[fill=myblue, text=white] (2.4,0) circle [radius=0.4] node {$l^0_{\textrm{out}}$};
+    \draw[->-=0.5] (2.8, 0) -- (3.2, 0);
+    \draw[fill=myred, text=white] (3.6,0) circle [radius=0.4] node {$l^1_{\textrm{in}}$};
+    \draw[->-=0.5] (4.0, 0) -- (4.4, 0);
+    \draw[fill=mygray, text=white] (4.8,0) circle [radius=0.4] node {$l^1_{\textrm{int}}$};
+    \draw[->-=0.5] (5.2, 0) -- (5.6, 0);
+    \draw[fill=myblue, text=white] (6,0) circle [radius=0.4] node {$l^1_{\textrm{out}}$};
+    \draw[->-=0.5] (6.4, 0) -- (6.8, 0);
+
+    \node at (3.0, -1.0) {\small $\downarrow^{\ast}$ (after some reductions)};
+
+    \draw[->-=0.5] (-0.8, -2.0) -- (-0.4, -2.0);
+    \draw[fill=myred, text=white] (0,-2.0) circle [radius=0.4] node {$l^0_{\textrm{in}}$};
+    \draw[->-=0.5] (0.4, -2.0) -- (0.8, -2.0);
+    \draw[fill=myred, text=white] (1.2,-2.0) circle [radius=0.4] node {$l^1_{\textrm{in}}$};
+    \draw[->-=0.5] (1.6, -2.0) -- (2.0, -2.0);
+    \draw[fill=mygray, text=white] (2.4,-2.0) circle [radius=0.4] node {$l^0_{\textrm{int}}$};
+    \draw[->-=0.5] (2.8, -2.0) -- (3.2, -2.0);
+    \draw[fill=mygray, text=white] (3.6,-2.0) circle [radius=0.4] node {$l^1_{\textrm{int}}$};
+    \draw[->-=0.5] (4.0, -2.0) -- (4.4, -2.0);
+    \draw[fill=myblue, text=white] (4.8,-2.0) circle [radius=0.4] node {$l^0_{\textrm{out}}$};
+    \draw[->-=0.5] (5.2, -2.0) -- (5.6, -2.0);
+    \draw[fill=myblue, text=white] (6,-2.0) circle [radius=0.4] node {$l^1_{\textrm{out}}$};
+    \draw[->-=0.5] (6.4, -2.0) -- (6.8, -2.0);
+  \end{tikzpicture}
+  \caption{Pushing all external input/output labels}
+  \label{fig-reducing-exts}
+\end{figure}
+
+\autoref{fig-reducing-exts} shows an original example history and the resulting history after pushing all the external input and output labels in the original history.
+We can generate such a history by performing reductions:
+\begin{itemize}
+\item Try to pick the first external-input label that is \emph{not in the leftmost region of the history yet}. If it exists, it can always be pushed to the left, right after the external-input labels that are already in the leftmost region, by applying \autoref{thm-push-ext-labels}.
+\item Try to pick the last external output label that is \emph{not at the rightmost region of the history yet}. If it exists, it can always be pushed to the right, right before the external-output labels that are already in the rightmost region, by applying \autoref{thm-push-ext-labels}.
+\end{itemize}
+Note that pushing the external input (output) labels to the leftmost (rightmost), respectively, is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to postpone releasing all the external output messages as late as possible.
 
 \subsection{Interleaving and nonconfluent histories}
+\label{sec-itlv-ncf-hst}
 
 \subsection{Reduction of atomic-history fragments}
 

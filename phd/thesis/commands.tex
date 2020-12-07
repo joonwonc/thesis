@@ -32,7 +32,7 @@
 \newcommand{\listsub}[2]{\ensuremath{#1 - #2}}
 \newcommand{\listdisj}[2]{\ensuremath{#1 \; \# \; #2}}
 \newcommand{\listconcat}[1]{\ensuremath{\oplus #1}}
-\newcommand{\sizeof}[1]{\ensuremath{|\, #1\, |}}
+\newcommand{\sizeof}[1]{\ensuremath{| #1 |}}
 
 \newcommand{\mapupd}[3]{\listapp{#1}{(#2, #3)}}
 \newcommand{\mapupds}[2]{\listapp{#1}{#2}}
@@ -148,32 +148,32 @@
 \newcommand{\hsrzl}[2]{\ensuremath{\mathsf{Serializable}\ #1\ #2}}
 \newcommand{\hsrz}[1]{\ensuremath{\mathsf{Serializable}\ #1}}
 
-\newcommand{\strsn}[2]{\ensuremath{#1 \sswarrow_{s} #2}}
-\newcommand{\hsseq}[3]{\ensuremath{#1 \parallel_{#3} #2}}
+\newcommand{\strsn}[2]{\ensuremath{#1 \rightslice_{s} #2}}
+\newcommand{\hsseq}[3]{\ensuremath{\mathsf{Sequential}_{\textrm{s}}\ #1\ #2\ #3}}
 
 %% Visualization of messages/histories
 
 \newcommand*\rdrecsm[1]{
-  \adjustbox{raise=.1ex, trim=2.3pt 0pt 0pt 0pt}{
+  \adjustbox{raise=.1ex, trim=4pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myred]
       (char) {\scriptsize\sffamily\bf #1};}}
 }
 \newcommand*\blrecsm[1]{
-  \adjustbox{raise=.1ex, trim=2.3pt 0pt 0pt 0pt}{
+  \adjustbox{raise=.1ex, trim=4pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=rectangle, draw, inner sep=0pt, minimum size=7pt, fill=white, text=myblue]
       (char) {\scriptsize\sffamily\bf #1};}}
 }
 
 \newcommand*\rdcircf[1]{
-  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
+  \adjustbox{raise=.2ex, trim=4pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myred, text=white]
       (char) {\tiny\sffamily #1};}}
 }
 \newcommand*\blcircf[1]{
-  \adjustbox{raise=.2ex, trim=2.3pt 0pt 0pt 0pt}{
+  \adjustbox{raise=.2ex, trim=4pt 0pt 0pt 0pt}{
     \tikz[baseline=(char.base)]{
       \node[shape=circle, inner sep=0pt, minimum size=8pt, fill=myblue, text=white]
       (char) {\tiny\sffamily #1};}}
