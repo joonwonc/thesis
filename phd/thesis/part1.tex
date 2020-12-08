@@ -340,6 +340,7 @@ In this section, we provide all the formal definitions required to define serial
 A history $h$ is \emph{atomic} iff it satisfies the predicate $(\atomic{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$ with \emph{initial messages} $\listof{\amsgi{im}}$ and \emph{live messages} $\listof{\amsge{im}}$.
 [AtomicStart] initializes a history with an internal label.
 [AtomicCont] inductively adds a label to an atomic history, where the input messages of the new label \emph{should be from the live messages of the previous atomic history}.
+A shorter notation $\atomicShort{h}$ will be used when $\listof{\amsgi{im}}$ and $\listof{\amsge{im}}$ are clear from context.
 
 \begin{figure}[t]
   \centering

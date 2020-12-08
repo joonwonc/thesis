@@ -132,11 +132,13 @@
 %% Serializability
 
 \newcommand{\atomic}[3]{\ensuremath{#1 \stackrel{#2}{\squigs{3}\rsquigend} #3}}
+\newcommand{\atomicShort}[1]{\ensuremath{(\stackrel{#1}{\squigs{3}\rsquigend})}}
 \newcommand{\atomicLong}[4]{\ensuremath{#1 \stackrel{#2}{\squigs{#3}\rsquigend} #4}}
 \newcommand{\extatomic}[4]{\ensuremath{#1 \vdash #2 \stackrel{#3}{\squigs{3}\rsquigend}_{\textsf{ext}} #4}}
+\newcommand{\extatomicShort}[2]{\ensuremath{#1 \stackrel{#2}{\squigs{3}\rsquigend}_{\textsf{ext}}}}
 \newcommand{\extatomicLong}[5]{\ensuremath{#1 \vdash #2 \stackrel{#3}{\squigs{#4}\rsquigend}_{\textsf{ext}} #5}}
-\newcommand{\extatomicShort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
 \newcommand{\trsn}[2]{\ensuremath{#1 \rightslice #2}}
+\newcommand{\atomicHsts}[1]{\ensuremath{\overline{\mathcal{A}}\,(#1)}}
 
 \newcommand{\extatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{ext}}}}
 \newcommand{\intatomicshort}[2]{\ensuremath{#1 \stackrel{#2}{\rightsquigarrow}_{\textsf{int}}}}
@@ -157,6 +159,9 @@
 \newcommand{\hdiscontsymb}{\ensuremath{\nsucc}}
 \newcommand{\hdiscont}[2]{\ensuremath{#1 \hdiscontsymb{} #2}}
 \newcommand{\hitlv}[2]{\ensuremath{\mathsf{Interleaved}\ #1\ #2}}
+
+\newcommand{\hmgb}[3]{\ensuremath{#1 \vdash #2 \bowtie #3}}
+\newcommand{\smgb}[1]{\ensuremath{\mathsf{Mergeable}\ #1}}
 
 %% Visualization of messages/histories
 
