@@ -349,6 +349,7 @@ This reduction technique has been used before to prove correctness of concurrent
 We first present our intuition of how commuting reductions are used in the serializability proof; in order for it, we need to formalize commuting reductions first.
 The most basic commuting reduction happens between two adjacent state-transition steps:
 \begin{definition}[Commutativity of steps]
+  \label{def-comm-steps}
   Two adjacent state-transition steps commute, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
   \begin{displaymath}
     \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})} \triangleq \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
@@ -358,6 +359,7 @@ We will write just $\commstep{l_0}{l_1}$ when the system $S$ and the transition-
 
 We can naturally lift the definition to one for histories to argue whether two histories commute or not:
 \begin{definition}[Commutativity of histories]
+  \label{def-comm-hsts}
   Two adjacent histories commute, denoted as \commstep{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semstep{S}{s_1}{h_1}{s_2})}, if the state transitions with the opposite order reach the same state:
   \begin{displaymath}
     \commhst{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semsteps{S}{s_1}{h_1}{s_2})} \triangleq \exists s_1'.\; \semsteps{S}{s_0}{h_1}{s_1'} \wedge \semsteps{S}{s_1'}{h_0}{s_2}.
@@ -902,27 +904,177 @@ We are finally equipped with enough definitions to introduce a convenient genera
   Applying \autoref{thm-sseq-sz}, we will eventually obtain a sequential history reaching the same state by repeating this process.
 \end{proof}
 
-\subsection{Separation points and pushes}
+\subsection{Reduction and pushes by separation}
 
-\newcommand{\lpush}[4]{\ensuremath{\mathsf{Pushable}_{\mathsf{L}}\ #1\ #2\ #3\ #4}}
-\newcommand{\rpush}[4]{\ensuremath{\mathsf{Pushable}_{\mathsf{R}}\ #1\ #2\ #3\ #4}}
+\newcommand{\aobjs}[1]{\ensuremath{\mathsf{objs}\,(#1)}}
+\newcommand{\achns}[1]{\ensuremath{\mathsf{chns}\,(#1)}}
+\newcommand{\ainputs}[1]{\ensuremath{\mathsf{ins}\,(#1)}}
+\newcommand{\aoutputs}[1]{\ensuremath{\mathsf{outs}\,(#1)}}
+\newcommand{\objsep}[2]{\ensuremath{\mathsf{ObjSep}\ #1\ #2}}
+\newcommand{\objseph}[2]{\ensuremath{\mathsf{ObjSepHst}\ #1\ #2}}
+\newcommand{\msgseph}[2]{\ensuremath{\mathsf{MsgSepHst}\ #1\ #2}}
 
-\begin{definition}
-  For a given system $S$, two atomic histories $h_1$ and $h_2$ (not necessarily continuous), and an atomic history $h$ between the two, $h$ is \emph{left-pushable} (\emph{right-pushable}) iff it can be pushed right before $h_1$ (after $h_2$), respectively:
+\autoref{thm-sz-when} presents a good intuition on how to prove serializability using nonconfluence and mergeability.
+The mergeability definition (\autoref{def-mgb}), however, is rather abstract; it does not provide any actual techniques to merge continuous histories.
+In this section, we explore a method to merge continuous histories, by using \emph{state-transition separation} and \emph{pushability}.
+
+\subsubsection{Reduction by separation}
+
+We begin with introducing the trivial reduction between two state transitions:
+\begin{theorem}
+  \label{thm-red-trivial-steps}
+  Two state transitions commute if they affect different objects and different input/output channels:
   \begin{displaymath}
-    \renewcommand{\arraystretch}{1.6}
+    \renewcommand{\arraystretch}{1.2}
     \begin{array}{l}
-      \lpush{S}{h_1}{h_2}{h} \triangleq\\
-      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
-      \to \semsteps{S}{s_1}{\listapp{h}{\listapp{h_1}{h_2}}}{s_2}.\\
-      \rpush{S}{h_1}{h_2}{h} \triangleq\\
-      \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
-      \to \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h_2}{h}}}{s_2}.\\
+      \forall o_1, r_1, \listof{\mathrm{ins}}_1, \listof{\mathrm{outs}}_1,
+      o_2, r_2, \listof{\mathrm{ins}}_2, \listof{\mathrm{outs}}_2.\\
+      \quad\quad o_1 \neq o_2 \;\wedge\; \listdisj{(\listof{\idxOf{\mathrm{ins}_1}} \cup \listof{\idxOf{\mathrm{outs}_1}})}{(\listof{\idxOf{\mathrm{ins}_2}} \cup \listof{\idxOf{\mathrm{outs}_2}})} \to\\
+      \quad\quad \commstep{\lblInt{o_1}{r_1}{\listof{\mathrm{ins}}_1}{\listof{\mathrm{outs}}_1}}
+                 {\lblInt{o_2}{r_2}{\listof{\mathrm{ins}}_2}{\listof{\mathrm{outs}}_2}}.
+    \end{array}
+  \end{displaymath}
+\end{theorem}
+
+For a given history $h$, we denote by \aobjs{h} (\achns{h}) the set of object (channel) indices whose state is \emph{used} by $h$, obtained by collecting the object index (the input/output channel indices) in each label in $h$, respectively.
+We can then lift the trivial reduction theorem to the one for histories, using \aobjs{h} and \achns{h}:
+\begin{theorem}[Reduction by trivial separation]
+  \label{thm-red-trivial-hsts}
+  Two histories commute if they affect different objects and different input/output channels:
+  \begin{displaymath}
+    \forall h_1, h_2.\; \listdisj{\aobjs{h_1}}{\aobjs{h_2}} \;\wedge\; \listdisj{\achns{h_1}}{\achns{h_2}} \to \commhst{h_1}{h_2}.
+  \end{displaymath}
+\end{theorem}
+
+\autoref{thm-red-trivial-hsts} is too trivial to be used in actual atomic histories generated by the \hemiola{} DSL.
+We thus relax this theorem with respect to object and message states, so it can be used in the actual serializability proof.
+
+Firstly, instead of comparing object indices, \aobjs{h_1} and \aobjs{h_2}, sometimes we would like to prove the commutativity of state transitions \emph{within an object} directly.
+Given two internal labels \lblInt{\idxOf{O}}{\idxOf{r_1}}{\listof{\mathrm{ins}}_1}{\listof{\mathrm{outs}}_1} and \lblInt{\idxOf{O}}{\idxOf{r_2}}{\listof{\mathrm{ins}}_2}{\listof{\mathrm{outs}}_2} (created by the same object $O$), if we prove the following property then the two labels are commutative in terms of object state transitions:
+\begin{displaymath}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{array}{rl}
+    \objsep{r_1}{r_2} \triangleq & \forall o_0, \listof{\mathrm{ins}}_1, \listof{\mathrm{ins}}_2.\\
+    & \mathsf{let}\ (o_1, \listof{\mathrm{outs}}_1) := \rtrsOf{r_1}\;(o_0, \listof{\mathrm{ins}}_1)\ \mathsf{in}\\
+    & \mathsf{let}\ (o_2, \listof{\mathrm{outs}}_2) := \rtrsOf{r_2}\;(o_1, \listof{\mathrm{ins}}_2)\ \mathsf{in}\\
+    & \mathsf{let}\ (o_1', \listof{\mathrm{outs}}_2') := \rtrsOf{r_2}\;(o_0, \listof{\mathrm{ins}}_2)\ \mathsf{in}\\
+    & \listof{\mathrm{outs}}_2 = \listof{\mathrm{outs}}_2' \;\wedge\;
+    \rtrsOf{r_1}\;(o_1', \listof{\mathrm{ins}}_1) = (o_2, \listof{\mathrm{outs}}_1).
+  \end{array}
+\end{displaymath}
+For instance, while using the \hemiola{} DSL, when an object forwards an upward request it sets an uplock.
+The object should be able to handle a downward request to it even after setting the uplock.
+These two state transitions are always commutative, since there is no state transition while forwarding the upward request (except locking) and handling the downward request does not affect the uplock.
+
+This object commutativity is naturally extended to the one for atomic histories:
+\begin{definition}\label{def-obj-comm}
+  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are object-commutative, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
+  \begin{displaymath}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{array}{rcl}
+      \objseph{h_1}{h_2} \triangleq & \forall l_1, l_2. & l_1 \in h_1 \;\wedge\; l_2 \in h_2 \to\\
+      & & \mathsf{let}\ \lblInt{\idxOf{O_1}}{\idxOf{r_1}}{\listof{\mathrm{ins}}_1}{\listof{\mathrm{outs}}_1} := l_1\ \mathsf{in}\\
+      & & \mathsf{let}\ \lblInt{\idxOf{O_2}}{\idxOf{r_2}}{\listof{\mathrm{ins}}_2}{\listof{\mathrm{outs}}_2} := l_2\ \mathsf{in}\\
+      & & \idxOf{O_1} \neq \idxOf{O_2} \;\vee\; (\idxOf{O_1} = \idxOf{O_2} \;\wedge\; \objsep{r_1}{r_2}).
     \end{array}
   \end{displaymath}
 \end{definition}
+Note that each label $l$ in $h_1$ (or $h_2$) is always an internal label, since it is an atomic history.
+The intuition here is that $h_1$ and $h_2$ are commutative in terms of object state transitions when each label -- representing an object state transition -- in $h_1$ and $h_2$ are commutative either by different objects or by the commutativity conditions within the same object.
 
-We could define mergeability directly using pushability, but we define and use the following relaxed definition:
+Next we consider message states.
+Instead of comparing channel indices regardless of their input/output types, we relax the notion to allow the live messages of $h_1$ and the initial messages of $h_2$ to be in the same channel but still different.
+We first define a couple of new notions for atomic histories:
+\begin{definition}
+  For given an atomic history $h$, we define the input and output messages of $h$, denoted as \ainputs{h} and \aoutputs{h}, respectively:
+  \begin{displaymath}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{array}{l}
+      \ainputs{h} \triangleq \listconcat{(\mathsf{List.map}\ (\lambda l.\; \mathsf{let}\ \lblInt{o}{r}{\listof{\mathrm{ins}}}{\listof{\mathrm{outs}}} := l\ \mathsf{in}\ \listof{\idxOf{\mathrm{ins}}})\ h)}.\\
+      \aoutputs{h} \triangleq \listconcat{(\mathsf{List.map}\ (\lambda l.\; \mathsf{let}\ \lblInt{o}{r}{\listof{\mathrm{ins}}}{\listof{\mathrm{outs}}} := l\ \mathsf{in}\ \listof{\idxOf{\mathrm{outs}}})\ h)}.
+    \end{array}
+  \end{displaymath}
+\end{definition}
+As seen in the definition, \ainputs{h} (or \aoutputs{h}) collects all the input (output) message channels of the internal labels, respectively.
+
+\begin{definition}\label{def-msg-comm}
+  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are message-commutative, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
+  \begin{displaymath}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{array}{rl}
+      \msgseph{h_1}{h_2} \triangleq & \forall\; \listof{\mathrm{inits}}_1, \listof{\mathrm{lives}}_1, \listof{\mathrm{inits}}_2, \listof{\mathrm{lives}}_2.\\
+      & \atomic{\listof{\mathrm{inits}}_1}{h_1}{\listof{\mathrm{lives}}_1} \;\wedge\;
+      \atomic{\listof{\mathrm{inits}}_2}{h_2}{\listof{\mathrm{lives}}_2} \to\\
+      & \listdisj{\ainputs{h_1}}{\ainputs{h_2}} \;\wedge\;
+      \listdisj{\ainputs{h_1}}{\aoutputs{h_2}} \;\wedge\\
+      & \listdisj{\listof{\mathrm{lives}}_1}{\listof{\mathrm{inits}}_2} \;\wedge\;
+      \listdisj{\aoutputs{h_1}}{\aoutputs{h_2}}.
+    \end{array}
+  \end{displaymath}
+\end{definition}
+Instead of having $\listdisj{\achns{h_1}}{\achns{h_2}}$ as a disjointness condition, we see a relaxation between $\listof{\mathrm{lives}}_1$ and $\listof{\mathrm{inits}}_2$ to require disjointness not only by channel indices, but also by message values.
+
+This relaxation is indeed required to prove serializability in \hemiola{}.
+We can find an instance from our interleaving example, again, specifically from \autoref{fig-ex-sz-comm-1}.
+It is the case where the atomic history $[\blcircf{6}]$ happens first, generating \blmsgsm{rqI} to the channel $5$ as the live message, and the atomic history $[\rdcircf{7}]$ happens next, consuming \rdmsgsm{rsM} from the same channel.
+These two histories commute, but if we just use \autoref{thm-red-trivial-hsts} with the trivial conditions, we cannot prove the commutativity.
+We can employ the relaxed condition (\autoref{def-msg-comm}), though, since \blmsgsm{rqI} and \rdmsgsm{rsM} are different messages thus the relaxed condition $\listdisj{\listof{\mathrm{lives}}_1}{\listof{\mathrm{inits}}_2}$ holds.
+
+Using the new, relaxed object and message commutativity, we present the following reduction theorem:
+\begin{theorem}[Reduction by separation]
+  \label{thm-red-by-sep}
+  \begin{displaymath}
+    \forall h_1, h_2.\; \atomicShort{h_1} \;\wedge\; \atomicShort{h_2} \;\wedge\;
+    \objseph{h_1}{h_2} \;\wedge\; \msgseph{h_1}{h_2} \to \commhst{h_1}{h_2}.
+  \end{displaymath}
+\end{theorem}
+\begin{proof}
+  The proof is quite straightforward by nested induction on \atomicShort{h_1} and \atomicShort{h_2}.
+  The base case is to prove \commstep{l_1}{l_2} when $h_1 = \listsingle{l_1}$ and $h_2 = \listsingle{l_2}$.
+  Suppose $l_1 = \lblInt{\idxOf{O_1}}{\idxOf{r_1}}{\listof{\mathrm{ins}}_1}{\listof{\mathrm{outs}}_1}$ and $l_2 = \lblInt{\idxOf{O_2}}{\idxOf{r_2}}{\listof{\mathrm{ins}}_2}{\listof{\mathrm{outs}}_2}$.
+  Then we obtain the object commutativity $(\objsep{r_1}{r_2})$ from $(\objseph{h_1}{h_2})$.
+  We also obtain $\listdisj{\listof{\idxOf{\mathrm{ins}_1}}}{\listof{\idxOf{\mathrm{ins}_2}}}$,
+  $\listdisj{\listof{\idxOf{\mathrm{ins}_1}}}{\listof{\idxOf{\mathrm{outs}_2}}}$,
+  $\listdisj{\listof{\mathrm{outs}_1}}{\listof{\mathrm{ins}_2}}$, and
+  $\listdisj{\listof{\idxOf{\mathrm{outs}_1}}}{\listof{\idxOf{\mathrm{outs}_2}}}$ from $(\msgseph{h_1}{h_2})$.
+  These conditions are enough to prove commutativity between $l_1$ and $l_2$ just by construction.
+  Induction cases are straightforward as well, \eg{} if $h_1 = \listcons{h_1'}{l_1}$ we perform reduction between $l_1$ and $h_2$ first, and do another reduction between $h_1'$ and $h_2$ by the induction hypothesis to perform the whole reduction between $h_1$ and $h_2$.
+\end{proof}
+
+\subsubsection{Pushes by separation}
+
+%% Suppose that we want to merge continuous histories $h_1$ and $h_2$ through the intermediate atomic histories $\listof{h}$.
+%% The basic merging strategy can be summarized as follows:
+%% \begin{enumerate}
+%% \item For each atomic history $h \in \listof{h}$, show that the following property holds:
+%%   \begin{displaymath}
+%%     \begin{array}{l}
+%%       \mathsf{Separated}_2\ h_1\ h_2\ h\ \triangleq
+%%       \quad\quad (\aobjs{h} \subseteq (\aobjs{h_1} - \aobjs{h_2}) \;\wedge\; \achns{h} \subseteq (\achns{h_1} - \achns{h_2})) \;\vee\\
+%%       \quad\quad (\aobjs{h} \subseteq (\aobjs{h_2} - \aobjs{h_1}) \;\wedge\; \achns{h} \subseteq (\achns{h_2} - \achns{h_1})),
+%%     \end{array}
+%%   \end{displaymath}
+%%   which implies $h$ is disjoint to either $h_1$ or $h_2$.
+%% \item
+%% \end{enumerate}
+
+%% \newcommand{\lpush}[4]{\ensuremath{\mathsf{Pushable}_{\mathsf{L}}\ #1\ #2\ #3\ #4}}
+%% \newcommand{\rpush}[4]{\ensuremath{\mathsf{Pushable}_{\mathsf{R}}\ #1\ #2\ #3\ #4}}
+
+%% \begin{definition}
+%%   For a given system $S$, two atomic histories $h_1$ and $h_2$ (not necessarily continuous), and an atomic history $h$ between the two, $h$ is \emph{left-pushable} (\emph{right-pushable}) iff it can be pushed right before $h_1$ (after $h_2$), respectively:
+%%   \begin{displaymath}
+%%     \renewcommand{\arraystretch}{1.6}
+%%     \begin{array}{l}
+%%       \lpush{S}{h_1}{h_2}{h} \triangleq\\
+%%       \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
+%%       \to \semsteps{S}{s_1}{\listapp{h}{\listapp{h_1}{h_2}}}{s_2}.\\
+%%       \rpush{S}{h_1}{h_2}{h} \triangleq\\
+%%       \quad \forall s_1, s_2.\; \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h}{h_2}}}{s_2}
+%%       \to \semsteps{S}{s_1}{\listapp{h_1}{\listapp{h_2}{h}}}{s_2}.\\
+%%     \end{array}
+%%   \end{displaymath}
+%% \end{definition}
 
 \subsection{All together: the serializability proof}
 

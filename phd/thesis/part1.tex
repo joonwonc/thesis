@@ -147,8 +147,8 @@ It is necessary to distinguish between internal and external channels, in order 
           \midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}
           & \listof{o}[\idxOf{O}] = o_1
           & \msgIns{im} \subseteq \heads{M}\smallskip \\
-          r.p\enspace o_1\ \msgIns{im}
-          & r.t\ o_1\ \msgIns{im} = (o_2, \msgOuts{im})\smallskip \\
+          \rprecOf{r}\enspace (o_1, \msgIns{im})
+          & \rtrsOf{r}\enspace (o_1, \msgIns{im}) = (o_2, \msgOuts{im})\smallskip \\
           \midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}
           & \disj{\midxIns{im}}{\midxOuts{im}}}{\semstep{S}
           {\hst{\listof{o}}{M}}
