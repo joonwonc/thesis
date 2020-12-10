@@ -150,6 +150,8 @@
 \newcommand{\hsrzl}[2]{\ensuremath{\mathsf{Serializable}\ #1\ #2}}
 \newcommand{\hsrz}[1]{\ensuremath{\mathsf{Serializable}\ #1}}
 
+%% Serializability proof
+
 \newcommand{\strsn}[2]{\ensuremath{#1 \rightslice_{s} #2}}
 \newcommand{\hsseq}[3]{\ensuremath{\mathsf{Sequential}_{\textrm{s}}\ #1\ #2\ #3}}
 
@@ -162,6 +164,13 @@
 
 \newcommand{\hmgb}[3]{\ensuremath{#1 \vdash #2 \bowtie #3}}
 \newcommand{\smgb}[1]{\ensuremath{\mathsf{Mergeable}\ #1}}
+
+\newcommand{\ontree}[2]{\ensuremath{\mathsf{OnTree}\ #1\ #2}}
+\newcommand{\goodrules}[2]{\ensuremath{\mathsf{GoodRules}\ #1\ #2}}
+
+\newcommand{\subtree}[1]{\ensuremath{\textrm{tr}\,(#1)}}
+\newcommand{\subtreec}[1]{\ensuremath{\textrm{tr}^{-1}\,(#1)}}
+\newcommand{\objsinv}[1]{\ensuremath{\textsf{Invalid}\;(#1)}}
 
 %% Visualization of messages/histories
 
