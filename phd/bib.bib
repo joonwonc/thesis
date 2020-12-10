@@ -319,6 +319,41 @@ url={http://hdl.handle.net/1721.1/106096}
   url = {https://research.cs.wisc.edu/multifacet/misc/spec2000cache-data},
 }
 
+@article{10.1145/170036.170081,
+author = {O'Neil, Elizabeth J. and O'Neil, Patrick E. and Weikum, Gerhard},
+title = {The LRU-K Page Replacement Algorithm for Database Disk Buffering},
+year = {1993},
+issue_date = {June 1, 1993},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {22},
+number = {2},
+issn = {0163-5808},
+url = {https://doi.org/10.1145/170036.170081},
+doi = {10.1145/170036.170081},
+abstract = {This paper introduces a new approach to database disk buffering, called the LRU-K method. The basic idea of LRU-K is to keep track of the times of the last K references to popular database pages, using this information to statistically estimate the interarrival times of references on a page by page basis. Although the LRU-K approach performs optimal statistical inference under relatively standard assumptions, it is fairly simple and incurs little bookkeeping overhead. As we demonstrate with simulation experiments, the LRU-K algorithm surpasses conventional buffering algorithms in discriminating between frequently and infrequently referenced pages. In fact, LRU-K can approach the behavior of buffering algorithms in which page sets with known access frequencies are manually assigned to different buffer pools of specifically tuned sizes. Unlike such customized buffering algorithms however, the LRU-K method is self-tuning, and does not rely on external hints about workload characteristics. Furthermore, the LRU-K algorithm adapts in real time to changing patterns of access.},
+journal = {SIGMOD Rec.},
+month = jun,
+pages = {297–306},
+numpages = {10}
+}
+
+@inproceedings{cacheLRU,
+author = {O'Neil, Elizabeth J. and O'Neil, Patrick E. and Weikum, Gerhard},
+title = {The LRU-K Page Replacement Algorithm for Database Disk Buffering},
+year = {1993},
+isbn = {0897915925},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/170035.170081},
+doi = {10.1145/170035.170081},
+booktitle = {Proceedings of the 1993 ACM SIGMOD International Conference on Management of Data},
+pages = {297–306},
+numpages = {10},
+location = {Washington, D.C., USA},
+series = {SIGMOD '93}
+}
+
 @book{ccbook:2020,
  author={V. {Nagarajan} and D. J. {Sorin} and M. D. {Hill} and D. A. {Wood} and N. {Enright Jerger} and M. {Martonosi}},
  booktitle={A Primer on Memory Consistency and Cache Coherence: Second Edition},

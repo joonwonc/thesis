@@ -3,17 +3,77 @@
 \chapter{Case Studies: Hierarchical MSI and MESI Protocols}
 \label{sec-case-study}
 
+In this chapter we specify, implement, and formally prove the correctness of the following three hierarchical cache-coherence protocols: an inclusive MSI protocol, a noninclusive MSI protocol, and a noninclusive MESI protocol.
+Each protocol is parameterized by a tree $t$ that decides the topology of the memory subsystem $S$, thus the system naturally satisfies $\ontree{S}{t}$.
+Cache objects in each protocol are defined using the rule templates (defined in \autoref{sec-rule-templates}) thus the system satisfies $\goodrules{S}{t}$ by construction.
+These predicates imply that each protocol satisfies the serializability property, proven in \autoref{thm-sz-guarantee}.
+We will see how \hemiola{} helps implement and prove the protocols by taking full advantage of serializability.
+
 \section{Design Principles}
+\label{sec-design-principles}
+
+We first present the common design principles shared by all the case studies.
 
 \subsection{Topology as a parameter}
+\label{sec-topo-param}
+Each design is parameterized by a tree $t$ that decides the topology of the memory subsystem.
+In other words, whenever we instantiate the tree parameter, we get a cache-coherence design and its correctness proof for free.
+For example, the following tree definition will generate a cache-coherence protocol for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
+\begin{lstlisting}[numbers=none, frame=none]
+  Definition t: tree := Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]].
+\end{lstlisting}
+
+There are three different kinds of caches in this topology-parameterized protocol.
+First of all, there are L1 caches (denoted as $L_1$) that correspond to leaf nodes in the tree.
+Symmetrically, each uses the same set of rules.
+The second kind is the last-level cache (LLC), which is the only one attached to the main memory, the root of the tree.
+It is possible to design multiple LLCs attached to the main memory in \hemiola{}, but our case studies follow standard practice in sticking to a single LLC.
+All the other caches between the L1 caches and the LLC are called intermediate caches (denoted as $L_i$), and they share a common set of rules as well.
 
 \subsection{Design and proof per-line}
+\label{sec-design-line}
+
+The protocol is defined just for a single cache line first and naturally extended to all cache lines using a protocol compiler that will be introduced in \autoref{sec-compiler}.
+This approach is reasonable in terms of correctness, since a transaction does not affect coherence for lines other than its own.
+Consider the ``duplicated'' protocol first, where each cache line, its status, a directory entry, communication channels, and a lock holder are all duplicated per-line.
+It is infeasible to extend the protocol literally in this way, since we cannot require physically distinct channels and lock holders for all cache lines.
+The protocol compiler restricts the resources (\eg{} channels, lock holders, etc.) to make the implementation hardware-synthesizable.
+Note that in this sense the duplicated protocol can be regarded as the most general multiline design, whose behaviors can cover all the behaviors of compiled implementations (see \autoref{sec-compiler-correctness} for details).
 
 \subsection{Nondeterministic invalidation/eviction}
+\label{sec-nondet-inv-ev}
 
-\subsection{Directory-based cache coherence}
+The protocol initiates invalidations and evictions nondeterministically.
+In other words, there are rules in each cache that can be executed even without being triggered by input messages, to make invalidation requests to the child caches or to make an eviction request to the parent.
+This design choice is certainly not realistic, but it always has more behaviors than any design with specific invalidation/eviction policy, thus in terms of correctness a refinement to the specific design is trivial.
 
-\subsection{Inclusive vs. Noninclusive protocols}
+For instance, a number of practical cache-coherence protocols manage a data structure (a cache) to keep track of least-recently-used (LRU) cache line per set (lines with the same index)~\cite{cacheLRU}.
+Use of such a data structure and the decision algorithm is irrelevant to the correctness of a protocol.
+In other words, a protocol with the LRU replacement policy, regardless of its implementation, always has less behaviors than the one with nondeterministic eviction.
+
+Another instance is a back-invalidation policy used in an inclusive cache.
+Back invalidation is necessary to maintain the cache inclusion among the parent and child caches and may happen right before evicting a parent cache line.
+There is another practical policy, called self-invalidation~\cite{Ros:2012}, where some voluntary back invalidations happen to increase performance.
+Similar to the case of cache replacement, a protocol with nondeterministic invalidation includes all the behaviors by the one with a specific invalidation policy.
+
+\subsection{Directory-based coherence}
+\label{sec-dir-based}
+
+The protocol uses a directory structure to ensure coherence, introduced in \autoref{sec-design-space}.
+In our designs, each node with children has its own directory structure to track their statuses.
+The directory holds sound information about the status of each child \emph{subtree}.
+For example, for a certain cache line, if an L1 cache $L_1$ has M status for the line, then all the ancestors (including the main memory) of $L_1$ have the directory status M pointing to the child subtree that contains $L_1$.
+
+\subsection{Noninclusive-cache inclusive-directory structure}
+\label{sec-ncid}
+
+Our noninclusive protocols employ the noninclusive-cache inclusive-directory (NCID)~\cite{Zhao:2010} structure to optimize the cache space.
+In terms of protocol design, unlike conventional inclusive caches, the parent cache does not have to contain all the line values that children have, and back invalidations are not required to evict a line.
+In inclusive caches, in order to maintain the inclusion policy, it is required to invalidate each cache line of a child recursively before evicting the parent's line, which adds overhead.
+On the other hand, noninclusive caches do not need such a process.
+
+Measuring performance among various cache-inclusion policies is beyond the scope of this work.
+That said, we choose noninclusive caches as part of our case studies to demonstrate that \hemiola{} is general enough to design and prove various cache-coherence protocols, where specifically the noninclusive caches are the ones that most previous work had difficulty dealing with properly.
 
 \section{The MSI Protocol}
 \label{sec-msi-protocol}
@@ -50,6 +110,7 @@
 \subsubsection{Blocking vs. Nonblocking protocols}
 
 \section{Correctness of the Protocol Compiler}
+\label{sec-compiler-correctness}
 
 \section{Synthesis of a \hemiola{} Protocol}
 \label{sec-synthesis}
