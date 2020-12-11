@@ -90,7 +90,7 @@ A cache state has the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{own
 
 A status is either \stM{}($=3$), \stS{}($=2$), \stI{}($=1$), or the ``Not Present'' status (\stNP{}$=0$), encoded by natural numbers.
 \stNP{} means that the line does not exist in the cache object.
-In our case-study protocols we distinguish \stI{} and \stNP{} to avoid unnecessary line creation when invalidating the line.
+In our case-study protocols we distinguish \stI{} and \stNP{} to avoid unnecessary line creation when invalidating the line~\cite{ccbook:2020}.
 That is, when the cache object gets an invalidation request, if the line status is \stNP{}, then it should not change its status to \stI{} but maintain the \stNP{} status.
 
 A directory contains a status of its children called a \emph{directory status} and a list of child-cache indices that have the directory status.
@@ -236,7 +236,7 @@ It also sends a response (\slstinline{rsS}) to the requestor with the up-to-date
 
 \begin{figure}[h]
   \centering
-\begin{lstlisting}
+\begin{lstlisting}[escapeinside={(*}{*)}]
 Definition liDropImm: Rule :=
   rule.imm
   :requires (fun ost _ _ => ost#[status] <= msiS (*$\wedge$*) ost#[owned] = false)
@@ -407,11 +407,84 @@ Denoting by $\implcoh{s}{o}{v}$ that an object $o$ contains a coherent value $v$
 \section{The MESI Protocol}
 \label{sec-mesi-protocol}
 
+The MESI protocol~\cite{Papamarcos:1984} applies further optimizations to the MSI protocol, by adding a status called Exclusive-Unmodified.
+As the name of the status says, if a cache line has \stE{} status, then the line is exclusive to the cache but also clean.
+In this section we present a hierarchical MESI protocol and demonstrate that the design and the correctness proof are easily extended from the ones for the MSI protocol with the support of \hemiola{}.
+
 \subsection{Protocol description}
 \label{sec-mesi-protocol-desc}
 
+\subsubsection{Cache states}
+
+The cache state in the MESI protocol is the same as in the MSI protocol, taking the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$.
+The only difference is that the status may be \stE{}.
+
+\subsubsection{New rules added beyond the MSI protocol}
+
+There are several rules added in order to deal with the \stE{} status.
+Like the previous rule-template examples, proper preconditions and transitions are automatically set in terms of locking.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition l1GetMImmE: Rule :=
+  rule.immd
+  :accepts rqM
+  :from cidx
+  :requires (fun ost _ _ => ost#[status] = mesiE)
+  :transition
+     (fun ost msg => (ost +#[status <- mesiM]
+                          +#[val <- msg.(msg_value)],
+                      <| rsM; 0 |>)).
+\end{lstlisting}
+  \caption{$L_1$ silently upgraded to \stM{}}
+  \label{fig-rule-l1-silent-upgrade}
+\end{figure}
+
+\autoref{fig-rule-l1-silent-upgrade} shows a basic case, where an L1 cache is silently upgraded from \stE{} to \stM{} to write data.
+Template \slstinline{rule.immd} says that it takes a request from the external world (similar to \autoref{fig-rule-l1-rqS}) and immediately sends an external response.
+As defined in the state \slstinline{transition} function, the cache silently changes its status to \stM{}, stores the new value from the input message, and responds with \slstinline{rsM}.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}[escapeinside={(*}{*)}]
+Definition liGetSImmME: Rule :=
+  rule.immd
+  :accepts rqS
+  :from cidx
+  :requires (fun ost _ _ => mesiE (*$\leq$*) ost#[status] (*$\wedge$*)
+                            ost#[dir].(dir_st) = mesiI)
+  :transition (fun ost _ => (ost +#[status <- mesiI]
+                                 +#[dir <- setDirE cidx],
+                             <| rsE; ost#[val] |>)).
+\end{lstlisting}
+  \caption{$L_i$ responding with \slstinline{rsE}}
+  \label{fig-rule-li-rsE}
+\end{figure}
+
+Another case, shown in \autoref{fig-rule-li-rsE}, happens when an intermediate cache gets a request from a child to read the data, while it has status \stE{} or \stM{}.
+In this case, instead of responding with \slstinline{rsS}, the cache sends \slstinline{rsE} to provide \stE{}.
+Once the original requestor obtains \stE{} status, it can both read and write the data.
+
 \subsection{Correctness proof}
 \label{sec-mesi-proof}
+
+\subsubsection{Logical status and new invariants for \stE{}}
+
+We extend the notion of logical status from the MSI protocol, declaring that a cache in MESI is \stE{} if either 1) it has \stE{} and there is no eviction response to it or 2) there is a response \slstinline{rsE} to it.
+We should extend the invariants as well to cover caches with \stE{} status.
+\begin{itemize}
+\item The exclusiveness invariant (\autoref{inv-excl}) also applies to \stE{}; whenever a cache has logical status \stE{}, all the other caches are logically in \stI{}.
+\item The sharing (\autoref{inv-sharing}) and invalidness invariants (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}) remain the same.
+\item A new invariant for \stE{} claims that if a cache takes an eviction request \emph{without writeback} from a child, and the directory status pointing to the child is \stE{}, then it has a coherent value.
+\end{itemize}
+
+\subsubsection{Invariant and refinement proofs}
+
+Unlike the exclusiveness and the invalidness invariants, the invariant for \stE{} does not involve a large chunk of caches; it is rather an invariant that just relates a child and the parent cache states.
+Therefore, we do not employ predicate messages in this invariant proof, instead using a normal induction on state-transition steps.
+
+The simulation relation for the MESI protocol is just the same as the one for the MSI protocol, while the coherence predicate $\implcoh{s^I}{o}{v}$ is extended slightly to cover caches with \stE{} status and messages with ID \slstinline{rsE}.
 
 \chapter{Compilation and Synthesis to Hardware}
 \label{sec-comp-syn}
