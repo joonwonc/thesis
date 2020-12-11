@@ -441,6 +441,7 @@ The next section will explain how we benefit from this serializability definitio
 Lastly, note that this relaxed definition is still safe in that it does not require preserving the order of the trace.
 
 \section{Predicate Messages in Atomic Histories}
+\label{sec-pred-msg}
 
 Now we discuss how to exploit our notion of serializability: how does it help prove trace refinement between an implementation and its spec?
 There is a clear gap between two notions, serializability and trace refinement: the former only deals with \emph{reachable states}, whereas the latter only deals with \emph{behaviors}.

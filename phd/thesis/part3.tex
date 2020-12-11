@@ -64,29 +64,351 @@ In our designs, each node with children has its own directory structure to track
 The directory holds sound information about the status of each child \emph{subtree}.
 For example, for a certain cache line, if an L1 cache $L_1$ has M status for the line, then all the ancestors (including the main memory) of $L_1$ have the directory status M pointing to the child subtree that contains $L_1$.
 
-\subsection{Noninclusive-cache inclusive-directory structure}
-\label{sec-ncid}
+\subsection{Noninclusive-cache inclusive-directory (NCID) structure}
+\label{sec-inc-noninc}
 
 Our noninclusive protocols employ the noninclusive-cache inclusive-directory (NCID)~\cite{Zhao:2010} structure to optimize the cache space.
-In terms of protocol design, unlike conventional inclusive caches, the parent cache does not have to contain all the line values that children have, and back invalidations are not required to evict a line.
-In inclusive caches, in order to maintain the inclusion policy, it is required to invalidate each cache line of a child recursively before evicting the parent's line, which adds overhead.
-On the other hand, noninclusive caches do not need such a process.
+As explained in \autoref{sec-design-space}, in noninclusive protocols the parent cache does not have to contain all the line values that children have, and back invalidations are not required to evict a line.
 
-Measuring performance among various cache-inclusion policies is beyond the scope of this work.
+Measuring performance among various cache-inclusion policies is beyond the scope of this thesis.
 That said, we choose noninclusive caches as part of our case studies to demonstrate that \hemiola{} is general enough to design and prove various cache-coherence protocols, where specifically the noninclusive caches are the ones that most previous work had difficulty dealing with properly.
 
 \section{The MSI Protocol}
 \label{sec-msi-protocol}
 
+The MSI protocol is known as a base cache-coherence protocol that can be optimized to more sophisticated protocols like MESI, MOSI, etc.
+Even though it is a base protocol, there are a lot of nontrivial cases that require deep understanding of the protocol itself and the nature of distributed protocols, especially in hierarchical protocols.
+In this section we design two hierarchical, directory-based MSI protocols, one with the inclusive cache-inclusion policy and the other with the noninclusive policy.
+As explained in \autoref{sec-design-principles}, the description and the correctness proof are for a single cache line, parameterized by a tree deciding the system topology.
+
 \subsection{Protocol description}
+\label{sec-msi-protocol-desc}
+
+\subsubsection{Cache states}
+
+A cache state has the form $O(\textsf{st}, \textsf{v}, \textsf{dir}, \textsf{owned})$, consisting of a status, a value, a directory, and a Boolean called an \emph{ownership bit}.
+
+A status is either \stM{}($=3$), \stS{}($=2$), \stI{}($=1$), or the ``Not Present'' status (\stNP{}$=0$), encoded by natural numbers.
+\stNP{} means that the line does not exist in the cache object.
+In our case-study protocols we distinguish \stI{} and \stNP{} to avoid unnecessary line creation when invalidating the line.
+That is, when the cache object gets an invalidation request, if the line status is \stNP{}, then it should not change its status to \stI{} but maintain the \stNP{} status.
+
+A directory contains a status of its children called a \emph{directory status} and a list of child-cache indices that have the directory status.
+We will denote the directory like $\dir{\stS{}}{1, 2}$, saying that the directory status is \stS{} and child subtrees with indices $1$ and $2$ may contain caches with \stS{} status.
+
+The ownership bit is to determine whether the cache is responsible for writing the value back to the parent when invalidated.
+When a cache has the \stM{} status, the ownership bit is always true.
+However, when the cache has \stS{}, the ownership bit can be either true or false.
+Note that $L_1$ does not have a directory since it has no children.
+It also does not have an ownership bit, since it does not have a case where it has \stS{} status but is responsible for writing the value back.
+
+\tikzset{
+  pcc1/.pic = {
+    \node at (0, 0) {$P(\stI{}, \cdot, \dir{\stM{}}{1}, \bot)$};
+    \node at (-1.5, -1.5) {$C_1(\stM{}, v)$};
+    \node at (1.5, -1.5) {$C_2(\stI{}, \cdot)$};
+    % to the parent of P
+    \node at (0, 1.2) {$\vdots$};
+    \draw [>->] (-0.2, 0.4) -- (-0.2, 0.8);
+    \draw [>->] (0, 0.4) -- (0, 0.8);
+    \draw [<-<] (0.2, 0.4) -- (0.2, 0.8);
+    % between P and C_1
+    \draw [<-<] (-0.7, -0.4) -- (-1.3, -1.1);
+    \draw [<-<] (-0.5, -0.4) -- (-1.1, -1.1);
+    \draw [>->] (-0.3, -0.4) -- (-0.9, -1.1);
+    % between P and C_2
+    \draw [>->] (0.7, -0.4) -- (1.3, -1.1);
+    \draw [<-<] (0.5, -0.4) -- (1.1, -1.1);
+    \draw [<-<] (0.3, -0.4) -- (0.9, -1.1);
+    % message
+    \node[color=myblue,label={[label distance=-10pt]below left:{\blmsgsm{rqS}}}] at (0.6, -0.75) {$\bullet$};
+  },
+  pcc2/.pic = {
+    \node at (0, 0) {\color{myred} $P(\stS{}, v, \dir{\stS{}}{1,2}, \top)$};
+    \node at (-1.5, -1.5) {\color{myred} $C_1(\stS{}, v)$};
+    \node at (1.5, -1.5) {$C_2(\stI{}, \cdot)$};
+    % to the parent of P
+    \node at (0, 1.2) {$\vdots$};
+    \draw [>->] (-0.2, 0.4) -- (-0.2, 0.8);
+    \draw [>->] (0, 0.4) -- (0, 0.8);
+    \draw [<-<] (0.2, 0.4) -- (0.2, 0.8);
+    % between P and C_1
+    \draw [<-<] (-0.7, -0.4) -- (-1.3, -1.1);
+    \draw [<-<] (-0.5, -0.4) -- (-1.1, -1.1);
+    \draw [>->] (-0.3, -0.4) -- (-0.9, -1.1);
+    % between P and C_2
+    \draw [>->] (0.7, -0.4) -- (1.3, -1.1);
+    \draw [<-<] (0.5, -0.4) -- (1.1, -1.1);
+    \draw [<-<] (0.3, -0.4) -- (0.9, -1.1);
+    % message
+    \node[color=myred,label={[label distance=-14pt]above right:{\rdmsgsm{rsS}{\color{myred}$(v)$}}}] at (1.0, -0.75) {$\bullet$};
+  }
+}
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pic at (-3.2, 0) {pcc1};
+    \node at (0, 0) {$\Longrightarrow$};
+    \pic at (3.2, 0) {pcc2};
+  \end{tikzpicture}
+  \caption{An ownership bit set in a shared-state cache}
+  \label{fig-ownership-bit}
+\end{figure}
+
+\autoref{fig-ownership-bit} presents an example of a shared-state cache having its ownership bit set in a hierarchical memory subsystem.
+It could happen when an L1 cache $C_2$ wants to get \stS{} while another L1 cache $C_1$ has \stM{}.
+In this case, $C_2$ sends \blmsg{rqS} and waits for the response with the value \rdmsg{rsS}{\color{myred}$(v)$}.
+After a few steps, the value is pulled from $C_1$, and the parent $P$ gets the data as well, entering a shared status with ownership bit set.
+Here the bit says that the shared value might be dirty, so it should be written back.
+
+The ownership bit intuitively constrains which caches can have valid status.
+In the figure, all the other caches outside $P$, after pulling a value from $C_1$, are in the invalid status, since previously $C_1$ had the dirty value with \stM{}.
+We will see how this intuition is used for the correctness proof soon in \autoref{sec-msi-proof}.
+
+\subsubsection{Protocol description with rule templates}
+
+We present a number of rule descriptions in the MSI protocols that employ the rule templates provided in \hemiola{}.
+Each rule template is defined in Coq, taking in several parameters and generating a rule.
+We exploited Coq's notation mechanism to have a compact definition for each rule template.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}[escapeinside={(*}{*)}]
+Definition l1GetSRqUpUp: Rule :=
+  rule.rquu
+  :accepts getRq
+  :from cidx
+  :me oidx
+  :requires (fun ost msgIn => ost#[status] (*$\leq$*) msiI)
+  :transition (fun ost msgIn => <| rqS; 0 |>).
+\end{lstlisting}
+  \caption{$L_1$ requesting \stS{} to the parent}
+  \label{fig-rule-l1-rqS}
+\end{figure}
+
+\autoref{fig-rule-l1-rqS} presents an actual rule definition, starting with an invocation of a particular rule template \slstinline{rule.rquu}, which takes a request from one of its children and sends a further request to the parent.
+An L1 cache does not have any children; in this case \slstinline{cidx} will be instantiated to an abstract node referring to the external interface (\ie{} processor core) for it.
+Each line starting with a colon (\slstinline{:}) provides more information about the rule.
+This rule \slstinline{accepts} a message with the ID \slstinline{rqS} \slstinline{from} the child with the index \slstinline{cidx}.
+This rule template also requires to write down which object (cache) it belongs to (\slstinline{me}), the precondition (\slstinline{requires}), and the state-transition function (\slstinline{transition}).
+The output \slstinline{rqS} message that we generate carries no data value, so we pair it with a dummy zero value.
+
+Each rule template has different (Coq) types for a precondition and a state-transition function.
+In this example rule, the precondition takes the current object state (\slstinline{ost}) and an input message (\slstinline{msgIn}) from the child.
+It suffices to say that the current status is either \stI{} or \stNP{} (\slstinline{ost#[status]} $\leq$ \slstinline{msiI}), thus the cache needs to request to the parent.
+Note that the statuses are defined as natural numbers, so we can use arithmetic operations inside the precondition.
+
+The transition function also takes the current object state and the input message, and it returns only the message to the parent.
+In this example the cache forwards \slstinline{rqS} to the parent without any meaningful value.
+As explained in \autoref{sec-rule-templates}, when forwarding a request to the parent, no state transition should happen except locking.
+The rule template ensures this requirement by restricting the type of the transition function.
+Note that the rule does not mention locking at all.
+Each rule template automatically sets a proper lock; in this case an uplock is set right after sending a request to the parent.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liDownSRsUpDownM: Rule :=
+  rule.rsudo
+  :accepts downRsS
+  :holding rqS
+  :requires (fun _ _ _ => True)
+  :transition (fun ost rsFrom rs rq rsbTo =>
+    (ost +#[status <- msiS]
+         +#[val <- rs.(msg_value)]
+         +#[dir <- setDirS [rsbTo; rsFrom]]
+         +#[owned <- true],
+     <| rsS; rs.(msg_value) |>)).
+\end{lstlisting}
+  \caption{$L_i$ responding to the child that requested \slstinline{rqS}}
+  \label{fig-rule-li-downRsS}
+\end{figure}
+
+\autoref{fig-rule-li-downRsS} presents another example rule that is fired at the last of the steps shown in \autoref{fig-ownership-bit}, which sends the response to the child who requested \slstinline{rqS}.
+Template \slstinline{rule.rsudo} says that the rule takes a single response and responds back to the original requestor.
+The rule \slstinline{accepts} the response message with the ID \slstinline{downRsS}.
+This rule can be executed when it is \slstinline{holding} a downlock, where the holder contains the original request message with the ID \slstinline{rqS}.
+While the rule does not require any additional precondition (\slstinline{fun _ _ _ => True}), it changes the object state, unlike rules that make requests.
+
+The transition function takes the current object state (\slstinline{ost}), the object index that sent a response (\slstinline{rsFrom}), the response message (\slstinline{rs}), the original request in a lock holder (\slstinline{rq}), and the index of the original requestor (\slstinline{rsbTo}).
+The transition returns a pair of the next state and an output message; this rule sets its status to \stS{}, stores the up-to-date value brought from the \slstinline{downRsS} message, sets the directory status to \stS{} by adding the two children -- one that was downgraded to \stS{} before and the other that originally requested \stS{} -- as sharers, and sets the ownership bit as true since the up-to-date value might be dirty in this case.
+It also sends a response (\slstinline{rsS}) to the requestor with the up-to-date value. Lastly, the rule automatically releases the downlock.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liDropImm: Rule :=
+  rule.imm
+  :requires (fun ost _ _ => ost#[status] <= msiS (*$\wedge$*) ost#[owned] = false)
+  :transition (fun ost => ost +#[status <- msiNP]).
+\end{lstlisting}
+  \caption{$L_i$ immediately dropping a line}
+  \label{fig-rule-li-drop-imm}
+\end{figure}
+
+\autoref{fig-rule-li-drop-imm} is a rule only used in the noninclusive protocol.
+Template \slstinline{rule.imm} is for making an immediate state transition that neither takes any input messages nor generates any output messages.
+Its precondition just says that the line is possibly shared but needs not be written back (the ownership bit is false).
+In this case, we can \emph{silently} drop the line by setting the status to \stNP{}, to denote explicitly that the line is removed.
+Note that there is no precondition about the directory status at all; a line can be dropped even when the directory status is \stS{} or \stM{}, which is not allowed in inclusive caches.
+Our noninclusive protocol employs NCID, and in this case the dropped line may migrate to so-called the extended directory~\cite{Zhao:2010}.
+We will see in \autoref{sec-compiler} how this migration is implicitly processed in the actual hardware implementation.
+
+\begin{figure}[h]
+  \centering
+\begin{lstlisting}
+Definition liBInvRqS: Rule :=
+  rule.rqsd
+  :requires (fun ost => ost#[dir].(dir_st) = msiS)
+  :transition (fun ost => (ost#[dir].(dir_sharers), <| downRqIS; O |>)).
+
+Definition liBInvRqM: Rule :=
+  rule.rqsd
+  :requires (fun ost => ost#[dir].(dir_st) = msiM)
+  :transition (fun ost => ([ost#[dir].(dir_excl)], <| downRqIM; O |>)).
+\end{lstlisting}
+  \caption{$L_i$ initiating a back invalidation}
+  \label{fig-rule-li-back-inv}
+\end{figure}
+
+Lastly, \autoref{fig-rule-li-back-inv} shows two rules to initiate back invalidation, only used in the inclusive protocol.
+Template \slstinline{rule.rqsd} is for making downward requests without any input messages.
+\slstinline{liBInvRqS} \slstinline{requires} the directory status to be \stS{}, and in this case it makes downward requests to the sharers.
+On the other hand, \slstinline{liBInvRqM} \slstinline{requires} the directory status to be \stM{}, and in this case it makes a single downward request to the exclusive child cache.
+
+It is worth recalling that thanks to the rule templates, rule descriptions in the protocol never mention anything about how to set/release locks to deal with interleavings safely; they are rather designed as if only a single transaction is being processed when executing a rule.
 
 \subsection{Correctness proof}
 \label{sec-msi-proof}
+
+Now we present the correctness proof of the MSI protocol, claiming that the implementation refines to a single-line memory as a spec.
+We already discussed in \autoref{sec-pred-msg} that a number of invariants are necessarily required to prove simulation.
+The two variants -- inclusive and noninclusive protocols -- have different set of rules but require the same invariants.
+In this section, we provide necessary invariants to prove the correctness of the MSI protocol, and we demonstrate how \hemiola{} helps prove such invariants using predicate messages.
+
+\subsubsection{Logical status of a cache}
+Before talking about invariants, we would like to clarify how to deal with cache statuses in transition.
+For example, what would be the representative cache status if a cache currently has a status \stS{} but is just about to handle the eviction response (say \msgsfsm{rsPut}) that will remove the line?
+It implies that the parent directory already accepted the eviction request and changed the directory status (for the child) properly.
+In this case, it would make more sense to regard the child cache status to \stI{}.
+
+In order to deal with this situation, we introduce a notion called \emph{logical status} to obtain an abstract status of each cache.
+In the above example, even if the cache has not handled \msgsfsm{rsPut} yet, the logical status is \stI{}.
+Logical statuses are defined formally as follows:
+\begin{itemize}
+\item A cache has logical status \stM{} iff it has \stM{} and there is no \msgsfsm{rsPut} to it.
+\item A cache has logical status \stS{} iff either 1) it has \stS{} and there is no \msgsfsm{rsPut} to it or 2) there is a response \msgsfsm{rsS} to it.
+\item A cache has logical status \stI{} iff either 1) it has \stI{} and there is no \msgsfsm{rsM} or \msgsfsm{rsS} to it or 2) there is a response \msgsfsm{rsPut} to it.
+\end{itemize}
+Note that the logical status of a cache is \emph{not} \stM{} when there is a response \msgsfsm{rsM} to it, since the response could still imply an ongoing invalidation process.
+We will see the actual use case of the \msgsfsm{rsM} message very soon in \autoref{fig-pred-msg-msi}.
+
+\paragraph{Invariants.}
+The MSI protocol largely requires three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}.
+
+\begin{invariant}[Exclusiveness invariant]
+  \label{inv-excl}
+  Whenever a cache object $O$ has logical status \stM{}, then all the other caches are in logical \stI{} status.
+  We denote this predicate by $\objsinv{\lambda c.\; c \neq O}$, where $\objsinv{S}$ claims that any cache object in the object set $S$ has logical \stI{} status.
+\end{invariant}
+
+\begin{invariant}[Sharing invariant]
+  \label{inv-sharing}
+  All caches in logical \stS{} status have the same coherent value.
+\end{invariant}
+
+\begin{invariant}[Invalidness invariant on ownership bits]
+  \label{inv-inv-ownership}
+  If a cache $C$ has an ownership bit true, then all the caches outside $C$ (\ie{} \subtreec{C}) have logical \stI{} status, \ie{} $\objsinv{\subtreec{C}}$.
+\end{invariant}
+
+\begin{invariant}[Invalidness invariant on directory status \stM{}]
+  \label{inv-inv-dir-m}
+  If a parent $P$ has a directory status $M$ to a child $C_i$, then all the caches outside $C_i$ (including $P$) have logical \stI{} status, \ie{} $\objsinv{\subtreec{C_i}}$.
+\end{invariant}
+
+The sharing invariant (\autoref{inv-sharing}) is the easiest one to prove, since the rules involved with sharing the coherent value employ just simple value forwarding.
+For example, the rule in \autoref{fig-rule-li-downRsS} just takes a message \slstinline{downRsS} that contains the coherent value and stores/sends the value.
+Proving the preservation of the invariant for this rule is very straightforward.
+
+\subsubsection{Invariant proofs using predicate messages}
+
+While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness (\autoref{inv-excl}) and invalidness invariants (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}), since these invariants are involved with global cache states.
+We have already learned in \autoref{sec-pred-msg} that in order to prove this kind of invariants, it is desirable to state some supporting invariants based on the existence of certain messages, called predicate messages.
+We also discovered that on top of serializability it is much easier to state and prove predicate messages.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    %% Part 1
+    \node [color=myblue] at (0, 1.2) {$(P.\textsf{owned} = \top)\{\objsinv{\subtreec{P}}\}$};
+    \node at (0, 0) {$P$};
+    \node at (-1.2, -1.2) {$C_0$};
+    \node at (0, -1.5) {$C_1$};
+    \node at (1.3, -0.9) {$C_n$};
+
+    \draw [dotted,line width=1pt] (0, 0.4) -- (0, 0.8);
+    \draw [>->] (-0.3, -0.3) -- (-0.9, -0.9);
+    \draw [>->] (0, -1.2) -- (0, -0.3);
+    \draw [>->] (1.0, -0.7) -- (0.3, -0.2);
+    \draw [loosely dotted,line width=1pt] (0.4, -1.5) to[out=0,in=-150] (1.1, -1.1);
+
+    \node [color=myblue,label={[myblue,label distance=-9pt]below right:{\msgsfsm{rsI}}}] at (0, -0.7) {$\bullet$};
+    \node [color=myblue,label={[myblue,label distance=-9pt]above right:{\predmsg{\msgsfsm{rsI}}{\objsinv{\subtree{C_n}}}}}] at (0.65, -0.45) {$\bullet$};
+    \node [color=myred,label={[myred,label distance=-9pt]above left:{\predmsg{\msgsfsm{rsM}}{\objsinv{\subtreec{C_0}}}}}] at (-0.6, -0.6) {$\bullet$};
+
+    \node [anchor=west,draw] at (1.8, -1.4) {{\small {\color{myblue} current}/{\color{myred} next}}};
+
+    %% Part 2
+    \node [color=mygray] at (-2.4, -2.4) {$L_1$};
+    \node [color=mygray,anchor=west] at (-1.8, -2.7) {$(L_1.\textsf{st} = M)\{\objsinv{\lambda c. c \neq L_1}\}$};
+    \draw [color=mygray,dotted,line width=1pt] (-1.7, -2.7) -- (-2.1, -2.4);
+    \draw [loosely dotted,line width=1pt] (-1.4, -1.4) -- (-1.7, -1.7);
+    \draw [color=mygray,>->] (-1.8, -1.8) -- (-2.2, -2.2);
+
+    \node [anchor=east,draw] at (-3.0, -2.4) {{\small\color{mygray} eventually}};
+
+    \node [color=mygray,label={[label distance=-9pt,mygray]above left:{\predmsg{\msgsfsm{rsM}}{\objsinv{\subtreec{L_1}}}}}] at (-2.0, -2.0) {$\bullet$};
+  \end{tikzpicture}
+  \caption{Use of predicate messages to prove the exclusiveness invariant}
+  \label{fig-pred-msg-msi}
+\end{figure}
+
+We would like to present a practical usage of predicate messages in proving the exclusiveness invariant, shown in \autoref{fig-pred-msg-msi}.
+Suppose that an L1 cache (shown as {\color{mygray} $L_1$ in gray} in the figure) requested to the parent to get the \stM{} status.
+When it finally handles the response \msgsfsm{rsM}, it should know all the other caches (except itself) have the logical \stI{} status to prove the exclusiveness invariant (denoted as {\color{mygray} $\{\objsinv{\lambda c. c \neq L_1}\}$}).
+This proof case can be supported using the predicate message for \msgsfsm{rsM}, stating \objsinv{\subtreec{C}} (outside of the subtree rooted to $C$) when the message goes to $C$.
+Since $L_1$ is the leaf node in the tree, it is trivial to prove $(\objsinv{\subtreec{L_1}} \to \objsinv{\lambda c. c \neq L_1})$, so we see an example of a predicate message helping prove a conventional invariant.
+
+\autoref{fig-pred-msg-msi} also shows another case, where conventional invariants and predicate messages coordinate to prove a predicate message for the next state.
+When a child $C_i$ sends the invalidation response \msgsfsm{rsI}, it should know that all the caches inside the subtree of $C_i$ have been invalidated (denoted as {\color{myblue} \objsinv{\subtree{C_i}}}).
+When the parent $P$ subsequently handles the invalidation responses, it responds with \msgsfsm{rsM} to the original requestor ($C_0$ in the figure), requiring to prove {\color{myred} \objsinv{\subtreec{C_0}}}.
+While $P$ also changes its status to \stI{} in this state transition, how do we infer that the caches outside $P$ are in the logical \stI{} status, which is required to prove the predicate over {\color{myred} \msgsfsm{rsM}}?
+In this case, we should prove a simple object-level invariant of $P$ that it has the ownership bit true.
+Then we can use \autoref{inv-inv-ownership} to obtain the desired predicate (denoted as {\color{myblue} $(P.\textsf{owned} = \top)\{\objsinv{\subtreec{P}}\}$}).
+Combining all the predicates and the state transition by $P$, we can prove the next predicate message for {\color{myred} \msgsfsm{rsM}}.
+
+\subsubsection{Refinement proof}
+
+Once equipped with sufficient invariants, it is straightforward to prove the refinement between the implementation and the spec.
+The only work is to define a correct simulation that relates all the coherent values in the implementation and the single value in the spec.
+The coherent values are collected by looking at the logical status of each object; if the logical status is \stS{} or \stM{} then values either in the object or in some messages (\eg{} \slstinline{rsS}) are coherent.
+
+Denoting by $\implcoh{s}{o}{v}$ that an object $o$ contains a coherent value $v$ in a system state $s$, the simulation can be stated as follows:
+\begin{theorem}[Correctness of the MSI protocol]
+  \label{thm-msi-correct}
+  The following simulation relation holds between the implementation system state $s^I$ and the spec system state $s^S$.
+  \begin{displaymath}
+    s^I \sim s^S \triangleq \exists v.\; \forall o.\; \implcoh{s^I}{o}{v} \wedge s^S = \speccoh{v}.
+  \end{displaymath}
+  where $\speccoh{v}$ represents a single-value state for the spec.
+\end{theorem}
 
 \section{The MESI Protocol}
 \label{sec-mesi-protocol}
 
 \subsection{Protocol description}
+\label{sec-mesi-protocol-desc}
 
 \subsection{Correctness proof}
 \label{sec-mesi-proof}
