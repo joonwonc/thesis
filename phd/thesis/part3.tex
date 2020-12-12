@@ -20,7 +20,7 @@ Each design is parameterized by a tree $t$ that decides the topology of the memo
 In other words, whenever we instantiate the tree parameter, we get a cache-coherence design and its correctness proof for free.
 For example, the following tree definition will generate a cache-coherence protocol for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
 \begin{lstlisting}[numbers=none, frame=none]
-  Definition t: tree := Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]].
+Definition t: tree := Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]].
 \end{lstlisting}
 
 There are three different kinds of caches in this topology-parameterized protocol.
@@ -489,18 +489,130 @@ The simulation relation for the MESI protocol is just the same as the one for th
 \chapter{Compilation and Synthesis to Hardware}
 \label{sec-comp-syn}
 
+As mentioned in \autoref{sec-design-line}, so far we have dealt with cache-coherence protocols for a single line, where the specification has a single line as well.
+In order to build a hardware-synthesizable multiline implementation, we developed a simple compiler that takes a single-line \hemiola{} protocol as a source program and generates a multiline implementation described in Kami~\cite{kami}.
+Kami is a hardware formal-verification framework, where its own HDL and proof tools are defined in Coq, allowing users to design, specify, verify, and synthesize their hardware components.
+
+The protocol transition system and the rule templates given in the \hemiola{} DSL match well rule-based HDLs like Kami; a rule in \hemiola{} naturally maps to an equivalent rule in Kami, which describes atomic state transitions in hardware modules.
+Instead of directly compiling \hemiola{} protocols to a register-transfer language (RTL), we chose to build a compiler from \hemiola{} to Kami as a first step toward using the protocols and their correctness proofs within larger Kami proofs including processors -- though this thesis does not include those composition proofs.
+Since Kami already has a hardware-synthesis toolchain, we can just compile a \hemiola{} program to Kami and use the toolchain to run it on FPGAs.
+
+In this chapter, we will explore how a single-line \hemiola{} protocol is compiled to a multiline cache-coherence protocol implementation in Kami and demonstrate its synthesis to hardware (FPGA).
+We will further discuss the desired specification of the multiline implementations, which is naturally derived from the source \hemiola{} protocol.
+
 \section{Compilation of a \hemiola{} Protocol}
 \label{sec-compiler}
 
-\subsection{Kami: the target register-transfer-level language}
+\subsection{Compiler ingredients}
 
-\subsection{Preprocessing: reification}
+\begin{figure}[t]
+  \centering
+  \tikzstyle{arg} = [inner sep=1pt, outer sep=2pt]
+  \tikzstyle{component} = [rectangle, draw=black, inner sep=5pt, outer sep=2pt]
+  \tikzstyle{libcomp} = [rectangle, draw=black, minimum width=3.0cm, inner sep=5pt, outer sep=1pt]
+  \tikzstyle{arrow}=[-{stealth}]
+  \tikzstyle{dataflow}=[-{latex}]
+  \begin{tikzpicture}
+    \node[arg] (hemiolaSource) at (0, 2.0) {\sf{(Single-line) \hemiola{} protocol}};
+    \node[component] (compiler) at (0, 0) {\sf{Protocol Compiler}};
+    \node[arg, fill=white] (kamiTarget) at (0, -2.0) {\sf{(Multiline) Kami implementation}};
+    \node[anchor=east, arg] (extComp) at (-2.5, 0.4) {\small\sf{Custom data structure reifier/compiler}};
+    \node[anchor=east, arg] (cacheConfig) at (-2.5, -0.4) {\small\sf{Cache/MSHR configuration}};
 
-\subsubsection{Reifying and compiling custom data structures}
+    \node[anchor=west,
+      rectangle, draw=black,
+      minimum width=3.6cm,
+      minimum height=2.2cm] (lib) at (3.0, 0) {};
+    \node[above right] at (lib.north west) {\small\sf{Prebuilt Kami library}};
+    \node[anchor=west, libcomp] (caches) at (3.3, 0.7) {\small\tt{Caches}};
+    \node[anchor=west, libcomp] (victimlines) at (3.3, 0) {\small\tt{Victim lines}};
+    \node[anchor=west, libcomp] (mshrs) at (3.3, -0.7) {\small\tt{MSHRs}};
 
-\subsection{Prebuilt cache-related components}
+    \draw [dataflow] (hemiolaSource) to
+    node[left, inner sep=1pt] (reifyArrow) {}
+    node[right] {\footnotesize\sf\it{after reification}} (compiler);
+    \draw [dataflow] (compiler) to (kamiTarget);
+    \draw [arrow] (extComp) to[out=0,in=180] (reifyArrow);
+    \draw [arrow] (extComp) to[out=0,in=180] (compiler);
+    \draw [arrow] (cacheConfig) to[out=0,in=180] (compiler);
+    \draw [arrow] (lib) to[out=180,in=0] (compiler);
 
-\subsection{Pipelined cache controller}
+    \node[arg] (bsvTarget) at (0, -3.4) {\sf{Bluespec implementation}};
+    \node[arg] (fpga) at (0, -4.8) {\sf{Circuit on FPGA}};
+
+    \draw [dataflow] (kamiTarget) to[out=270,in=90,outer sep=3pt] node[left] {\footnotesize\sf\it{Kami-to-Bluespec transliteration}} (bsvTarget);
+    \draw [dataflow] (bsvTarget) to[out=270,in=90,outer sep=3pt] node[left] {\footnotesize\sf\it{Bluespec synthesis}} (fpga);
+
+    \begin{pgfonlayer}{bg}
+      \node[anchor=west, text=mygray, arg] at (-8.5, -1.6) {\small\sf\it{compilation}};
+      \draw[dashed] (-8.5, -2.0) -- (6.5, -2.0);
+      \node[anchor=west, text=mygray, arg] at (-8.5, -2.4) {\small\sf\it{synthesis}};
+    \end{pgfonlayer}
+  \end{tikzpicture}
+  \caption{Compilation and Synthesis of \hemiola{} protocols}
+  \label{fig-compiler}
+\end{figure}
+
+\autoref{fig-compiler} depicts a compilation/synthesis flow from a given \hemiola{} protocol to an FPGA-ready circuit.
+We provide an overview for each ingredient in the compiler, following the diagram.
+
+\subsubsection{Preprocessing: reification}
+
+A source program of the protocol compiler is a single-line protocol described in \hemiola{} with the rule templates.
+Before feeding a \hemiola{} source program to the compiler, a preprocessing step is required, which is to reify the program into an AST we can hand off to the compiler.
+\hemiola{} supports automated, correct-by-construction reification driven by a series of tactics in Coq.
+For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \hemiola{} rule to the corresponding rule AST, where \slstinline{HRule} is a Coq record (struct) containing the AST and its correctness, \ie{} denotation of the AST matches the denotation of the original rule:
+\begin{lstlisting}[numbers=none, frame=none]
+    Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
+\end{lstlisting}
+
+\subsubsection{Kami: the target register-transfer-level language}
+
+Kami~\cite{kami} is a hardware-verification framework embedded in Coq with its own HDL at the register-transfer level.
+A hardware design in Kami consists of modules with encapsulated private state (registers), public methods, and \emph{rules} that make atomic state changes.
+Rules are fired by a global scheduler by Bluespec, later synthesized to the corresponding scheduling circuitry.
+The Bluespec scheduler tries to find a maximal number of rules to execute at a cycle, with the convenient semantic guarantee that the execution can be interpreted as if the rules are executed atomically and sequentially, called \emph{one-rule-at-a-time execution}.
+
+As mentioned in \autoref{sec-cc-as-mp}, the underlying transition system of \hemiola{} is also rule-based, and the semantics is based on the one-rule-at-a-time execution.
+In this sense, Kami is a good target HDL in that a rule in \hemiola{} can be compiled to a corresponding rule in Kami.
+
+Another advantage of using Kami as a target language is its verification tools defined in Coq.
+Similarly to \hemiola{}, Kami also employs trace refinement as a correctness criterion.
+Kami as a formal-verification framework provides an effective verification technique called \emph{modular refinement}, which basically says that trace refinement proofs of submodules can be combined together to obtain the refinement for the whole module:
+\begin{theorem}[Modular refinement in Kami]
+  \label{thm-kami-modular-refinement}
+  \begin{displaymath}
+    \forall I_1, I_2, S_1, S_2.\; I_1 \sqsubseteq S_1 \wedge I_2 \sqsubseteq S_2 \to I_1 + I_2 \sqsubseteq S_1 + S_2.
+  \end{displaymath}
+\end{theorem}
+
+A corollary of \autoref{thm-kami-modular-refinement} is called \emph{modular substitution}, where we can substitute a submodule to another submodule to have a simpler design as an intermediate step to the final refinement:
+\begin{theorem}[Modular substitution in Kami]
+  \label{thm-kami-modular-subst}
+  \begin{displaymath}
+    \forall I_1, I_2, I_1'.\; I_1 \sqsubseteq I_1' \to I_1 + I_2 \sqsubseteq I_1' + I_2.
+  \end{displaymath}
+\end{theorem}
+This corollary will be referred to when substituting our optimized cache-controller submodules in the entire memory subsystem to simpler ones, explained in \autoref{sec-compiler-correctness}.
+
+\subsubsection{Reification and compilation of custom data structures}
+
+Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for it.
+This task is straightforward for the user, since both reification and compilation work at the level of expressions, not rules.
+For instance, a field access \slstinline{dir.(dir_sharers)} for a Coq record \slstinline{dir} is reified to an expression AST node \slstinline{(HDirGetSh hdir)}, where \slstinline{hdir} is the reified directory structure, and compiled to \slstinline{cdir@."dir_sharers"} in Kami, which uses a field-access expression.
+
+\subsubsection{Prebuilt cache-related components}
+
+The compiler uses prebuilt hardware components described in Kami.
+Some of them are for implementing NCID~\cite{Zhao:2010} introduced in \autoref{sec-inc-noninc}, whose interfaces include asynchronous read and write of the line information (ownership bits, statuses, directory statuses, etc.) and value.
+The cache normally uses a primitive BRAM (block RAM) module in Kami, later synthesized to a BRAM on an FPGA.
+The cache module also manages \emph{victim lines} that should be evicted eventually.
+
+Another prebuilt component holds a finite number of MSHRs, whose abstract interface includes registering, updating, and releasing MSHRs with respect to their types (uplock or downlock) and locking addresses.
+Recall that ideally (as a spec) MSHRs are assigned per-line, but the actual design can contain only a finite number of them.
+The compiler takes several counts as configuration parameters to determine the sizes of caches (\eg{} the number of lines and ways) and MSHRs (\eg{} the number of uplocks and downlocks).
+
+\subsection{Compilation to the pipelined cache controller}
 
 \subsubsection{Blocking vs. Nonblocking protocols}
 
