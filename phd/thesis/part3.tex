@@ -612,7 +612,7 @@ Another prebuilt component holds a finite number of MSHRs, whose abstract interf
 Recall that ideally (as a spec) MSHRs are assigned per-line, but the actual design can contain only a finite number of them.
 The compiler takes several counts as configuration parameters to determine the sizes of caches (\eg{} the number of lines and ways) and MSHRs (\eg{} the number of uplocks and downlocks).
 
-\subsection{Compilation to the pipelined cache controller}
+\subsection{Compilation of a pipelined cache module}
 
 One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
 In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
@@ -635,10 +635,13 @@ In the source protocol, a single line can be read (or written) \emph{immediately
       \draw [arrow, line width=0.8pt] (hrules) to[out=0,in=180] (hdata);
       \node (hinput1) at (-5.2, 0.4) {};
       \node (hinput2) at (-5.2, -0.4) {};
-      \node (houtput) at (-2.5, 2.0) {};
+      \node (houtput1) at (-2.2, 2.0) {};
+      \node (houtput2) at (-2.8, 2.0) {};
       \draw [arrow, line width=1.2pt] (hinput1) to [out=0,in=180] node[above, pos=0.24] {\footnotesize\tt{inputs}} (hrules);
       \draw [arrow, line width=1.2pt] (hinput2) to [out=0,in=180] node[below, pos=0.24] {\footnotesize\tt{inputs}} (hrules);
-      \draw [arrow, line width=1.2pt] (hrules) to [out=90,in=-90] node[right, pos=0.75] {\footnotesize\tt{outputs}} (houtput);
+      \draw [arrow, line width=1.2pt] (hrules) to [out=90,in=-90] (houtput1);
+      \draw [arrow, line width=1.2pt] (hrules) to [out=90,in=-90] (houtput2);
+      \node (houtputlbl) at (-2.5, 2.0) {\footnotesize\tt{outputs}};
     },
     kamimod/.pic = {
       \node [comp, line width=0.8pt, myblue, minimum width=8.0cm, minimum height=4.0cm] (kami) at (0, 0) {};
@@ -655,11 +658,12 @@ In the source protocol, a single line can be read (or written) \emph{immediately
       \node [anchor=east, comp, text width=1.6cm] (ex) at (3.4, 0.8) {{\small\tt Compiled Kami rules}};
       \node[above right=-2pt] at (ex.north west) {\scriptsize\tt\color{myblue}{EX}};
       \node [comp] (mshrs) at (-2.6, -1.2) {{\small\tt MSHRs}};
-      \node [comp, inner sep=2pt, text width=3.4cm, minimum height=1.2cm] at (0.5, -1.2) {{\small\tt BRAM-based caches (defined in Kami)}};
+      \node [comp, inner sep=2pt, text width=3.6cm, minimum height=1.2cm] at (0.5, -1.2) {{\small\tt BRAM-based caches (prebuilt in Kami)}};
 
       \node (input1) at (-5.2, 1.4) {};
       \node (input2) at (-5.2, 0.2) {};
-      \node (output) at (5.4, 0.8) {};
+      \node (output1) at (5.2, 0.4) {};
+      \node (output2) at (5.2, 1.2) {};
       \node (inforq) at (-1.0, -0.7) {};
       \node (datarq) at (0, -0.7) {};
       \node (wrq) at (1.6, -0.7) {};
@@ -671,14 +675,15 @@ In the source protocol, a single line can be read (or written) \emph{immediately
       \draw [parrow] (ir) to node[above=2pt, pos=0.5] {\footnotesize\tt{i2l}} (lr);
       \draw [parrow] (lr) to node[above=2pt, pos=0.5] {\footnotesize\tt{l2e}} (ex);
 
-      \draw [arrow, line width=0.8pt] (in1) to[out=0,in=90,distance=0.2cm] (mshrs);
-      \draw [arrow, line width=0.8pt] (in2) to[out=0,in=90,distance=0.2cm] (mshrs);
+      \draw [barrow, line width=0.8pt] (in1) to[out=0,in=90,distance=0.4cm] (mshrs);
+      \draw [barrow, line width=0.8pt] (in2) to[out=0,in=90,distance=0.4cm] (mshrs);
 
       \draw [arrow, line width=0.8pt] (ir) to node[right, pos=0.3] {\scriptsize\tt info} node[right, pos=0.6] {\scriptsize\tt rq} (inforq);
       \draw [barrow, line width=0.8pt] (lr) to node[right, pos=0.3] {\scriptsize\tt info rs} node[right, pos=0.6] {\scriptsize\tt /data rq} (datarq);
       \draw [barrow, line width=0.8pt] (ex) to node[right, pos=0.5] {\scriptsize\tt data rs/write} (wrq);
 
-      \draw [arrow, line width=1.2pt] (ex) to node[above=2pt, pos=0.85] {\footnotesize\tt{outputs}} (output);
+      \draw [arrow, line width=1.2pt] (ex) to[out=0,in=180] (output1);
+      \draw [arrow, line width=1.2pt] (ex) to[out=0,in=180] node[above=2pt, pos=0.85] {\footnotesize\tt{outputs}} (output2);
     }
   }
   \begin{tikzpicture}
@@ -686,21 +691,49 @@ In the source protocol, a single line can be read (or written) \emph{immediately
     \draw [arrow, mygray, line width=3pt] (0, 1.0) to node[right, pos=0.5] {\footnotesize\tt{Protocol Compiler}} (0, -0.2);
     \pic at (0, -2.8) {kamimod};
   \end{tikzpicture}
-  \caption{Compilation of a cache controller}
+  \caption{Compilation of a pipelined cache module}
   \label{fig-compilation-pipeline}
 \end{figure}
 
-In order to implement asynchronous line accesses, the protocol compiler uses the prebuilt pipeline.
-\autoref{fig-compilation-pipeline} depicts a source \hemiola{} cache object and the corresponding target Kami module, generated by the protocol compiler.
-Each \hemiola{} rule in the source cache object takes input messages from various channels, accesses values -- a line status, a line value, and locks --, and generates output messages atomically at a step.
+In order to optimize asynchronous line accesses, the protocol compiler employs the prebuilt pipeline.
+\autoref{fig-compilation-pipeline} presents a source \hemiola{} cache object and the corresponding target Kami module, generated by the protocol compiler.
+Each \hemiola{} rule in the source cache object takes input messages from various channels, reads/writes values (\eg{} a line status, a line value, locks, etc.), and generates output messages (to various channels) atomically at a step.
 
 A \hemiola{} rule execution corresponds to the executions of multiple stages in the pipeline, each of which takes part of the source-rule execution.
-Each earlier stage in the pipeline accepts the input message, (asynchronously) reads the line information, and checks the precondition and the MSHR conditions.
-The last stage then makes the state transition using the line read from the earlier stages, by requesting a write to the line.
-In order to make the execution of these pipeline-stage rules correct, as per standard hardware pipelines, the pipeline includes stall logic to make concurrent partial executions for different line addresses correct.
-Pipelining in the cache module is nontrivial but ubiquitous in real-world cache controllers.
+The first stage ({\small\tt\color{myblue} IN} in the figure) takes input messages from various channels; in order to avoid a deadlock, the pipeline has different entries for inputs from the parent and the children.
+The {\small\tt\color{myblue} IN} stage also checks MSHRs to see if the input message can be accepted to the pipeline or not.
+Depending on the management of MSHRs, it either accepts the input, stalls it, or puts it to the ``retry'' entries in the MSHR-managing module.
+Whether to stall or retry later determines the protocol \emph{blocking or nonblocking}; we will discuss the difference in detail right in the next section.
 
-\subsubsection{Blocking vs. Nonblocking protocols}
+The second stage ({\small\tt\color{myblue} IR}) asynchronously requests the line information (status, directory status, etc.) with the line address from the input message.
+It makes the request in terms of the index (from the line address), \ie{} it tries to read all the tags and information values with the same index.
+
+The third stage ({\small\tt\color{myblue} LR}) gets the response for the line information and tries to find if any tag matches the line address.
+If so, it is a \emph{cache hit}; the {\small\tt\color{myblue} LR} stage requests to get the line value with the index and tag.
+Otherwise, it is a \emph{cache miss}; the {\small\tt\color{myblue} LR} stage decides the victim line by means of the replacement-managing module and requests to get the line value for the victim.
+
+The last stage ({\small\tt\color{myblue} EX}) gets the response for the line value.
+In case of a cache hit, using the line information and value read from the earlier stages, a properly selected Kami rule (compiled from a source \hemiola{} rule) possibly requests a write to the line and generates output messages.
+In case of a cache miss, the line status is decoded to \stNP{} (Not Present), and a proper state transition is made by a Kami rule.
+The line information and value in this case are the ones for the new victim; the {\small\tt\color{myblue} EX} stage registers the victim using those values.
+
+\subsubsection{Blocking vs. nonblocking protocols}
+
+The protocol compiler takes a single-line \hemiola{} protocol and generates a corresponding multiline implementation.
+In terms of safety (correctness), this compilation is sound enough, since the coherence of each line is orthogonal to coherence of others.
+
+However, in terms of progress, since the implementation can only use finite resources (\eg{} communication channels, MSHRs, etc.), a transaction for a certain line is often \emph{blocked} by the other transaction for a different line.
+For instance, suppose that a request is blocked (stalled) at the {\small\tt\color{myblue} IN} stage in \autoref{fig-compilation-pipeline}, because there is already an ongoing transaction with the same line address, represented as an acquired lock in MSHRs.
+If the pipeline just let this request remain in the pipeline, some other requests, possibly with different line addresses, will be blocked as well since the pipeline is in-order.
+This case just defines a \emph{blocking cache-coherence protocol}; a stalled request affects the other transactions to be blocked as well.
+
+We can optimize this blocking protocol by moving the blocking request to a designated slot (\eg{} a fresh MSHR) and allowing subsequent messages to pass through the pipeline.
+This is one way to implement a \emph{nonblocking protocol}; a transaction has a chance not to be blocked by the other messages.
+Note that the degree of nonblocking is determined by the number of resources, \eg{} the more MSHRs the pipeline has, the fewer blocking would happen.
+
+The MSHR-managing module, prebuilt in Kami, supports this kind of nonblocking while maintaining the safety of interleavings.
+That is, a new input message is temporarily held in an MSHR slot when there is already a slot occupied with the same line address.
+The module manages MSHRs with tracking execution dependencies among them, so the pipeline retries processing the input message that was held temporarily in the MSHR right after the preoccupied MSHR slot is released, \ie{} the ongoing transaction is finished.
 
 \section{Correctness of the Protocol Compiler}
 \label{sec-compiler-correctness}
@@ -709,7 +742,7 @@ As explained in \autoref{sec-compiler}, the protocol compiler takes a cache conf
 Then what would be the specification for all possible implementations from a given source protocol?
 In this section we naturally extend a single-line \hemiola{} protocol to a multiline one and argue its role as the specification for multiline implementations.
 
-The core idea comes from the fact that \emph{the coherence of each line is orthogonal to coherence of others}.
+The core idea is mentioned already in the previous section: \emph{the coherence of each line is orthogonal to coherence of others}.
 In this case, a single-line \hemiola{} protocol is naturally extended to a multiline one by using the notion of compositionality.
 Compositionality claims that if two systems are index-disjoint (\ie{} objects and channel indices are disjoint) thus not communicating with each other, then refinement of the composed system is obtained for free just by composing the specs:
 \begin{theorem}[Compositionality]
@@ -769,8 +802,10 @@ Thus the protocol can serve as a spec for all the multiline implementations gene
 For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
 Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
 After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
-Proving compiler correctness in this manner is on our list of valuable future work.
-As already mentioned in \autoref{sec-compiler}, while the compiler may use nontrivial optimizations, they are all within the internal cache design, thus irrelevant to cache-coherence protocol verification.
+In proving this refinement, \autoref{thm-kami-modular-subst} will be required, since every pipelined cache module in $I^{k}_{m}$ should be substituted to a naive module in $I^{k}_{M}$, transliterated from $I^{h}_{M}$.
+
+As presented in \autoref{fig-multiline-spec}, proving the compiler correctness is a part of the correctness proof of a cache-coherent memory subsystem implementation at the lower level.
+While this thesis only focuses on proving cache-coherence protocols described in the high level, we believe that proving the low-level implementation in this manner is another great milestone.
 
 \section{Synthesis of a \hemiola{} Protocol}
 \label{sec-synthesis}
