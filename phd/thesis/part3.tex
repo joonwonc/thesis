@@ -614,10 +614,163 @@ The compiler takes several counts as configuration parameters to determine the s
 
 \subsection{Compilation to the pipelined cache controller}
 
+One of the biggest differences between a source \hemiola{} protocol and the target Kami code is that the target accesses multiple lines \emph{asynchronously}.
+In the source protocol, a single line can be read (or written) \emph{immediately} by directly accessing a value, whereas in the target the value is accessed asynchronously by making a read (or write) request with a certain line address to a cache and by handling the response.
+
+\begin{figure}[t]
+  \centering
+  \renewcommand{\arraystretch}{1.1}
+  \tikzstyle{comp} = [draw, rounded corners=6pt, align=center, inner sep=6pt]
+  \tikzstyle{arrow}=[-{stealth}]
+  \tikzstyle{barrow}=[{stealth}-{stealth}]
+  \tikzstyle{parrow}=[-{stealth}, densely dotted, line width=0.8pt]
+  \tikzset{
+    hemobj/.pic = {
+      \node [comp, line width=0.8pt, myred, minimum width=8.0cm, minimum height=2.4cm] (hem) at (0, 0) {};
+      \node[above left] at (hem.north east) {\small\tt\color{myred}{Hemiola cache object}};
+
+      \node [comp, text width=1.6cm] (hrules) at (-2.5, 0) {{\small\tt\hemiola{} rules}};
+      \node [anchor=west, comp, text width=4.0cm, inner sep=2pt] (hdata) at (-0.5, 0) {{\small\tt\begin{tabular}{c} Line status\\ Line value\\ Uplock/downlock \end{tabular}}};
+
+      \draw [arrow, line width=0.8pt] (hrules) to[out=0,in=180] (hdata);
+      \node (hinput1) at (-5.2, 0.4) {};
+      \node (hinput2) at (-5.2, -0.4) {};
+      \node (houtput) at (-2.5, 2.0) {};
+      \draw [arrow, line width=1.2pt] (hinput1) to [out=0,in=180] node[above, pos=0.24] {\footnotesize\tt{inputs}} (hrules);
+      \draw [arrow, line width=1.2pt] (hinput2) to [out=0,in=180] node[below, pos=0.24] {\footnotesize\tt{inputs}} (hrules);
+      \draw [arrow, line width=1.2pt] (hrules) to [out=90,in=-90] node[right, pos=0.75] {\footnotesize\tt{outputs}} (houtput);
+    },
+    kamimod/.pic = {
+      \node [comp, line width=0.8pt, myblue, minimum width=8.0cm, minimum height=4.0cm] (kami) at (0, 0) {};
+      \node[above right] at (kami.north west) {\small\tt\color{myblue}{Kami cache module}};
+
+      \node [comp, myblue, fill=myblue, minimum width=0.52cm, minimum height=0.52cm] (in1) at (-3.2, 1.4) {};
+      \node[above=-2pt] at (in1.north) {\scriptsize\tt\color{myblue}{IN}};
+      \node [comp, myblue, fill=myblue, minimum width=0.52cm, minimum height=0.52cm] (in2) at (-3.2, 0.2) {};
+      \node[above=-2pt] at (in2.north) {\scriptsize\tt\color{myblue}{IN}};
+      \node [comp, myblue, fill=myblue, minimum width=0.52cm, minimum height=0.52cm] (ir) at (-1.6, 0.8) {};
+      \node[above=-2pt] at (ir.north) {\scriptsize\tt\color{myblue}{IR}};
+      \node [comp, myblue, fill=myblue, minimum width=0.52cm, minimum height=0.52cm] (lr) at (0, 0.8) {};
+      \node[above=-2pt] at (lr.north) {\scriptsize\tt\color{myblue}{LR}};
+      \node [anchor=east, comp, text width=1.6cm] (ex) at (3.4, 0.8) {{\small\tt Compiled Kami rules}};
+      \node[above right=-2pt] at (ex.north west) {\scriptsize\tt\color{myblue}{EX}};
+      \node [comp] (mshrs) at (-2.6, -1.2) {{\small\tt MSHRs}};
+      \node [comp, inner sep=2pt, text width=3.4cm, minimum height=1.2cm] at (0.5, -1.2) {{\small\tt BRAM-based caches (defined in Kami)}};
+
+      \node (input1) at (-5.2, 1.4) {};
+      \node (input2) at (-5.2, 0.2) {};
+      \node (output) at (5.4, 0.8) {};
+      \node (inforq) at (-1.0, -0.7) {};
+      \node (datarq) at (0, -0.7) {};
+      \node (wrq) at (1.6, -0.7) {};
+
+      \draw [arrow, line width=1.2pt] (input1) to node[above, pos=0.24] {\footnotesize\tt{inputs}} (in1);
+      \draw [arrow, line width=1.2pt] (input2) to node[below, pos=0.24] {\footnotesize\tt{inputs}} (in2);
+      \draw [parrow] (in1) to[out=0,in=180] node[above=6pt, pos=0.8] {\footnotesize\tt{n2i}} (ir);
+      \draw [parrow] (in2) to[out=0,in=180] node[below=4pt, pos=0.8] {\footnotesize\tt{n2i}} (ir);
+      \draw [parrow] (ir) to node[above=2pt, pos=0.5] {\footnotesize\tt{i2l}} (lr);
+      \draw [parrow] (lr) to node[above=2pt, pos=0.5] {\footnotesize\tt{l2e}} (ex);
+
+      \draw [arrow, line width=0.8pt] (in1) to[out=0,in=90,distance=0.2cm] (mshrs);
+      \draw [arrow, line width=0.8pt] (in2) to[out=0,in=90,distance=0.2cm] (mshrs);
+
+      \draw [arrow, line width=0.8pt] (ir) to node[right, pos=0.3] {\scriptsize\tt info} node[right, pos=0.6] {\scriptsize\tt rq} (inforq);
+      \draw [barrow, line width=0.8pt] (lr) to node[right, pos=0.3] {\scriptsize\tt info rs} node[right, pos=0.6] {\scriptsize\tt /data rq} (datarq);
+      \draw [barrow, line width=0.8pt] (ex) to node[right, pos=0.5] {\scriptsize\tt data rs/write} (wrq);
+
+      \draw [arrow, line width=1.2pt] (ex) to node[above=2pt, pos=0.85] {\footnotesize\tt{outputs}} (output);
+    }
+  }
+  \begin{tikzpicture}
+    \pic at (0, 2.6) {hemobj};
+    \draw [arrow, mygray, line width=3pt] (0, 1.0) to node[right, pos=0.5] {\footnotesize\tt{Protocol Compiler}} (0, -0.2);
+    \pic at (0, -2.8) {kamimod};
+  \end{tikzpicture}
+  \caption{Compilation of a cache controller}
+  \label{fig-compilation-pipeline}
+\end{figure}
+
+In order to implement asynchronous line accesses, the protocol compiler uses the prebuilt pipeline.
+\autoref{fig-compilation-pipeline} depicts a source \hemiola{} cache object and the corresponding target Kami module, generated by the protocol compiler.
+Each \hemiola{} rule in the source cache object takes input messages from various channels, accesses values -- a line status, a line value, and locks --, and generates output messages atomically at a step.
+
+A \hemiola{} rule execution corresponds to the executions of multiple stages in the pipeline, each of which takes part of the source-rule execution.
+Each earlier stage in the pipeline accepts the input message, (asynchronously) reads the line information, and checks the precondition and the MSHR conditions.
+The last stage then makes the state transition using the line read from the earlier stages, by requesting a write to the line.
+In order to make the execution of these pipeline-stage rules correct, as per standard hardware pipelines, the pipeline includes stall logic to make concurrent partial executions for different line addresses correct.
+Pipelining in the cache module is nontrivial but ubiquitous in real-world cache controllers.
+
 \subsubsection{Blocking vs. Nonblocking protocols}
 
 \section{Correctness of the Protocol Compiler}
 \label{sec-compiler-correctness}
+
+As explained in \autoref{sec-compiler}, the protocol compiler takes a cache configuration as an argument, thus we can have several different implementations by providing different configurations.
+Then what would be the specification for all possible implementations from a given source protocol?
+In this section we naturally extend a single-line \hemiola{} protocol to a multiline one and argue its role as the specification for multiline implementations.
+
+The core idea comes from the fact that \emph{the coherence of each line is orthogonal to coherence of others}.
+In this case, a single-line \hemiola{} protocol is naturally extended to a multiline one by using the notion of compositionality.
+Compositionality claims that if two systems are index-disjoint (\ie{} objects and channel indices are disjoint) thus not communicating with each other, then refinement of the composed system is obtained for free just by composing the specs:
+\begin{theorem}[Compositionality]
+  \begin{displaymath}
+    \forall I_1, I_2, S_1, S_2.\ \refines{I_1}{S_1} \land \refines{I_2}{S_2} \to
+    \refines{I_1 \oplus I_2}{S_1 \oplus S_2},
+  \end{displaymath}
+  where $I_1 \oplus I_2$ implicitly assumes that the indices used in $I_1$ and $I_2$ are disjoint.
+\end{theorem}
+
+\hemiola{} additionally supports an \emph{index-extension} mechanism, which takes a system $S$ and a \emph{prefix index} $i$, generating a new system $S^{(i)}$ where every object or channel index in the system is extended by attaching $i$.
+Note that an index in \hemiola{} is a list of numbers, so it is easy to extend an index just by concatenating another one.
+\hemiola{} also provides a lemma that $S^{(i)}$ and $S^{(j)}$ are index-disjoint when $i \neq j$.
+
+Composing these elements, we obtain a replication theorem that is used directly to convert a single-line cache-coherence protocol to an ideal multiline protocol:
+\begin{theorem}[Replication]
+  $\forall I, S.\ \refines{I}{S} \to \forall n.\ \refines{\bigoplus^{n}_{i=0} I^{(i)}}{\bigoplus^{n}_{i=0} S^{(i)}}$.
+  \label{thm-replication}
+\end{theorem}
+
+The multiline protocol derived from the replication theorem is indeed ideal; it has line values, lock holders, and communication channels per cache line.
+Thus the protocol can serve as a spec for all the multiline implementations generated by the protocol compiler, since they have limited resources, which implies that the behavior of the multiline protocol covers their behaviors.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \node (ih0) at (0, 0) {$I^{h}_{0}$};
+    \node (rh0) at (0.8, 0) {$\sqsubseteq_{h}$};
+    \node (sh0) at (1.6, 0) {$S^{h}_{0}$};
+
+    \node (ihM) at (0, -2.0) {$I^{h}_{M}$};
+    \node (rhM) at (0.8, -2.0) {$\sqsubseteq_{h}$};
+    \node (shM) at (1.6, -2.0) {$S^{h}_{M}$};
+
+    \node (ikm) at (-1.6, -4.0) {$I^{k}_{m}$};
+    \node (rkm) at (-0.8, -4.0) {$\sqsubseteq_{k}$};
+    \node (ikM) at (0, -4.0) {$I^{k}_{M}$};
+    \node (rkM) at (0.8, -4.0) {$\sqsubseteq_{k}$};
+    \node (skM) at (1.6, -4.0) {$S^{k}_{M}$};
+
+    \draw (-1.9, -4.5) to (0.3, -4.5);
+    \node (compCorrect) at (-0.8, -5.0) {\sf{(compiler correctness)}};
+
+    \draw[|-{latex}] (ih0) to[out=180,in=90] node[left] {
+      \small\sf\begin{tabular}{r}
+      compiles-to\\
+      (\autoref{sec-compiler})
+      \end{tabular}} (ikm);
+    \draw[->] (rh0) to node[right] {\sf{replication (\autoref{thm-replication})}} (rhM);
+    \draw[->] (rhM) to node[right] {\sf{(transliteration)}} (rkM);
+  \end{tikzpicture}
+  \caption{A single-line protocol, a multiline spec, and multiline implementations}
+  \label{fig-multiline-spec}
+\end{figure}
+
+\autoref{fig-multiline-spec} elaborates more on the role of the multiline specification.
+For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
+Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
+After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
+Proving compiler correctness in this manner is on our list of valuable future work.
+As already mentioned in \autoref{sec-compiler}, while the compiler may use nontrivial optimizations, they are all within the internal cache design, thus irrelevant to cache-coherence protocol verification.
 
 \section{Synthesis of a \hemiola{} Protocol}
 \label{sec-synthesis}
