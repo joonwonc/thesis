@@ -728,7 +728,7 @@ If the pipeline just let this request remain in the pipeline, some other request
 This case just defines a \emph{blocking cache-coherence protocol}; a stalled request affects the other transactions to be blocked as well.
 
 We can optimize this blocking protocol by moving the blocking request to a designated slot (\eg{} a fresh MSHR) and allowing subsequent messages to pass through the pipeline.
-This is one way to implement a \emph{nonblocking protocol}; a transaction has a chance not to be blocked by the other messages.
+This is one way to implement a \emph{nonblocking protocol}~\cite{cacheNonblocking,cacheNonblocking2,cacheNonblocking3}; a transaction has a chance not to be blocked by the other messages.
 Note that the degree of nonblocking is determined by the number of resources, \eg{} the more MSHRs the pipeline has, the fewer blocking would happen.
 
 The MSHR-managing module, prebuilt in Kami, supports this kind of nonblocking while maintaining the safety of interleavings.
@@ -804,10 +804,70 @@ Since both \hemiola{} and Kami are rule-based description languages, we expect i
 After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
 In proving this refinement, \autoref{thm-kami-modular-subst} will be required, since every pipelined cache module in $I^{k}_{m}$ should be substituted to a naive module in $I^{k}_{M}$, transliterated from $I^{h}_{M}$.
 
-As presented in \autoref{fig-multiline-spec}, proving the compiler correctness is a part of the correctness proof of a cache-coherent memory subsystem implementation at the lower level.
+As presented in \autoref{fig-multiline-spec}, the compiler correctness proof is a part of the bigger correctness proof of a cache-coherent memory subsystem implementation at the lower level.
 While this thesis only focuses on proving cache-coherence protocols described in the high level, we believe that proving the low-level implementation in this manner is another great milestone.
 
 \section{Synthesis of a \hemiola{} Protocol}
 \label{sec-synthesis}
+
+\newcommand{\bhemh}{{\sf Hem\textsubscript{3}}}
+\newcommand{\bhemt}{{\sf Hem\textsubscript{2}}}
+\newcommand{\briscy}{{\sf RiscyOO}}
+
+Once we have obtained a multiline cache-coherence protocol implementation from the compiler, we can use Kami's synthesis toolchain to transliterate it to a Bluespec~\cite{bluespec} program and synthesize it to load on an FPGA.
+
+Before synthesis, we first evaluated two \hemiola{} protocols, \bhemt{} and \bhemh{}, instantiated from our hierarchical noninclusive MESI protocol described in \autoref{sec-mesi-protocol}, using the Bluespec simulator.
+\bhemh{} is a 3-level protocol, consisting of four 32KB 4-way set-associative L1 caches, two 128KB 8-way L2 caches, and a 512KB 16-way last-level cache.
+\bhemt{} is 2-level, consisting of four L1 caches and the last-level cache.
+Each line holds 32 bytes in all the protocols.
+We compared the performance with an existing Bluespec implementation, \briscy{}~\cite{Zhang:2019,thesis:Zhang:2019}, featuring a 2-level inclusive MESI protocol with self-invalidation~\cite{Ros:2012}.
+We set the cache sizes of \briscy{} the same as for \bhemt{}.
+We also set the number of MSHR slots in each cache between \briscy{} and \bhemt{} the same.
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{c|cccc}
+    \hline
+    Performance & \multirow{2}{*}{all-shared} & \multirow{2}{*}{pair-shared} & \multirow{2}{*}{ex:sh=1:1} & \multirow{2}{*}{ex:sh=4:1} \\
+    (\#trs/cycle) & & & & \\
+    \hline
+    \bhemh{} & 0.259 & 0.868 & 0.506 & 0.764 \\
+    \bhemt{} & 0.270 & 0.800 & 0.637 & 0.913 \\
+    \briscy{} & 0.336 & 0.791 & 0.637 & 0.988 \\
+    \hline
+    \multicolumn{2}{c}{\#trs in $5 \times 10^5$ cycles} & & & \\
+    \hline
+    \bhemh{} & 129,459 & 434,063 & 252,797 & 381,801 \\
+    \bhemt{} & 134,927 & 399,919 & 318,727 & 456,674 \\
+    \briscy{} & 167,978 & 395,612 & 318,521 & 493,851 \\
+    \hline
+  \end{tabular}
+  \caption{Evaluation of \hemiola{} protocols}
+  \label{fig-evaluation}
+\end{figure}
+
+\autoref{fig-evaluation} shows the performance result.
+We measured the performance by counting the number of transactions performed in $5 \times 10^5$ simulation cycles, with various workloads that make random requests but mimic some amount of temporal/spatial locality of memory accesses.
+Though one should not draw too many conclusions from the precise measurements, the result shows that the \hemiola{} protocols are competitive with a practical implementation coded by hand.
+
+\begin{figure}[t]
+  \centering
+  \begin{tabular}{ccccc}
+    \hline
+    & Clock length\;(ns) & Critical path\;(ns) & \#LUTs & \#FFs\\
+    \hline
+    \bhemt{} & 40 & 36.861 & 126,714 & 41,203\\
+    \bhemh{} & 40 & 37.608 & 240,034 & 61,011\\
+    \hline
+  \end{tabular}
+  \caption{Synthesis of \hemiola{} protocols}
+  \label{fig-synthesis}
+\end{figure}
+
+Next we synthesized the \hemiola{} protocols, shown in \autoref{fig-synthesis}.
+We used Xilinx's Virtex-7 VC707 FPGA~\cite{vc707} and its toolkit for synthesis.
+Each protocol uses a minimal clock length that can safely cover its critical path.
+Both \bhemh{} and \bhemt{} stayed within the FPGA's budget of lookup tables (LUTs) and flip-flops (FFs).
+We performed tandem verification covering over $10^9$ memory requests for each protocol on the FPGA, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
 
 \chapter{Related Work II: Verification of Cache-Coherence Protocols}
