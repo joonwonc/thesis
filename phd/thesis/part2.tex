@@ -491,7 +491,7 @@ We introduce each state transition here to understand the interleaving better:
 
 \autoref{fig-ex-sz-state-trs} shows the original legal interleaved history (top) and how reductions apply to it and make it sequential (bottom).
 In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, either the commutation $\commhst{[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]}{[\blcircf{6}]}$ or $\commhst{[\blcircf{6}]}{[\rdcircf{7}]}$ should hold.
-We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (or right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ (or $[\rdcircf{7}]$), respectively.
+We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ ($[\rdcircf{7}]$).
 
 Two state transitions trivially commute if 1) the object state transitions happen in different objects and 2) input/output channels used for the transitions are all orthogonal to each other.
 (We will formalize this intuition as a lemma in the actual serializability proof, shown in \autoref{sec-sz-proof}.)
@@ -656,7 +656,7 @@ Recall that the serializability (\autoref{def-seq-sz}) does not require the sequ
 The following two dual theorems are enough to push all external labels:
 \begin{theorem}
   \label{thm-push-ext-labels}
-  In any legal history in the system $S$, the first external-input (or the last external-output) label can be pushed to the first (or the last) of the history, respectively:
+  In any legal history in the system $S$, the first external-input (the last external-output) label can be pushed to the first (the end) of the history.
   \begin{displaymath}
     \forall s_0, s_1, \listof{h_0}, im, \listof{h_1}.\;
     \mathsf{NoExtIns}(\listof{h_0}) \to
@@ -733,7 +733,7 @@ We can generate such a history by performing reductions:
 \item Try to pick the first external-input label that is \emph{not in the leftmost region of the history yet}. If it exists, it can always be pushed to the left, right after the external-input labels that are already in the leftmost region, by applying \autoref{thm-push-ext-labels}.
 \item Try to pick the last external output label that is \emph{not at the rightmost region of the history yet}. If it exists, it can always be pushed to the right, right before the external-output labels that are already in the rightmost region, by applying \autoref{thm-push-ext-labels}.
 \end{itemize}
-Note that pushing the external input (output) labels to the leftmost (rightmost), respectively, is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to postpone releasing all the external output messages as late as possible.
+Note that pushing the external input (output) labels to the leftmost (rightmost), is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to postpone releasing all the external output messages as late as possible.
 
 \subsection{Interleaving and nonconfluent histories}
 \label{sec-itlv-ncf-hst}
@@ -939,7 +939,7 @@ We begin with introducing the trivial reduction between two state transitions:
   \end{displaymath}
 \end{theorem}
 
-For a given history $h$, we denote by \aobjs{h} (\achns{h}) the set of object (channel) indices whose state is \emph{used} by $h$, obtained by collecting the object index (the input/output channel indices) in each label in $h$, respectively.
+For a given history $h$, we denote by \aobjs{h} (\achns{h}) the set of object (channel) indices whose state is \emph{used} by $h$, obtained by collecting the object index (the input/output channel indices) in each label in $h$.
 We can then lift the trivial reduction theorem to the one for histories, using \aobjs{h} and \achns{h}:
 \begin{theorem}[Reduction by trivial separation]
   \label{thm-red-trivial-hsts}
@@ -998,7 +998,7 @@ We first define a couple of new notions for atomic histories:
     \end{array}
   \end{displaymath}
 \end{definition}
-As seen in the definition, \ainputs{h} (or \aoutputs{h}) collects all the input (output) message channels of the internal labels, respectively.
+As seen in the definition, \ainputs{h} (\aoutputs{h}) collects all the input (output) message channels of the internal labels.
 We will also use \ainits{h} and \alives{h} to refer to the initial messages and live messages of $h$, respectively.
 
 \begin{definition}\label{def-msg-comm}

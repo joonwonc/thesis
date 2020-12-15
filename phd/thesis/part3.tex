@@ -566,9 +566,9 @@ For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \h
     Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
 \end{lstlisting}
 
-\subsubsection{Kami: the target register-transfer-level language}
+\subsubsection{Kami: the target register-transfer language}
 
-Kami~\cite{kami} is a hardware-verification framework embedded in Coq with its own HDL at the register-transfer level.
+Kami~\cite{kami} is a hardware-verification framework embedded in Coq with its own HDL at register-transfer level.
 A hardware design in Kami consists of modules with encapsulated private state (registers), public methods, and \emph{rules} that make atomic state changes.
 Rules are fired by a global scheduler by Bluespec, later synthesized to the corresponding scheduling circuitry.
 The Bluespec scheduler tries to find a maximal number of rules to execute at a cycle, with the convenient semantic guarantee that the execution can be interpreted as if the rules are executed atomically and sequentially, called \emph{one-rule-at-a-time execution}.
