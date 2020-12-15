@@ -17,7 +17,7 @@ Most cache-coherent memory subsystems follow this topology, where leaf nodes cor
 A child and its parent in the tree communicate using the three channels shown in \autoref{sec-nutshell}: an upward-request channel, an upward-response channel, and a single downward channel.
 Note that the use of the three channels does not mean the actual hardware implementation should use just the three channels; it can use any channel implementation that refines the three channels regarded as a specification.
 For example, we may want to have an additional queue that accepts all the requests from child caches (from the corresponding upward-request channels), so the parent can have a single entry point to handle child requests.
-We will indeed see in \autoref{sec-comp-syn} how logical channels in \hemiola{} are implemented in a register-transfer level.
+We will indeed see in \autoref{sec-comp-syn} how logical channels in \hemiola{} are implemented at register-transfer level.
 
 \hemiola{} as a Coq library generates the topology and network channels automatically from instances of a simple inductive type.
 For example, the following tree definition will generate topology and channels for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
@@ -58,12 +58,12 @@ This relaxed locking mechanism is then not coupled with any specific cache-coher
     \node[draw,align=left] at (4.0, 0.2) {$P_1$ sets an uplock\\ when sending {\small $\textsf{rq2}$} to $P_2$};
     \node[draw,align=left] at (6.4, 2.0) {$P_2$ sets a downlock\\ when sending {\small $\overline{\textsf{rqs}}$} to children};
   \end{tikzpicture}
-  \caption{The uplock and downlock in \hemiola{}}
+  \caption{Locking mechanism in \hemiola{}}
   \label{fig-locking}
 \end{figure}
 
 In particular, \hemiola{} provides two kinds of locks: \emph{uplocks and downlocks}.
-We say an object is uplocked (or downlocked) when it holds an uplock (or downlock), respectively.
+We say an object is uplocked (downlocked) when it holds an uplock (downlock).
 \autoref{fig-locking} depicts the locking mechanism in \hemiola{}.
 An uplock is set when an object makes an upward request to its parent ($P_1$ in the figure); it is released when the object gets a corresponding response from the parent.
 On the contrary, a downlock is set when an object makes a downward request(s) to some of its children ($P_2$ in the figure).
@@ -93,7 +93,7 @@ This locking mechanism means that an object can make a request to the parent eve
 It is still safe, since the lock release will not be allowed when downlocked, \ie{} the uplock release should always wait for the downlock to be released.
 On the other hand, a downlock \emph{can be set and released even when uplocked}.
 This relaxation is very important to make the locking mechanism both safe and live.
-If a downlock could not be released when uplocked, we would have a deadlock case, where the both locks wait for each other.
+If a downlock could not be released when uplocked, we would have a deadlock case, where both locks wait for each other.
 
 Now every cache object defined in \hemiola{} \emph{does not need to set transient states} to consider all combinations among stable statuses;
 instead, the framework helps maintain the cache status and claim proper locks.
@@ -155,10 +155,10 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
         \node at (0, -1.3) {{\bf (a) immd}};
       \end{tikzpicture}
     \end{adjustbox}&
-    An immediate-down ({\bf immd}) rule responds immediately to an upward request, requiring the both locks free.
-    This rule possibly does not take (and generate) any input (and output) messages, respectively.
+    An immediate-down ({\bf immd}) rule responds immediately to an upward request, requiring both locks be free.
+    This rule allows not to take (generate) any input (output) messages.
     (The input/output messages are parenthesized in the form.)
-    In other words, using this rule, an object can make a local state transition without any input/output messages, but in this case the both locks should be free.
+    In other words, using this rule, an object can make a local state transition without any input/output messages, but in this case both locks should be free.
     This rule also shows that a transaction may start without any input messages as a trigger, which still matches the definition of externally atomic histories in \autoref{fig-atomic-trs}.
   \end{tabular}
 \end{center}
@@ -177,7 +177,7 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
         \node at (0, -1.3) {{\bf (b) immu}};
       \end{tikzpicture}
     \end{adjustbox}&
-    An immediate-up ({\bf immu}) rule responds immediately to a downward request, and it only requires the downlock free.
+    An immediate-up ({\bf immu}) rule responds immediately to a downward request, and it only requires the downlock be free.
     In other words, even when uplocked, an object can make a state transition by taking a downward request and generating an upward response immediately.\\
   \end{tabular}
 \end{center}
@@ -216,7 +216,7 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
         \node at (0, -1.3) {{\bf (d) rsdd}};
       \end{tikzpicture}
     \end{adjustbox}&
-    A response-down-down ({\bf rsdd}) rule is a dual of the {\bf rquu} rule, which takes a downward response and (possibly) responds to the original child requestor.
+    A response-down-down ({\bf rsdd}) rule is dual to the {\bf rquu} rule, which takes a downward response and (possibly) responds to the original child requestor.
     This rule releases the corresponding uplock.
     Note that in order to handle a response from the parent, the object should be downlock-free.
     This precondition is indeed required to ensure correctness (serializability), as explained in \autoref{sec-locking-mechanism}.
@@ -262,7 +262,7 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
         \node at (0, -1.3) {{\bf (e) rsud}};
       \end{tikzpicture}
     \end{adjustbox}&
-    A response-up-down ({\bf rsud}) rule is a dual of the {\bf rqud} rule, which takes upward responses and (possibly) responds back to the original child requestor.
+    A response-up-down ({\bf rsud}) rule is dual to the {\bf rqud} rule, which takes upward responses and (possibly) responds back to the original child requestor.
     The rule releases the corresponding downlock.
     As explained in \autoref{sec-locking-mechanism}, it does not require any conditions on the uplock.
   \end{tabular}
@@ -296,12 +296,12 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
         \node[label={[label distance=-6pt]left:{\small {\sf {\bf rss}}}}] at (0, -0.55) {$\circ$};
       \end{tikzpicture}
     \end{adjustbox}&
-    A response-up-up ({\bf rsuu}) rule is a dual of the {\bf rqdd} rule, which takes upward responses and responds back to the parent.
+    A response-up-up ({\bf rsuu}) rule is dual to the {\bf rqdd} rule, which takes upward responses and responds back to the parent.
     Similar to {\bf rsud}, this rule also releases the corresponding downlock.
   \end{tabular}
 \end{center}
 
-\paragraph{A rule template for the whole-tree traversal}
+\paragraph{A rule template for whole-tree traversal}
 
 \begin{center}
   \begin{tabular}{p{0.18\textwidth}p{0.77\textwidth}}
@@ -324,7 +324,7 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
 
 \paragraph{Remarks}
 
-The rule templates are carefully designed to perform any practical transactions \emph{safely} with serializable behavior.
+The rule templates are designed carefully to perform any practical transactions \emph{safely} with serializable behavior.
 Consider an extreme case in a cache-coherence protocol.
 When an L1 cache wants to obtain a write permission, all the other caches should be invalidated (changing each cache status to Invalid).
 In order to perform such a transaction, it must be able to traverse all the other caches.

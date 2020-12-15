@@ -6,9 +6,9 @@
 The very first task to verify cache-coherence protocols in a theorem prover is to define an underlying state-transition system formally.
 Formalization of such a system typically consists of its formal syntax and semantics.
 Additionally, if we want to verify a program defined in the system, a correctness criterion should be established as well.
-In this chapter, we provide the formal definition of the state-transition system for cache-coherence protocols, called \emph{protocol transition systems}.
+In this chapter, we provide the formal definition of state-transition systems for cache-coherence protocols, called \emph{protocol transition systems}.
 
-\section{Cache-Coherence Protocol as a Message-Passing System}
+\section{Cache-Coherence Protocols as Message-Passing Systems}
 \label{sec-cc-as-mp}
 
 In a cache-coherence protocol, cache objects in a system communicate with each other via \emph{messages}.
@@ -17,20 +17,20 @@ Here the notion of a channel is logical, but the actual hardware implementation 
 The hardware implementation of communication channels will be explained in detail later in \autoref{sec-comp-syn}.
 
 The correctness proof of a cache-coherence protocol heavily relies on the formalization of a message-passing system.
-An incorrect formalization can lead to a protocol unprovable.
-It is also a part of trusted computing base (TCB); one must read through the formalization and be convinced that it is fair.
+An incorrect formalization can leave a protocol unprovable.
+It is also a part of the trusted computing base (TCB); one must read through the formalization and be convinced that it is fair.
 The formalization of a message-passing system varies by its purpose.
 For instance, in order to reason about software distributed protocols, one may want to add Byzantine fault models~\cite{byzantine} to the formalization.
 
 A cache-coherence protocol also requires its specific assumptions on top of a message-passing system.
-First of all, each channel should be ordered; it is used practically, and the correctness of the protocol depends on it.
+First of all, communication channels should be ordered; practical cache-coherence protocols indeed use ordered channels, and the correctness of a protocol usually depends on this constraint.
 Also, each channel cannot be accessed twice in a single state-transition cycle, \eg{} one cannot push two different messages to a channel in the same cycle.
-This constraint is also due to the practical implementations of an ordered channel; considering a channel as a black-box circuitry, there is usually a single ``wire'' to push a new element to the channel, thus accessing it twice (through the wire) is not possible.
+This constraint is also due to the practical implementations of an ordered channel; considering a channel as a black-box circuit, there is usually a single ``wire'' to push a new element to the channel, thus accessing it twice (through the wire) is not possible.
 
 Last but foremost, a conventional message-passing system assumes that it is fair to reason a single state transition (by a single object) at a time.
 In other words, while multiple objects make their local state transitions by consuming and generating messages in actual execution, it is still fine to assume that a state-transition step is made by a single object.
-This assumption is powerful especially in verification, since without it there would be exponential number of cases to consider for a state transition.
-We certainly want to utilize the assumption in reasoning cache-coherence protocols.
+This assumption is powerful, especially in verification, since without it there would be an exponential number of cases to consider for a state transition.
+We certainly want to utilize the assumption in reasoning about cache-coherence protocols.
 Fortunately, a convenient concept has been developed in rule-based hardware description languages (RHDLs) such as Bluespec SystemVerilog~\cite{bluespec}, called ``one-rule-at-a-time semantics.''
 Our cache-coherence protocol descriptions will be rule-based, and thus our formalization of the underlying system will assume that rules are executed atomically, even when multiple rules are executed at the same time.
 It is worth noting that the one-rule-at-a-time semantics has been used in designing/verifying hardware components~\cite{Murali:2015,Dave:2005,Dave:2007} and formalized~\cite{fesi,kami,koika}.
@@ -43,7 +43,7 @@ Now we provide the formal syntax and semantics for message-passing-based state-t
 \label{sec-syntax}
 
 \paragraph{Notations}
-Throughout the thesis, we will use several notations for lists (sequences) and finite maps.
+Throughout the dissertation, we will use several notations for lists (sequences) and finite maps.
 An overline (\eg{} $\listof{l}$) denotes a list.
 $\llistof{l}$ denotes a list of lists.
 $\listnil{}$, $(\listcons{\listof{l}}{e})$, $(\listapp{\listof{l_1}}{\listof{l_2}})$, $(\listsub{\listof{l_1}}{\listof{l_2}})$, and
@@ -92,8 +92,8 @@ $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{List
 \hemiola{} uses formal protocol transition systems as an underlying basis for reasoning about cache-coherence protocols.
 \autoref{fig-trs-system} explains what such systems are.
 A \emph{message} $m$ is a communication unit, consisting of a Boolean message type, a message ID, and a value.
-A message type is false (true) for a request (response), respectively.
-A message ID is an enumeration of message kinds.
+A message type is false (true) for a request (response).
+A message ID belongs to an enumeration of message kinds.
 We use \emph{value} to refer to each line in a cache or a memory.
 Note that a struct sometimes has an \emph{index} to distinguish it from the other components.
 A pair \idmbuild{i}{m} is used to represent a message $m$ residing in a channel with an index $i$.
@@ -147,8 +147,8 @@ It is necessary to distinguish between internal and external channels, in order 
           \midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}
           & \listof{o}[\idxOf{O}] = o_1
           & \msgIns{im} \subseteq \heads{M}\smallskip \\
-          \rprecOf{r}\enspace (o_1, \msgIns{im})
-          & \rtrsOf{r}\enspace (o_1, \msgIns{im}) = (o_2, \msgOuts{im})\smallskip \\
+          \rprecOf{r}\, (o_1, \msgIns{im})
+          & \rtrsOf{r}\, (o_1, \msgIns{im}) = (o_2, \msgOuts{im})\smallskip \\
           \midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}
           & \disj{\midxIns{im}}{\midxOuts{im}}}{\semstep{S}
           {\hst{\listof{o}}{M}}
@@ -178,14 +178,14 @@ A system may accept input messages from the external world.
 [StepIns] describes this case, where the external input messages (\listof{im}) should not be empty ($\listof{im} \neq \listnil$), and channels of the messages are valid ($\listof{\idxOf{im}} \subseteq \hsysRqA{S}$), \ie{} the input messages are all put to external-request channels.
 An external-inputs label $(\lblIns{\listof{im}})$ is generated in this case.
 [StepOuts] describes the opposite case, for output messages being released to the external world.
-In this case, in addition to the [StepIns] case, each output message should be in the head (the first element) of its residing channel ($\listof{im} \subseteq \heads{M}$).
+In this case, in addition to the [StepIns] case, each output message should be in the head (the first element) of its channel ($\listof{im} \subseteq \heads{M}$).
 
 Lastly, [StepInt] deals with a state transition by a rule ($r$) in an object ($O$).
-It nondeterministically chooses an object and a rule in the object, checks that the precondition holds ($r.p\enspace (o_1, \msgIns{im})$), and applies the transition to update the state of the system ($r.t\enspace (o_1, \msgIns{im}) = (o_2, \msgOuts{im})$).
+It nondeterministically chooses an object and a rule in the object, checks that the precondition holds ($r.p\, (o_1, \msgIns{im})$), and applies the transition to update the state of the system ($r.t\, (o_1, \msgIns{im}) = (o_2, \msgOuts{im})$).
 An internal label ($\lblInt{\idxOf{O}}{\idxOf{r}}{\msgIns{im}}{\msgOuts{im}}$) is generated in this case, which records an object index, a rule index, input messages, and output messages.
 Each input message should be from either an internal channel or an external-request one ($\midxIns{im} \subseteq \hsysInA{S} \cup \hsysRqA{S}$) and should be the first element of the channel ($\msgIns{im} \subseteq \heads{M}$).
-On contrary to the input messages, each output message should be enqueued to either an internal channel or an external-response one ($\midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}$).
-Lastly, the channels of the input and output messages should be disjoint to each other ($\disj{\midxIns{im}}{\midxOuts{im}}$).
+In contrast to the input messages, each output message should be enqueued to either an internal channel or an external-response one ($\midxOuts{im} \subseteq \hsysInA{S} \cup \hsysRsA{S}$).
+Lastly, the channels of the input and output messages should be disjoint from each other ($\disj{\midxIns{im}}{\midxOuts{im}}$).
 Note that the semantics is based on ordered channels, so messages are \emph{enqueued} and \emph{dequeued} in each state-transition case.
 We use notations $\enqMsgs{M}{\listof{im}}$ and $\deqMsgs{M}{\listof{im}}$ for such operations.
 
@@ -215,9 +215,9 @@ The step semantics is naturally lifted to one for multiple steps, as shown in \a
 It is presented as a judgment $\semsteps{S}{s_0}{\listof{l}}{s_1}$, where $S$ is the system to execute, $s_0$ is a prestate, $s_1$ is a poststate, and $\listof{l}$ is a \emph{sequence of labels} generated by executions of the steps.
 [StepsNil] serves the case where no state transitions happen, and no labels are generated in this case.
 [StepsCons] is a natural inductive constructor that combines previous steps (\semsteps{S}{s_0}{\listof{l}}{s_1}) and a new one (\semstep{S}{s_1}{l_1}{s_2}).
-The label by the new step is appended to the last of the label sequence of the previous steps.
+The label by the new step is appended to the end of the label sequence of the previous steps.
 
-Throughout the thesis, we will now call a sequence of labels a \emph{history}.
+Throughout the dissertation, we will now call a sequence of labels a \emph{history}.
 We say that a state $s$ is \emph{reachable} iff there is a history $\listof{l}$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds, where $\sysInit{S}$ is the initial state of the system $S$, constructed by composing all initial object states.
 We use a simpler notation $\semrch{S}{s}$ for reachable states.
 We also say that a history $\listof{l}$ is \emph{legal} iff there is a state $s$ such that $\semsteps{S}{\sysInit{S}}{\listof{l}}{s}$ holds.
@@ -265,7 +265,7 @@ Serializability~\cite{sz1,sz2} is a celebrated notion of concurrency correctness
 While each transaction in a system affects multiple values, serializability guarantees that concurrent execution of such transactions is correct in that the effect (state change) is the same as if the transactions were executed separately in sequence.
 In this section, we provide the formal definition of serializability on top of a protocol transition system and explain how it eases the burden of designing and proving conventional invariants.
 
-\section{Cache-Coherence Protocol as a Distributed Protocol}
+\section{Cache-Coherence Protocols as Distributed Protocols}
 
 We already explored in \autoref{sec-nutshell} with a concrete example that the cache objects in a cache-coherent memory system handle multiple requests from the processor cores concurrently, in a distributed way.
 We also learned that transactions to handle such requests are interleaved, so it is crucial in designing and proving a cache-coherence protocol to ensure safe interleavings.
@@ -273,14 +273,15 @@ We also learned that transactions to handle such requests are interleaved, so it
 A very well-known approach to ensuring safe interleavings is to prove \emph{noninterference}, which basically claims that no other state transitions spuriously affect state relevant to an ongoing transaction.
 Not constrained to the cache-coherence protocols, noninterference has been developed and employed in verifying various computer systems including concurrent software and distributed systems.
 
-Model checkers have always been in favor of employing noninterference lemmas.
+Model checkers have employed noninterference lemmas for a long time.
 The lemmas are often described explicitly by the user (guided by intuition) or discovered automatically (typically guided by counterexamples).
 The established style of noninterference reasoning, though, has an inherent weakness: it requires explicit lemma statements per-protocol.
 Another issue is that even though these lemmas are stated and proven, it is hard to be sure if the lemmas are enough to resolve all possible interleavings in the system.
+We will discuss the use of noninterference more in \autoref{sec-related-work-i}.
 
 Another well-known approach is to prove \emph{serializability}, which claims that the overall state transition of any interleaved transactions can be interpreted as if they are executed serially, \ie{} \emph{atomically in some order with no interleaving}.
 Serializability has been mainly developed and used in database systems and software distribued systems.
-Regarding a cache-coherence protocol as a distributed protocol, one of the main topics of this thesis is to demonstrate that serializability can be also employed to prove the protocol.
+Regarding a cache-coherence protocol as a distributed protocol, one of the main topics of this dissertation is to demonstrate that serializability can also be employed to prove the protocol.
 To our knowledge, the notion of serializability has not been used to provide a formal correctness proof of a cache-coherence protocol.
 Instead of stating noninterference lemmas coupled to each protocol, which is a conventional approach to the verification of cache-coherence protocols, in \hemiola{} we try to find general conditions that ensures serializability, \emph{extracted and abstracted} from practical protocols, so the conditions can apply to various protocols.
 
@@ -399,7 +400,7 @@ In other words, the permitted atomic execution steps, in this transactional sema
 We denote by $\trsn{S}{h}$ that $h$ is a transaction in $S$.
 
 Note that an external-inputs label and an atomic history are regarded as separate transactions.
-In other words, accepting an external request (or releasing an external response) is regarded as a transaction separated from the atomic history handling the request (generating the response), respectively.
+In other words, accepting an external request (or releasing an external response) is regarded as a transaction separated from the atomic history handling the request (generating the response).
 This design choice gives more serializable histories in a given system, where the property is still meaningful enough to use it to verify distributed protocols.
 We will see why this relaxed definition is a better choice right in the next section (\autoref{sec-seq-sz}).
 
@@ -434,7 +435,7 @@ We may have the following legal history $h$ in $S$ for this kind of scenario:
 \begin{displaymath}
   h = \listcons{{\color{myred}\lblIns{\listsingle{(i_{\textrm{rq}},\textsf{rq}_1)}}}}{\listcons{{\color{myblue}\lblIns{\listsingle{(i_{\textrm{rq}},\textsf{rq}_2)}}}}{\listapp{h_a}{\listcons{{\color{myblue}\lblOuts{\listsingle{(i_{\textrm{rs}},\textsf{rs}_2)}}}}{{\color{myred}\lblOuts{\listsingle{(i_{\textrm{rs}},\textsf{rs}_1)}}}}}}},
 \end{displaymath}
-where $i_{\textrm{rq}}$ (and $i_{\textrm{rs}}$) is the external-request (external-response) channel, respectively.
+where $i_{\textrm{rq}}$ (and $i_{\textrm{rs}}$) is the external-request (external-response) channel.
 If we had not separated the external labels from an atomic history and regard the combined history as a transaction, then we cannot sequentialize $h$, \ie{} separating the {\color{myred}red} and {\color{myblue}blue} transactions, thus $h$ is not serializable.
 However, it is still meaningful if we can just sequentialize the internal processes of $\textsf{rq}_1$ and $\textsf{rq}_2$ (presented as $h_a$) to have two separated atomic histories.
 The next section will explain how we benefit from this serializability definition.
@@ -455,16 +456,16 @@ We start by defining a conventional notion of an invariant:
 In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``some important property holds whenever the system includes a certain message in a certain channel.''
 We call such an invariant a \emph{predicate message}, formally defined as following:
 \begin{definition}[Predicate Messages]
-  A predicate message, denoted as \spredmsg{S}{im}{P}, is an invariant over a system $S$ that additionally requires $im$, a pair of a residing channel and a message, to be in the system:
+  A predicate message, denoted as \spredmsg{S}{im}{P}, is an invariant over a system $S$ that additionally requires $im$, a pair of a channel and a message, to be in the system:
   \begin{displaymath}
-    \spredmsg{S}{im}{\mathcal{I}} \triangleq \forall s.\; \semrch{S}{s} \to im \in s.M \to \mathcal{I}(s).
+    \spredmsg{S}{im}{\mathcal{I}} \triangleq \forall s.\; \semrch{S}{s} \wedge im \in s.M \to \mathcal{I}(s).
   \end{displaymath}
   \label{def-pred-msg}
 \end{definition}
 
 We will write just \predmsg{im}{\mathcal{I}} when the system $S$ is clear from context.
-We will use an even-shorter version \predmsg{m}{\mathcal{I}} when the residing channel is not ambiguous.
-The same notation \predmsg{\msgid{}}{\mathcal{I}} will be used most commonly to define a predicate message that holds for every message with a given ID (\msgid{}) with the clear residing channel.
+We will use an even-shorter version \predmsg{m}{\mathcal{I}} when the channel that contains the message is not ambiguous.
+The same notation \predmsg{\msgid{}}{\mathcal{I}} will be used most commonly to define a predicate message that holds for every message with a given ID (\msgid{}) with the clear channel.
 
 \begin{figure}[h]
   \centering
@@ -507,8 +508,7 @@ The complete desired predicate message for \idmsf{8}{rsM} will then look like:
   \left\{\begin{array}{l}
   \textcolor{mygray}{\textit{// The original predicate}}\\
   \textcolor{myblue}{C_1.\textrm{st} = I\; \wedge\; P.\textrm{st} = I}\; \wedge\\
-  \textcolor{mygray}{\textit{// Noninterference with another transaction}}\\
-  \textcolor{mygray}{\textit{// to get M from}\ C_1}\\
+  \textcolor{mygray}{\textit{// Noninterference with another transaction to get M from}\ C_1}\\
   \textcolor{myred}{(7, \textsf{rsI}) \notin s.M\; \wedge\; (5, \textsf{rsM}) \notin s.M}\; \wedge\\
   \textcolor{mygray}{\textit{// More noninterference cases will be required}}\\
   \cdots
@@ -566,7 +566,7 @@ Compare this form with the original definition of predicate messages, defined in
 We can prove that the atomic invariant $\mathcal{I}_a$ holds for the atomic history (in the figure) step-by-step:
 \begin{itemize}[leftmargin=*]
 \item The initial step of the atomic history is the one by $r_1$. The live messages are $\listsingle{\idmsf{4}{rsI}}$. Since $r_1$ changes the status of $C_1$ to I, it is straightforward to prove $\mathcal{I}_a$.
-\item The next step is by $r_p$ and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis, we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
+\item The next step is by $r_p$, and at this point the live messages are $\listsingle{\idmsf{8}{rsM}}$. By the induction hypothesis, we obtain the predicate message \predmsg{\idmsf{4}{rsI}}{C_1.\textrm{st} = I}. Since $r_p$ changes the status of $P$ to I, we can prove the predicate for \idmsf{8}{rsM}.
 \item The last step is by $r_2$, and the live messages are $\listsingle{\idmsf{10}{rsWr}}$. $\mathcal{I}_a$ trivially holds here since it does not contain any predicate for \idmsf{10}{rsWr}.
 \end{itemize}
 It is worth emphasizing again that the invariant proof was straightforward since no other state transitions interfere with an atomic history.
