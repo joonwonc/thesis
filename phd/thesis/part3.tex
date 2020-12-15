@@ -871,3 +871,39 @@ Both \bhemh{} and \bhemt{} stayed within the FPGA's budget of lookup tables (LUT
 We performed tandem verification covering over $10^9$ memory requests for each protocol on the FPGA, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
 
 \chapter{Related Work II: Verification of Cache-Coherence Protocols}
+\label{sec-related-work-i}
+
+\todo{under construction!}
+
+\paragraph{Model-checking cache-coherence protocols}
+
+In order to verify cache-coherence protocols with arbitrary numbers of cores (but no hierarchy), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
+Since \hemiola{} is built on Coq, we can take full advantage of parameterization, and indeed the framework supports verification of cache-coherence protocols with an arbitrary tree shape as a parameter.
+
+In order to increase scalability further, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
+However, these approaches face a common obstacle: because of the modularity requirement, it became hard to design and verify noninclusive protocols.
+\cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state-space explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
+\cite{Opeoluwa:2016,Opeoluwa:2017} have developed the Neo theory as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
+They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} NCID~\cite{Zhao:2010}) but did not provide the actual design and proof.
+We provided the proofs of hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
+
+Another notable success of cache-coherence verification employed program synthesis to generate a protocol for a given atomic specification~\cite{Oswald:2018,Oswald:2020}.
+The synthesizer can generate various hierarchical protocols, each of which is nontrivial and more optimized than the procotols defined in \hemiola{}.
+The atomic specification is similar to \hemiola{}'s rule templates in the sense that a user can describe the protocol just with stable states.
+They used Murphi to verify synthesized protocols, but in a two-level protocol~\cite{Oswald:2018} they only succeeded up to three caches without exhausting memory, and for hierarchical protocols~\cite{Oswald:2020} they succeeded only with the root, two cache-H, and two cache-L nodes.
+They also mentioned that this extension to hierarchical protocols cannot cover noninclusive protocols.
+
+\paragraph{Theorem proving for cache-coherence protocols}
+
+Theorem proving also has been used to verify cache-coherence protocols.
+There are a number of works that proved the correctness with specific protocols~\cite{Park:1996,Moore:1998}.
+A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}, but it was not structured to promote streamlined reuse of results for other protocols.
+It also included rather complex and ad-hoc invariants that needed to characterize transient states.
+
+Another notable project designed a modular-specification approach for cache coherence, verifying each module (\ie{} cache) against the spec while automatically generating (and proving) invariants, using the Ivy verification tool~\cite{ivy:Padon:2016, McMillan:2016, ivy:McMillan:2020}.
+The modular spec is specialized to the TileLink protocol~\cite{tilelink}, whose interface is similar to the rule templates in \hemiola{}.
+That being said, this project targeted only the specific TileLink protocol, thus not clearly distinguishing which invariants can be reused for other protocols (like serializability provided by \hemiola{}) and which are for the actual protocol.
+
+In order to avoid tedious invariant searching, a toolchain was built to generate invariants and their proofs automatically for the FLASH cache-coherence protocol~\cite{Li:2018}.
+However, it did not provide the final refinement proof between the implementation and the spec.
+
