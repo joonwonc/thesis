@@ -871,7 +871,7 @@ Both \bhemh{} and \bhemt{} stayed within the FPGA's budget of lookup tables (LUT
 We performed tandem verification covering over $10^9$ memory requests for each protocol on the FPGA, by connecting it to a tester module that generates a random workload and a reference memory to check its correctness.
 
 \chapter{Related Work II: Verification of Cache-Coherence Protocols}
-\label{sec-related-work-i}
+\label{sec-related-work-ii}
 
 \todo{under construction!}
 
@@ -880,12 +880,12 @@ We performed tandem verification covering over $10^9$ memory requests for each p
 Various model checkers like Murphi~\cite{murphi:Dill:1996,murphi:Dill:1992}, SMV~\cite{smv:McMillan:1993,McMillan:1992,smv:Jhala:2001}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-space-explosion issues.
 
 In order to overcome state-space explosion, model checkers have been developed featuring sound techniques such as compositional model checking, symmetry reduction, or data-type reduction~\cite{McMillan:1999}.
-% Already mentioned in related work I
+\todo{Already mentioned in related work I}
 Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
 In order to obtain effective noninterference lemmas, a number of approaches used descriptions in terms of transactions (called ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
 Instead of looking at each transaction, \hemiola{} provides serializability that guarantees noninterference among any transactions defined on top of the framework.
 
-%% Parameterization more? Emerson:2003
+\todo{Parameterization more? Emerson:2003}
 In order to verify cache-coherence protocols with arbitrary numbers of cores (but no hierarchy), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
 Since \hemiola{} is built on Coq, we can take full advantage of parameterization, and indeed the framework supports verification of cache-coherence protocols with an arbitrary tree shape as a parameter.
 
