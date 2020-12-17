@@ -331,6 +331,7 @@ In order to perform such a transaction, it must be able to traverse all the othe
 This transaction kind is one of the longest-running in cache-coherence protocols, and the rule templates are designed with proper locking ($\uled$ and $\dled$) and a state-change condition ($\stsilent$), not to create any incoherence while such a long transaction is interleaved with other transactions.
 
 \chapter{Serializability Guarantee by \hemiola{}}
+\label{sec-sz-guarantee-hemiola}
 
 In this chapter, we provide the proof of serializability in \hemiola{}.
 As introduced in \autoref{sec-hemiola-dsl}, the proof largely requires the two conditions: the tree topology with the three channel kinds (introduced in \autoref{sec-topo-net-reqs}) and the locking mechanism (introduced in \autoref{sec-locking-mechanism}).
@@ -338,7 +339,7 @@ Since the \hemiola{} DSL with the rule templates faithfully follows such conditi
 While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}, \eg{} the DSL does not mention anything about cache-coherence protocols.
 
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
-This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
+This reduction technique has been used before to prove correctness of concurrent software~\cite{Hawblitzel:2015,Chajed:2018} and distributed systems~\cite{Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
 
 \section{The Intuition: Merging Atomic-History Fragments}
 \label{sec-sz-pf-intuition}
@@ -905,6 +906,7 @@ We are finally equipped with enough definitions to introduce a convenient genera
 \end{proof}
 
 \subsection{Reduction and pushes by separation}
+\label{sec-red-pushes}
 
 \newcommand{\aobjs}[1]{\ensuremath{\mathsf{objs}\,(#1)}}
 \newcommand{\achns}[1]{\ensuremath{\mathsf{chns}\,(#1)}}
@@ -1299,17 +1301,59 @@ Finally we combine all the theorems together to obtain the serializability guara
 \chapter{Related Work I: Approaches to Dealing with Interleavings}
 \label{sec-related-work-i}
 
-\todo{under construction!}
+In \autoref{sec-sz-def}, we have formalized serializability as a correctness criterion for safe interleavings.
+We also demonstrated that the serializability property eases the burden of designing and proving conventional invariants required to prove trace refinement as a correctness criterion.
+In \autoref{sec-hemiola-dsl} and \autoref{sec-sz-guarantee-hemiola}, we provided a domain-specific language that guarantees serializability automatically and proved the guarantee using commuting reductions.
 
-\paragraph{Interleavings in model checking}
+It is worth emphasizing again that the use of serializability is not mandatory to verify distributed protocols; it is rather a proof strategy that can make the rest of the proof much easier.
+Before moving on to the next part of dissertation -- the actual use of serializability in case studies -- we would like to explore some other approaches to dealing with interleavings, not bounded to the verification of cache-coherence protocols.
 
-Various model checkers like Murphi~\cite{murphi:Dill:1996}, SMV~\cite{smv:McMillan:1993}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-space-explosion issues.
+\paragraph{Noninterference lemmas}
 
-In order to overcome state-space explosion, model checkers have been developed featuring sound techniques such as compositional model checking, symmetry reduction, or data-type reduction~\cite{McMillan:1999}.
-Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
-In order to obtain effective noninterference lemmas, a number of approaches used descriptions in terms of transactions (called ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
-Instead of looking at each transaction, \hemiola{} provides serializability that guarantees noninterference among any transactions defined on top of the framework.
+One of the ways to ensure safe interleavings is to claim that other execution units (concurrent threads, transactions, etc.) do not affect desired (pre)conditions to execute a unit.
+\emph{Noninterference} refers to such a property, where its definition and form vary by the target computer system to verify.
 
-\todo{Mention once more, but in detail.}
-In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
-This reduction technique has been used before to prove correctness of concurrent software~\cite{Chajed:2018} and distributed systems~\cite{Hawblitzel:2015,Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
+We first look into the case in concurrent software; to our knowledge, the very first attempt to describe the property occurs in the foundational paper by Owicki and Gries:
+\begin{displayquote}
+  In \cite{Owicki:1976} on page 324:
+
+  ``The key word is of course `interfere'.
+  One possibility to obtain non-interference is not to allow shared variables, but this is too restrictive.
+  A more useful rule is to require that certain assertions used in the proof $\{P_i\} S_i \{Q_i\}$ of each process are left invariantly true under parallel execution of the other processes.''
+\end{displayquote}
+This paper extends the conventional Hoare logic~\cite{Hoare} to reason about parallel (concurrent) execution of sequential programs.
+Here the noninterference property is described implicitly, as a requirement that the assertions used in the Hoare triple is not interfered by the concurrent execution of the other processes.
+The paper later defines noninterference formally, by providing sufficient conditions about the execution of a statement that never interferes a given Hoare-triple proof.
+In this case, each property is presented as a specific lemma proving the noninterference conditions.
+
+The use of noninterference in Hoare logic has become more explicit by concurrent separation logic (CSL)~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
+For example, in order to have ``rely'' conditions $R$ from the original Hoare triple $\{P\}C\{Q\}$, the precondition $P$ should be stable (not interfered) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
+
+Now we explore the use of noninterference in hardware verification, more related to the techniques used in the \hemiola{} framework.
+To our knowledge, the notion has been mentioned firstly in the paper by McMillan as a part of compositional model checking:
+\begin{displayquote}
+  In \cite{McMillan:1999} on page 234:
+
+  ``We can also verify the design for an arbitrary number of execution units.
+  To do this, as one might expect, we split the result lemma into cases based on the execution unit used to produce the result, eliminating all the other units.
+  This, however, requires introducing a `noninterference lemma'.
+  This states that no other execution unit spuriously produces the result in question.''
+\end{displayquote}
+In model checking, the noninterference property is usually represented as a lemma (invariant) described in linear temporal logic~\cite{licsBook}, and it is specific to the hardware design to verify.
+The use of such noninterference lemmas has been later systematized to the CMP method~\cite{McMillan:1999,McMillan:2001,Chou:2004}, for model checkers to use the lemmas to reduce state space to be explored.
+
+\paragraph{Commuting reduction}
+
+Another way to ensure safe interleavings is to prove commutativity between two adjacent state transitions representing partial executions by two different execution units, called (commuting) reduction~\cite{reduction}.
+
+In verifying concurrent software, CIVL~\cite{Hawblitzel:2015} employed reductions and mover types~\cite{Flanagan:2008} to verify concurrent garbage collection.
+While the CIVL verifier also supports noninterference and rely-guarantee, the authors reported that the use of commutativity is optional but beneficial in their experience.
+CSPEC~\cite{Chajed:2018} is another framework, embedded in the Coq proof assistant, that also used mover types to verify a concurrent mail server.
+The framework also provides a library of reusable proof patterns, easing the commutativity proofs.
+
+Reductions have been employed in verifying distributed systems as well.
+IronFleet~\cite{Hawblitzel:2017} employed refinement layers and reductions to verify a Paxos-based~\cite{Paxos} replicated-state-machine and a shared key-value store.
+Reductions were particularly used to deal with interleavings by event handlers in the host implementation; once the interleaved execution is fully reduced, a refinement to the distributed-protocol layer can be proven directly.
+
+\hemiola{} also employs commuting reductions and the techniques mentioned above to prove serializability for any protocol defined by the \hemiola{} DSL.
+While not exhibiting mover types in protocol descriptions, a similar concept is used in the serializability proof under the name of left/right pushability, explained in \autoref{sec-red-pushes}.
