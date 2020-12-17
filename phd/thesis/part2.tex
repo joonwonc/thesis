@@ -335,11 +335,12 @@ This transaction kind is one of the longest-running in cache-coherence protocols
 
 In this chapter, we provide the proof of serializability in \hemiola{}.
 As introduced in \autoref{sec-hemiola-dsl}, the proof largely requires the two conditions: the tree topology with the three channel kinds (introduced in \autoref{sec-topo-net-reqs}) and the locking mechanism (introduced in \autoref{sec-locking-mechanism}).
-Since the \hemiola{} DSL with the rule templates faithfully follows such conditions, we can also say that just using the DSL ensures serializability.
-While conventional approaches to verifying cache-coherence protocols deal with transient states directly and induce noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}, \eg{} the DSL does not mention anything about cache-coherence protocols.
+Since the \hemiola{} DSL with the rule templates faithfully follows such conditions, it is also fair to say that just using the DSL ensures serializability.
+While conventional approaches to verifying cache-coherence protocols deal with transient states directly and prove noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}, \eg{} the DSL does not mention any cache-coherence specifics.
 
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
 This reduction technique has been used before to prove correctness of concurrent software~\cite{Hawblitzel:2015,Chajed:2018} and distributed systems~\cite{Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
+We will provide more detailed discussions on the use of commuting reductions in \autoref{sec-related-work-i}.
 
 \section{The Intuition: Merging Atomic-History Fragments}
 \label{sec-sz-pf-intuition}
@@ -347,7 +348,7 @@ This reduction technique has been used before to prove correctness of concurrent
 \newcommand{\commstep}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
 \newcommand{\commhst}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
 
-We first present our intuition of how commuting reductions are used in the serializability proof; in order for it, we need to formalize commuting reductions first.
+We first present our intuition of how commuting reductions are used in the serializability proof; in order for it, we need to formalize the reduction first.
 The most basic commuting reduction happens between two adjacent state-transition steps:
 \begin{definition}[Commutativity of steps]
   \label{def-comm-steps}
@@ -361,12 +362,12 @@ We will write just $\commstep{l_0}{l_1}$ when the system $S$ and the transition-
 We can naturally lift the definition to one for histories to argue whether two histories commute or not:
 \begin{definition}[Commutativity of histories]
   \label{def-comm-hsts}
-  Two adjacent histories commute, denoted as \commstep{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semstep{S}{s_1}{h_1}{s_2})}, if the state transitions with the opposite order reach the same state:
+  Two adjacent histories commute, denoted as \commhst{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semsteps{S}{s_1}{h_1}{s_2})}, if the state transitions with the opposite order reach the same state:
   \begin{displaymath}
     \commhst{(\semsteps{S}{s_0}{h_0}{s_1})}{(\semsteps{S}{s_1}{h_1}{s_2})} \triangleq \exists s_1'.\; \semsteps{S}{s_0}{h_1}{s_1'} \wedge \semsteps{S}{s_1'}{h_0}{s_2}.
   \end{displaymath}
 \end{definition}
-We overload the same notation for history commutativity.
+We overload the same notation for the commutativity of histories.
 We will also use the shorter version $\commhst{h_0}{h_1}$ with clear context.
 
 Our high-level intuition for the serializability proof is that for a given interleaved history we can perform a finite number of reductions to get a sequential history that reaches the same state.
@@ -491,7 +492,7 @@ We introduce each state transition here to understand the interleaving better:
 \end{figure}
 
 \autoref{fig-ex-sz-state-trs} shows the original legal interleaved history (top) and how reductions apply to it and make it sequential (bottom).
-In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, either the commutation $\commhst{[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]}{[\blcircf{6}]}$ or $\commhst{[\blcircf{6}]}{[\rdcircf{7}]}$ should hold.
+In order to merge $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ and $[\rdcircf{7}]$, either $\commhst{[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]}{[\blcircf{6}]}$ or $\commhst{[\blcircf{6}]}{[\rdcircf{7}]}$ should hold.
 We will say that $[\blcircf{6}]$ is \emph{pushed} to the left (right) when it commutes with $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ ($[\rdcircf{7}]$).
 
 Two state transitions trivially commute if 1) the object state transitions happen in different objects and 2) input/output channels used for the transitions are all orthogonal to each other.
@@ -574,7 +575,7 @@ Based on the intuitions from \autoref{sec-sz-pf-intuition}, in this section we p
 The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among rule templates, left/right pushes, etc. -- and the serializability proof employing those intuitions.
 The highest-level theorem will simply claim that use of good topology and the rule templates automatically guarantees serializability.
 
-We will use the example of interleaving transactions shown in \autoref{fig-ex-sz-trs} throughout the proof for better understanding of the entire proof, referred to as the ``interleaving example.''
+We will use the example of interleaving transactions shown in \autoref{fig-ex-sz-trs} throughout the proof to convey the intuitions in the proof better, referred to as the ``interleaving example.''
 
 \subsection{Semi-sequential histories}
 \label{sec-semi-seq-hst}
@@ -670,8 +671,13 @@ The following two dual theorems are enough to push all external labels:
     \semsteps{S}{s_0}{\listapp{\listcons{\listof{h_0}}{\lblOuts{im}}}{\listof{h_1}}}{s_1} \to
     \semsteps{S}{s_0}{\listapp{\listapp{\listof{h_0}}{\listof{h_1}}}{\lblOuts{im}}}{s_1},
   \end{displaymath}
-  where $\mathsf{NoExtIns}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblIns{im}$ and
-  $\mathsf{NoExtOuts}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblOuts{im}$.
+  where $\mathsf{NoExtIns}$ and $\mathsf{NoExtOuts}$ are defined as follows:
+  \begin{displaymath}
+    \begin{array}{l}
+      \mathsf{NoExtIns}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblIns{im}.\\
+      \mathsf{NoExtOuts}(\listof{h}) \triangleq \forall l.\; l \in \listof{h} \to \forall im.\; l \neq \lblOuts{im}.
+    \end{array}
+  \end{displaymath}
 \end{theorem}
 \begin{proof}
   By definition it suffices to prove \commhst{\listof{h_0}}{\listsingle{\lblIns{im}}}.
@@ -872,8 +878,8 @@ Focusing solely on this purpose, we formally define the notion of mergeability a
       \hmgb{S}{h_1}{h_2}\; \triangleq & \forall s_1. & \semrch{S}{s_1} \to\\
       & \forall \listof{h}, s_2. & \atomicHsts{\listof{h}} \;\wedge\;
       \semsteps{S}{s_1}{\listapp{h_1}{\listapp{\listconcat{\listof{h}}}{h_2}}}{s_2} \to\\
-      & \exists \listof{h}_{\textrm{l}}, \listof{h}_{\textrm{r}}.
-      & \atomicHsts{\listof{h}_{\textrm{l}}} \;\wedge\; \atomicHsts{\listof{h}_{\textrm{r}}} \;\wedge\\
+      & \exists \listof{h_{\textrm{l}}}, \listof{h_{\textrm{r}}}.
+      & \atomicHsts{\listof{h_{\textrm{l}}}} \;\wedge\; \atomicHsts{\listof{h_{\textrm{r}}}} \;\wedge\\
       & & \semsteps{S}{s_1}{\listapp{\listconcat{\listof{h_{\textrm{l}}}}}{\listapp{h_1}{\listapp{h_2}{\listconcat{\listof{h_{\textrm{r}}}}}}}}{s_2} \;\wedge\; \sizeof{\listof{h}} = \sizeof{\listof{h_{\textrm{l}}}} + \sizeof{\listof{h_{\textrm{r}}}}.
     \end{array}
   \end{displaymath}
@@ -1105,7 +1111,6 @@ We will introduce such restricted pushability definitions right in the next sect
 
 We are now equipped with enough formalization and ready to prove the serializability guarantee in \hemiola{}.
 In this section, we provide the serializability proof in \hemiola{}.
-\todo{The full mechanized Coq proof is in... where?}
 Recalling the requirements from \autoref{sec-hemiola-dsl}, a protocol should be defined on a tree topology (\ontree{S}{t}), and each rule should be defined using the rule templates (\goodrules{S}{t}).
 Throughout the section, we will deal with a system $S$ with these conditions.
 In order to prove serializability, we will use \autoref{thm-sz-when}, \ie{} nonconfluence and mergeability will be proven for the protocol defined with the \hemiola{} DSL.
@@ -1247,7 +1252,7 @@ By these pushability definitions, the third condition is also proven naturally b
 Let us call $O$ the \emph{separation point} in the sense that $O$ separates possible state transitions by an intermediate history.
 This concept will be used in the other cases as well.
 
-3) \emph{Multiple downward requests and upward responses}: this case is the most complex one in terms of setting the right pushability conditions.
+3) \emph{Multiple downward requests and upward responses}: this case is the most complex one in terms of setting the correct pushability conditions.
 We first define a new notion to define the common ancestor of the downward requests and upward responses:
 \begin{invariant}\label{inv-rqd-rsu-root}
   If an atomic history $h$ has multiple downward requests and upward responses as the live messages, there exists a unique common ancestor of the messages (recall $\ontree{S}{t}$, which says that $S$ is defined on the tree topology), called the root of downward requests and upward responses, which has a downlock set by an upward request.
@@ -1259,7 +1264,7 @@ Similarly, suppose that the upward responses are from the set of objects $\{O_j\
 Another invariant that can be proven while proving \autoref{inv-rqd-rsu-root} is that $I$ and $J$ are disjoint.
 
 Similarly to the case (2), $h_1$ can be decomposed into the upward/downward-request labels (no state transitions except locking) and all the other labels, and any intermediate atomic history is left-pushable before such request labels.
-Therefore, the following invariant about the coverage of $h_1$ does not mention those object state transitions as part of the constraint:
+Therefore, the following invariant about the coverage of $h_1$ will not mention those object state transitions as part of the constraint:
 \begin{invariant}\label{inv-rqd-rsu-live}
   Borrowing the notions of the root and the index sets mentioned above, $h_1$ is constrained within $\subtreec{O_r} \cup (\bigcup_{j \in J}\; \subtree{O_j})$.
 \end{invariant}
