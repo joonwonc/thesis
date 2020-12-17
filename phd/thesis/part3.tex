@@ -873,28 +873,35 @@ We performed tandem verification covering over $10^9$ memory requests for each p
 \chapter{Related Work II: Verification of Cache-Coherence Protocols}
 \label{sec-related-work-ii}
 
-\todo{under construction!}
+\todo{intro paragraph}
 
 \paragraph{Model-checking cache-coherence protocols}
 
-Various model checkers like Murphi~\cite{murphi:Dill:1996,murphi:Dill:1992}, SMV~\cite{smv:McMillan:1993,McMillan:1992,smv:Jhala:2001}, and TLA+~\cite{tla:Lamport:2002, Joshi:2003} have been used, but in the beginning applicability was limited to finite numbers of caches or specific protocols due to conventional state-space-explosion issues.
+Various model checkers like Murphi~\cite{murphi:Dill:1996,murphi:Dill:1992}, SMV~\cite{smv:McMillan:1993,smv:Jhala:2001}, and TLA+~\cite{tla:Lamport:2002} have been used to verify either high-level hardware designs or RTL implementations.
+Verification of cache-coherence protocols, in the beginning, was limited to finite numbers of caches and specific protocols due to conventional state-space-explosion issues.
+McMillan and Schwalbe~\cite{McMillan:1992} verified the Gigamax cache-coherence protocol, which employs bus snooping.
+They used SMV~\cite{smv:McMillan:1993,smv:Jhala:2001} to verify safety and liveness of the protocol, but at that time only succeeded with the 2-level protocol with two clusters, each of which has six processors.
+Joshi et al. tried to verify various cache-coherence protocols using TLA+ and TLC~\cite{tla:Lamport:2002}.
+In early phases the TLC model checker was not mature enough to provide a full correctness proof, so they focused on proving a number of invariants and finding bugs through those invariant proofs.
+Later they tried to verify another procotol with more-developed TLC, but the verification was still limited to a single cache line, two data values, and three processors, due to the state-space explosion to twelve million reachable states.
+These verifications were performed quite a long time ago, but we want to draw from these early approaches that state-space explosion has been a typical issue in model checking.
 
-In order to overcome state-space explosion, model checkers have been developed featuring sound techniques such as compositional model checking, symmetry reduction, or data-type reduction~\cite{McMillan:1999}.
-\todo{Already mentioned in related work I}
-Model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
+In order to overcome such state-space explosion, model checkers have been developed featuring sound techniques such as symbolic model checking~\cite{smv:McMillan:1993}, partial-order reduction~\cite{Bhattacharya:2005}, symmetry reduction~\cite{Bhattacharya:2006,thesis:Ip:1996}, data-type reduction~\cite{McMillan:1999}, and compositional model checking~\cite{McMillan:1999}.
+As explored in \autoref{sec-related-work-i}, model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
+
 In order to obtain effective noninterference lemmas, a number of approaches used descriptions in terms of transactions (called ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
+These papers claimed that effective verification obligations can be constructed by looking at the ordering information in message flows and demonstrated that such obligations help the CMP method~\cite{McMillan:2001,Chou:2004} converge.
 Instead of looking at each transaction, \hemiola{} provides serializability that guarantees noninterference among any transactions defined on top of the framework.
 
-\todo{Parameterization more? Emerson:2003}
-In order to verify cache-coherence protocols with arbitrary numbers of cores (but no hierarchy), parameterization has been used in designing and model-checking the protocols~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
+In order to verify cache-coherence protocols with arbitrary numbers of cores (but no hierarchy), parameterization has been used in designing and model-checking the protocols~\cite{Emerson:2003:1,Emerson:2003:2,Chou:2004,Zhang:2010,Zhang:2014,Banks:2017}.
 Since \hemiola{} is built on Coq, we can take full advantage of parameterization, and indeed the framework supports verification of cache-coherence protocols with an arbitrary tree shape as a parameter.
 
 In order to increase scalability further, recent approaches used abstraction and modularity in protocol design and successfully verified hierarchical cache-coherence protocols in a compositional way~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017}.
 However, these approaches face a common obstacle: because of the modularity requirement, it became hard to design and verify noninclusive protocols.
-\cite{Chen:2008,Chen:2010} tried to solve this problem using assume-guarantee reasoning and history variables, while still maintaining the concept of compositional verification, but faced state-space explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
-\cite{Opeoluwa:2016,Opeoluwa:2017} have developed the Neo theory as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
-They argued it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} NCID~\cite{Zhao:2010}) but did not provide the actual design and proof.
-We provided the proofs of hierarchical noninclusive cache-coherence protocols in \hemiola{}, without any such restrictions.
+There have been approaches~\cite{Chen:2008,Chen:2010} to solve this problem using assume-guarantee reasoning and history variables~\cite{Clint:1973,Clarke:1978}, while still maintaining the concept of compositional verification, but they faced state-space explosion again, and thus they just verified a two-level MSI protocol with three L2 caches.
+Recently, the Neo theory~\cite{Opeoluwa:2016,Opeoluwa:2017} have been developed as a safe way to compose ``subtrees'' of caches to have a hierarchical protocol.
+The authors argued that it is possible to verify noninclusive protocols in the Neo framework when a directory is still inclusive (\eg{} NCID~\cite{Zhao:2010}) but did not provide the actual design and proof.
+Here in \hemiola{} we provided the proofs of hierarchical noninclusive cache-coherence protocols, without any such restrictions.
 
 Another notable success of cache-coherence verification employed program synthesis to generate a protocol for a given atomic specification~\cite{Oswald:2018,Oswald:2020}.
 The synthesizer can generate various hierarchical protocols, each of which is nontrivial and more optimized than the procotols defined in \hemiola{}.
