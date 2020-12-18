@@ -873,10 +873,14 @@ We performed tandem verification covering over $10^9$ memory requests for each p
 \chapter{Related Work II: Verification of Cache-Coherence Protocols}
 \label{sec-related-work-ii}
 
-\todo{intro paragraph}
+In this chapter, we explore a number of approaches to verifying various cache-coherence protocols.
+While testing and bounded model checking (BMC)~\cite{BMC} have dominated the verification of the protocols in industry, formal verification also has been developed and used steadily to verify modern protocols.
+Formal verification (at least of hardware) is performed largely by two ways: model checking or theorem proving.
+We describe how each methodology has been developed to cover practical cache-coherence protocols.
 
 \paragraph{Model-checking cache-coherence protocols}
 
+Model checking has been dominating the formal verification of hardware.
 Various model checkers like Murphi~\cite{murphi:Dill:1996,murphi:Dill:1992}, SMV~\cite{smv:McMillan:1993,smv:Jhala:2001}, and TLA+~\cite{tla:Lamport:2002} have been used to verify either high-level hardware designs or RTL implementations.
 Verification of cache-coherence protocols, in the beginning, was limited to finite numbers of caches and specific protocols due to conventional state-space-explosion issues.
 McMillan and Schwalbe~\cite{McMillan:1992} verified the Gigamax cache-coherence protocol, which employs bus snooping.
@@ -911,10 +915,16 @@ They also mentioned that this extension to hierarchical protocols cannot cover n
 
 \paragraph{Theorem proving for cache-coherence protocols}
 
-Theorem proving also has been used to verify cache-coherence protocols.
-There are a number of works that proved the correctness with specific protocols~\cite{Park:1996,Moore:1998}.
-A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}, but it was not structured to promote streamlined reuse of results for other protocols.
-It also included rather complex and ad-hoc invariants that needed to characterize transient states.
+While not dominating, theorem proving also has been used steadily to verify cache-coherence protocols.
+In early days, the correctness proofs were done with specific protocol models, where the relation to the corresponding RTL implementation is left as TCB~\cite{Park:1996,Moore:1998}.
+The FLASH cache-coherence protocol model was proven to be correct using the PVS theorem prover~\cite{Park:1996}.
+They used aggregation of distributed transactions~\cite{thesis:Park:1996} to verify the protocol and claimed that the technique can be applied generally for other protocols.
+Another approach proved a write-invalidate cache-coherence protocol using the ACL2 theorem prover~\cite{Moore:1998}.
+The protocol is based on bus snooping, and the design and proof are parameterized by the number of processors.
+
+A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}.
+However, the proof was also for the specific protocol, and thus not structured to promote streamlined reuse of results for other protocols.
+It also employed rather complex and ad-hoc invariants that needed to characterize transient states.
 
 Another notable project designed a modular-specification approach for cache coherence, verifying each module (\ie{} cache) against the spec while automatically generating (and proving) invariants, using the Ivy verification tool~\cite{ivy:Padon:2016, McMillan:2016, ivy:McMillan:2020}.
 The modular spec is specialized to the TileLink protocol~\cite{tilelink}, whose interface is similar to the rule templates in \hemiola{}.
@@ -922,4 +932,3 @@ That being said, this project targeted only the specific TileLink protocol, thus
 
 In order to avoid tedious invariant searching, a toolchain was built to generate invariants and their proofs automatically for the FLASH cache-coherence protocol~\cite{Li:2018}.
 However, it did not provide the final refinement proof between the implementation and the spec.
-
