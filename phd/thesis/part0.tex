@@ -5,9 +5,7 @@
 
 \chapter{Background}
 
-\section{Cache-Coherence Protocols}
-
-\subsection{In a nutshell}
+\section{Cache-Coherence Protocols In a Nutshell}
 \label{sec-nutshell}
 
 Before introducing our proposed method to design and prove cache-coherence protocols more structurally, we provide a simple yet motivating example to explain the typical challenges.
@@ -171,11 +169,73 @@ Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf
 If proper locking (by transient states) and topology are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
 That is exactly what \hemiola{} provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates}, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
 
-\subsection{Design space}
+\section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}
 
-%% TODO: must add the following comparisons:
-%% - snooping vs. directory
-%% - inclusive vs. noninclusive
+In \autoref{sec-nutshell}, we have looked at a very specific protocol design.
+There are different ways to design a cache-coherence protocol, and each design decision affects performance and correctness of the protocol.
+In this section, we explore major design space of a cache-coherence protocol.
 
-\section{Verification of Cache-Coherence Protocols}
+\subsubsection{Snooping vs. Directory}
+
+A typical classification of a cache-coherence protocol is whether the protocol employs a designated data structure to keep track of the statuses of child caches.
+There are two representative classes: \emph{snooping} and \emph{directory} protocols.
+
+A snooping protocol does not use any data structure to monitor the statuses of child caches.
+Instead, when the parent communicates with child caches, it \emph{broadcasts} a message to the children.
+Each child cache decides whether to respond to the message from the parent or just to ignore it, depending on its status.
+For example, suppose the scenario, already mentioned in \autoref{sec-nutshell}, that the parent wants to an invalidation request to downgrade the status of the child who has the M status to I.
+Since the parent cache does not have any information which child currently has the M status, it has no choice but to broadcast the invalidation-request message to all of the children.
+The child cache with the M status will respond to the parent after invalidating its status, while the other caches will just ignore the request.
+In actual hardware implementations, snooping is usually implemented with an ordered wire bus shared by the parent and the children.
+
+A directory protocol, as its name says, uses the directory structure to record which child has which status.
+The example presented in \autoref{sec-nutshell} is a directory protocol; we see that the parent $P$ additionally has a directory data structure.
+Considering the same invalidation scenario, because the parent knows which child has the M status exactly, it can make the invalidation request just to that child.
+
+A snooping protocol is known to be easier to implement than a directory protocol, since the ordered bus enforces less interleavings among transactions.
+That being said, the snooping protocol is also known not to be scalable, since the cost of broadcasting increases significantly when more child caches are involved.
+A directory protocol, on the other hand, is known to be scalable and especially matches well hierarchy layers, but the design and verification are relatively more difficult than the snooping protocol.
+
+This dissertation only deals with directory protocols due to their inherent difficulties.
+We will build a framework that can ease the burden of designing and verifying directory protocols, and demonstrate the practicality of the framework with various hierarchical directory protocols as case studies.
+
+\subsubsection{Cache-centric vs. Memory-centric}
+
+
+
+\subsubsection{Write-update vs. Write-invalidate}
+
+A cache-coherence protocol can be also classified by the patterns of memory writes.
+Amony various memory-write patterns, we classify the protocol by when each legal write to a cache is propagated to the other caches.
+Then we have two classes: \emph{write-update} and \emph{write-invalidate} protocols.
+
+In a write-update protocol, if a cache wants to write to a line, it requests to update the lines in the other caches first and updates its line after the updates by the others.
+This protocol is beneficial when a cache writes to a line and the other caches wants to read it right after the write.
+
+In a write-invalidate protocol, if a cache wants to write to a line, it first requests to invalidate the lines in the other caches so that they cannot read or write the line.
+Once all the other caches are invalidated, it can write a new value.
+The write-invalidate policy is used more generally in practical cache-coherence protocols, since the write-update policy requires more bandwidth (to carry the up-to-date written value) and is not efficient when some other caches actually do not need to read the up-to-date value anymore.
+
+\subsubsection{Write-through vs. Write-back}
+
+Another criterion about memory writes is when a write to a cache is applied to the main memory; it provides two classes as well: \emph{write-through} and \emph{write-back} protocols.
+
+In a write-through protocol, when a cache writes to a line (already with enough permission), it further requests a write to the main memory as well.
+This protocol is easier to design, since the up-to-date value can be always found in the main memory.
+
+On the other hand, in a write-back protocol, a cache does not requests to the main memory to send the value when writing to a line.
+The write-back policy is harder to implement than the write-through protocol, since the protocol should provide a way to find the up-to-date -- possibly dirty -- value among all the caches, \eg{} by managing directories that point the cache that has the value.
+That being said, almost all practical cache-coherence protocols use the write-back policy to avoid unnecessary writeback to the main memory.
+
+\subsubsection{Inclusive vs. Noninclusive vs. Exclusive}
+
+\subsubsection{Blocking vs. Nonblocking}
+
+%% \subsubsection{Stalling vs. Nonstalling}
+
+\subsubsection{Direct-mapped vs. Fully-associative vs. Set-associative}
+
+\subsubsection{3-hop vs. 4-hop}
+
+%% - MSI, MESI, MOSI, MOESI, MESIF, ..
