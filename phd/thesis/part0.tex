@@ -5,11 +5,15 @@
 
 \chapter{Background}
 
+Before introducing our proposed method to design and prove cache-coherence protocols more structurally, in this chapter we provide some background to understand conventional cache-coherence protocol designs and typical correctness challenges.
+We first introduce a very simple cache-coherence protocol to explain the purpose of the protocol, basic design, and a number of nontrivial corner cases that require careful handling.
+After that, we explore some design space of cache-coherence protocols for better understanding of the case-study protocols we will provide in \autoref{sec-case-study}.
+
 \section{Cache-Coherence Protocols In a Nutshell}
 \label{sec-nutshell}
 
-Before introducing our proposed method to design and prove cache-coherence protocols more structurally, we provide a simple yet motivating example to explain the typical challenges.
-For simplicity, in this section, we will consider a protocol protecting only \emph{a single memory location}.
+In this section, we provide a simple yet motivating example to explain the typical challenges.
+For simplicity, throughout the section, we will consider a protocol protecting only \emph{a single memory location}.
 We will see it is still nontrivial to design and verify a correct protocol.
 
 The overall goal of cache coherence is, as the name suggests, to preserve coherence among multiple candidate values in a memory subsystem.
@@ -172,7 +176,7 @@ That is exactly what \hemiola{} provides: it provides \emph{rule templates}, exp
 \section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}
 
-In \autoref{sec-nutshell}, we have looked at a very specific protocol design.
+In \autoref{sec-nutshell}, we examined a very specific protocol design.
 There are different ways to design a cache-coherence protocol, and each design decision affects performance and correctness of the protocol.
 In this section, we explore major design space of a cache-coherence protocol.
 
@@ -200,10 +204,6 @@ A directory protocol, on the other hand, is known to be scalable and especially 
 This dissertation only deals with directory protocols due to their inherent difficulties.
 We will build a framework that can ease the burden of designing and verifying directory protocols, and demonstrate the practicality of the framework with various hierarchical directory protocols as case studies.
 
-\subsubsection{Cache-centric vs. Memory-centric}
-
-
-
 \subsubsection{Write-update vs. Write-invalidate}
 
 A cache-coherence protocol can be also classified by the patterns of memory writes.
@@ -228,14 +228,36 @@ On the other hand, in a write-back protocol, a cache does not requests to the ma
 The write-back policy is harder to implement than the write-through protocol, since the protocol should provide a way to find the up-to-date -- possibly dirty -- value among all the caches, \eg{} by managing directories that point the cache that has the value.
 That being said, almost all practical cache-coherence protocols use the write-back policy to avoid unnecessary writeback to the main memory.
 
+All the case-study protocols in this dissertation, which will be introduced in \autoref{sec-case-study}, follow the write-invalidate and write-back policies.
+
 \subsubsection{Inclusive vs. Noninclusive vs. Exclusive}
 
-\subsubsection{Blocking vs. Nonblocking}
+The protocol we introduced in \autoref{sec-nutshell} is a flat (\ie{} nonhierarchical) protocol in that child caches ($C_1$ and $C_2$) communicates directly with the parent $P$ as the main memory with a directory.
+In other words, there are no intermediate caches between the lowest-level caches (called the L1 caches) and the main memory.
+There is an essential tradeoff between caches and the memory: caches have much faster latency than the memory but lower hit rate.
+In order to mitigate the hit rate of a cache, hierarchical cache-coherence protocols have been developed and used.
+In a hierarchical protocol, some of the L1 caches are clustered to have an L2 cache as the parent, and so on.
+A higher-level cache usually has a lower latency than lower-level caches but has a better hit rate due to its increased size.
 
-%% \subsubsection{Stalling vs. Nonstalling}
+Hierarchical cache-coherence protocols can be classified by so-called the \emph{cache-inclusion policy}.
+Especially when designing a protocol with directories, it is practically easier to design caches to follow the requirement that every line in the value cache has its corresponding directory entry in the directory cache, and vice versa.
+It is indeed easier to design with such a policy, since it allows to combine an information cache (\ie{} the one containing line statuses, etc.) and a directory cache into a single cache, which is more space-efficient by not having to store tags in each cache.
+This policy, in other words, means that whenever a line is in a child cache there is a corresponding line in the parent cache as well.
+We therefore call it \emph{inclusive}, meaning that the parent cache includes the lines in child caches.
 
-\subsubsection{Direct-mapped vs. Fully-associative vs. Set-associative}
+Inclusive caches have a benefit that certain requests from the parent can be responded immediately just by searching the directory status.
+For example, when a cache gets an invalidation request from the parent and the line entry does not exist in the directory, it does not need to forward the request to the children for the complete invalidation, since by the inclusion policy absense of the directory status already implies that the line does not exists in any of the child caches.
+That said, inclusive caches have a drawback that some value entries are wasted; for example, when a directory status is M, meaning that a child has the possibly dirty value, the parent does not need to hold any stale value inside the value cache.
 
-\subsubsection{3-hop vs. 4-hop}
+A \emph{noninclusive} cache -- also called a noninclusive nonexclusive (NINE) cache -- does not require such inclusion.
+Since it does not require the inclusion, it has less chance to waste value lines.
+That said, the biggest drawback comes when a directory-status entry does not exist in the directory cache; the absense of the directory status does not imply that child caches do not have the line.
+The same issue occurs in a snooping protocol as well; \eg{} a cache should always snoop all the child caches in order to handle an invalidation request from the parent.
 
-%% - MSI, MESI, MOSI, MOESI, MESIF, ..
+In order to resolve the addressed issues, a number of practical cache-coherence protocols are known to manage noninclusive (value) caches and inclusive directories, called NCID~\cite{Zhao:2010}.
+Intel Skylake-X processors are known to use noninclusive caches~\cite{intel-non-inclusive,Yan:2019}.
+By having noninclusive value caches we have less chance to waste value lines, and by having inclusive directories we do not always need to visit child caches for invalidation.
+
+On the contrary to the inclusive cache, an \emph{exclusive} cache intends to maximize the utility between child caches and the parent one, by requiring that the lines of each child and the parent are disjoint to each other.
+AMD Opteron servers are known to use exclusive caches~\cite{Irazoqui:2016}.
+A similar optimization to NCID is possible in exclusive caches, by managing directories as inclusive while the value caches are exclusive.
