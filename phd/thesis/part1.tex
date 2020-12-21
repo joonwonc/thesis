@@ -37,10 +37,7 @@ It is worth noting that the one-rule-at-a-time semantics has been used in design
 
 \section{Formal Definition of Protocol Transition Systems}
 
-Now we provide the formal syntax and semantics for message-passing-based state-transition systems, called \emph{protocol transition systems}.
-
-\subsection{Syntax}
-\label{sec-syntax}
+Now we provide the formal syntax and semantics for protocol transition systems.
 
 \paragraph{Notations}
 Throughout the dissertation, we will use several notations for lists (sequences) and finite maps.
@@ -58,6 +55,9 @@ Moreover, we overload the same operation $(\mapupd{M}{k}{v})$ for a single updat
 
 We will use $\tuple{\cdot}$ to denote a struct and use a name (\eg{} $s.\textsf{fd}$) to access a field value.
 $(\listof{s.\textsf{fd}})$ will be used as a shorter notation for $(\textsf{List.map}\ (\lambda s.\; s.\textsf{fd})\ \listof{s})$.
+
+\subsection{Syntax}
+\label{sec-syntax}
 
 \begin{figure}[t]
   \centering

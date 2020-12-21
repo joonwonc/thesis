@@ -1,9 +1,42 @@
 \chapter{Introduction: What Makes Hardware Verification Complex}
 
-%% Design and verification of cache-coherence protocols have been long-lasting challenges for almost a half century.
-%% Cite Coq when introduced.
+%% All the code and proofs of the framework and the case studies are available in the supplementary material we provided for the paper submission.
+
+\subsubsection{Contributions}
+
+To sum up, the contribution of this dissertation includes the following:
+\begin{itemize}
+\item We discover a minimal set of topology and lock conditions that ensures \emph{serializability}, extracted from usual cache-coherence protocol designs.
+  We then identify a domain-specific protocol language, where every protocol defined in this language ensures serializability by construction, backed up with mechanized Coq proof (\autoref{sec-hemiola-dsl}).
+  Lastly, we formalize how serializability helps prove correctness (trace refinement), by using the novel notion of \emph{predicate messages} in distributed protocols.
+\item Using the protocol language, we provide the complete correctness proofs of three hierarchical cache-coherence protocols: inclusive and noninclusive MSI protocols and a noninclusive MESI protocol (\autoref{sec-case-study}).
+  Ours are the first complete mechanized proofs for various hierarchical ``noninclusive'' cache-coherence protocols, and as a bonus they share a large segment of reusable proofs (including with the inclusive variant).
+\item We provide a toolchain to compile \hemiola{} protocols to RTL implementations and to synthesize them to run on FPGAs.
+  We also evaluate our case-study protocols, in order to demonstrate that they indeed run on hardware with reasonable performance.
+\end{itemize}
+
+\subsubsection{Outline}
+
+Before introducing our proposed techniques to verify cache-coherence protocols, in \autoref{sec-background}, we will provide some background to understand conventional protocol designs and typical correctness challenges.
+After the background chapter, this dissertation is composed of three parts.
+
+The first part presents our underlying theory to reason about cache-coherence protocols.
+\autoref{sec-trs} introduces protocol transition systems as underlying state-transition systems to describe behaviors of cache-coherent memory subsystems.
+On top of a protocol transition system, we provide the formal definition of serializability in \autoref{sec-sz-def}.
+This chapter also demonstrates how serializability helps state and prove invariants of a given system.
+
+The second part introduces \hemiola{}, a framework embedded in Coq to design and verify cache-coherence protocols more structurally, by using the serializability guarantee.
+\autoref{sec-hemiola-dsl} first presents the \hemiola{} domain-specific language for easier protocol design.
+\autoref{sec-sz-guarantee-hemiola} describes the biggest contribution of the framework, a general once-and-for-all property claiming that any protocol defined with the DSL obtains the serializability property for free.
+We then provide the first series of related work in \autoref{sec-related-work-i}, focusing on how previous approaches dealt with interleavings among transactions.
+
+The last part provides our case studies, design and verification of hierarchical cache-coherence protocols.
+We present the designs and complete correctness proofs of hierarchical MSI and MESI protocols on top of the \hemiola{} framework in \autoref{sec-case-study}.
+\autoref{sec-comp-syn} presents the protocol compiler, which compiles a protocol described in \hemiola{} to a corresponding RTL implementation, and discusses the correctness of the compiler.
+We then provide the other series of related work in \autoref{sec-related-work-ii}, exploring some previous approaches to verifying cache-coherence protocols.
 
 \chapter{Background}
+\label{sec-background}
 
 Before introducing our proposed method to design and prove cache-coherence protocols more structurally, in this chapter we provide some background to understand conventional cache-coherence protocol designs and typical correctness challenges.
 We first introduce a very simple cache-coherence protocol to explain the purpose of the protocol, basic design, and a number of nontrivial corner cases that require careful handling.
