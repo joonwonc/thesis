@@ -890,7 +890,7 @@ In early phases the TLC model checker was not mature enough to provide a full co
 Later they tried to verify another procotol with more-developed TLC, but the verification was still limited to a single cache line, two data values, and three processors, due to the state-space explosion to twelve million reachable states.
 These verifications were performed quite a long time ago, but we want to draw from these early approaches that state-space explosion has been a typical issue in model checking.
 
-In order to overcome such state-space explosion, model checkers have been developed featuring sound techniques such as symbolic model checking~\cite{smv:McMillan:1993}, partial-order reduction~\cite{Bhattacharya:2005}, symmetry reduction~\cite{Bhattacharya:2006,thesis:Ip:1996}, data-type reduction~\cite{McMillan:1999}, and compositional model checking~\cite{McMillan:1999}.
+In order to overcome such state-space explosion, model checkers have been developed featuring sound techniques such as symbolic model checking~\cite{thesis:McMillan:1992,smv:McMillan:1993}, partial-order reduction~\cite{Bhattacharya:2005}, symmetry reduction~\cite{Bhattacharya:2006,thesis:Ip:1996}, data-type reduction~\cite{McMillan:1999}, and compositional model checking~\cite{McMillan:1999}.
 As explored in \autoref{sec-related-work-i}, model-checking cache-coherence protocols especially requires the design and use of noninterference lemmas to deal with the state-space explosion by interleavings~\cite{McMillan:1999,McMillan:2001,Chou:2004}.
 
 In order to obtain effective noninterference lemmas, a number of approaches used descriptions in terms of transactions (called ``message flows'')~\cite{flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}.
