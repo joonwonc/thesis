@@ -330,17 +330,17 @@ When an L1 cache wants to obtain a write permission, all the other caches should
 In order to perform such a transaction, it must be able to traverse all the other caches.
 This transaction kind is one of the longest-running in cache-coherence protocols, and the rule templates are designed with proper locking ($\uled$ and $\dled$) and a state-change condition ($\stsilent$), not to create any incoherence while such a long transaction is interleaved with other transactions.
 
-\chapter{Serializability Guarantee by \hemiola{}}
+\chapter{Serializability in \hemiola{}}
 \label{sec-sz-guarantee-hemiola}
 
 In this chapter, we provide the proof of serializability in \hemiola{}.
-As introduced in \autoref{sec-hemiola-dsl}, the proof largely requires the two conditions: the tree topology with the three channel kinds (introduced in \autoref{sec-topo-net-reqs}) and the locking mechanism (introduced in \autoref{sec-locking-mechanism}).
+As introduced in \autoref{sec-hemiola-dsl}, the proof largely requires two conditions: tree topology with the three channel kinds (introduced in \autoref{sec-topo-net-reqs}) and the locking mechanism (introduced in \autoref{sec-locking-mechanism}).
 Since the \hemiola{} DSL with the rule templates faithfully follows such conditions, it is also fair to say that just using the DSL ensures serializability.
 While conventional approaches to verifying cache-coherence protocols deal with transient states directly and prove noninterference lemmas per-state, \hemiola{} provides the serializability guarantee as \emph{the most general form of noninterference, obtained from conditions that are not coupled to any specific cache-coherence protocol}, \eg{} the DSL does not mention any cache-coherence specifics.
 
 In proving serializability we use a well-established technique called commuting reductions~\cite{reduction}.
 This reduction technique has been used before to prove correctness of concurrent software~\cite{Hawblitzel:2015,Chajed:2018} and distributed systems~\cite{Hawblitzel:2017}, but to our knowledge no past work has tried to discover serializability conditions for cache-coherence protocols and proved them using reductions.
-We will provide more detailed discussions on the use of commuting reductions in \autoref{sec-related-work-i}.
+We will provide more detailed discussion of the use of commuting reductions in \autoref{sec-related-work-i}.
 
 \section{The Intuition: Merging Atomic-History Fragments}
 \label{sec-sz-pf-intuition}
@@ -348,7 +348,7 @@ We will provide more detailed discussions on the use of commuting reductions in 
 \newcommand{\commstep}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
 \newcommand{\commhst}[2]{\ensuremath{#1 \leftrightarrowtriangle #2}}
 
-We first present our intuition of how commuting reductions are used in the serializability proof; in order for it, we need to formalize the reduction first.
+We first present our intuition of how commuting reductions are used in the serializability proof; first, we need to formalize reduction.
 The most basic commuting reduction happens between two adjacent state-transition steps:
 \begin{definition}[Commutativity of steps]
   \label{def-comm-steps}
@@ -357,7 +357,7 @@ The most basic commuting reduction happens between two adjacent state-transition
     \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})} \triangleq \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
   \end{displaymath}
 \end{definition}
-We will write just $\commstep{l_0}{l_1}$ when the system $S$ and the transition-step adjacency (\ie{} existence of the intermediate state $s_1$) are clear from context.
+We will write just $\commstep{l_0}{l_1}$ when the system $S$ and the states involved with $l_0$ and $l_1$ are clear from context.
 
 We can naturally lift the definition to one for histories to argue whether two histories commute or not:
 \begin{definition}[Commutativity of histories]
@@ -430,7 +430,7 @@ More specifically, we will try to \emph{merge} any two separated atomic-history 
 \end{figure}
 
 We elaborate this intuition more by using a concrete example.
-\autoref{fig-ex-sz-trs} shows two interleaving transactions in {\color{myred} red} and {\color{myblue} blue}, started from $C_1$ and $C_2$, respectively, both pursuing the M status from the simple MSI protocol presented in \autoref{sec-nutshell}.
+\autoref{fig-ex-sz-trs} shows two interleaving transactions in {\color{myred} red} and {\color{myblue} blue}, started from $C_1$ and $C_2$, respectively, both seeking the M status in the simple MSI protocol presented in \autoref{sec-nutshell}.
 We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{\textrm{rquu}}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{\textrm{rquu}} is a rule in $C_1$ using the ``rquu'' rule template, taking an input message \idmsf{1}{rqWr} and outputting \idmsf{3}{rqM}.
 
 We introduce each state transition here to understand the interleaving better:
@@ -582,7 +582,7 @@ We will use the example of interleaving transactions shown in \autoref{fig-ex-sz
 
 In \autoref{sec-sz-pf-intuition} we briefly provided the intuition of making a history sequential by merging atomic-history fragments repeatedly.
 In order to employ the intuition in the actual proof, we need to show that \emph{finitely many} reductions suffice.
-For example, while merging two atomic-history fragments, if we happen to separate the other fragment between the two, we will never be sure whether the merging process will be finished with the sequential history or not.
+For example, while merging two atomic-history fragments, if we happen to split any fragment between the two (so the number of intermediate fragments increases), we will never be sure whether the merging process will finish with a sequential history or not.
 
 \begin{figure}[t]
   \centering
@@ -618,10 +618,10 @@ The only difference from sequential histories is that we \emph{count} the number
 In our interleaving example, looking at the original interleaved history shown in \autoref{fig-ex-sz-state-trs}, we can find the following semi-transactions in-order: $[\rdcircf{1}]$, $[\blcircf{2}]$, $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$, $[\blcircf{6}]$, $[\rdcircf{7}]$, and $[\blcircf{8}; \blcircf{9}; \blcircf{10}]$.
 In this case, the degree of a semi-sequential history is $6$, the number of semi-transactions.
 Note that the degree of a semi-sequential history is not uniquely determined.
-In the example, when regarding $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ to the three separate single-label atomic histories -- $[\rdcircf{3}]$, $[\rdcircf{4}]$, and $[\rdcircf{5}]$ -- then we obtain another semi-sequential history with degree $8$.
+In the example, when splitting $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$ into the three separate single-label atomic histories -- $[\rdcircf{3}]$, $[\rdcircf{4}]$, and $[\rdcircf{5}]$ -- we obtain another semi-sequential history with degree $8$.
 
 This definition indicates that in order to obtain a serialized history, we should perform reductions to \emph{decrease the count as much as possible}.
-\hemiola{} employs theorems that reflects this intuition:
+\hemiola{} employs theorems that reflect this intuition:
 \begin{theorem}
   \label{thm-sseq-default}
   Given a system $S$, a legal history is always semi-sequential:
@@ -643,9 +643,9 @@ This definition indicates that in order to obtain a serialized history, we shoul
   \end{align*}
 \end{theorem}
 \begin{proof}
-  The proof employs the well-foundness of the less-than operator ($<$) for natural numbers.
+  The proof employs the well-foundedness of the less-than operator ($<$) for natural numbers.
   For a given history $h$ in a system $S$, we can find an initial number $n$ that satisfies $\hsseq{S}{h}{n}$ (by \autoref{thm-sseq-default}).
-  Now by the given property, $h$ is either already sequential or reduces to $h_r$ with the degree $m < n$.
+  Now by the given property, $h$ is either already sequential or reduces to $h_r$ with degree $m < n$.
   Therefore, finite iteration of the property will eventually reduce the history to a sequential history.
 \end{proof}
 
@@ -653,12 +653,12 @@ This definition indicates that in order to obtain a serialized history, we shoul
 \label{sec-red-ext-labels}
 
 For a given legal history in a system, the very first step to reduce it to a sequential history is to push all external input and output labels to the leftmost and rightmost regions of the history, respectively.
-Recall that the serializability (\autoref{def-seq-sz}) does not require the sequential history to preserve the behavior of a history, but to reach to the same state.
+Recall that serializability (\autoref{def-seq-sz}) does not require the sequential history to preserve the behavior of a history but to reach the same state.
 
 The following two dual theorems are enough to push all external labels:
 \begin{theorem}
   \label{thm-push-ext-labels}
-  In any legal history in the system $S$, the first external-input (the last external-output) label can be pushed to the first (the end) of the history.
+  In any legal history in the system $S$, the first external-input (the last external-output) label can be pushed to the beginning (the end) of the history.
   \begin{displaymath}
     \forall s_0, s_1, \listof{h_0}, im, \listof{h_1}.\;
     \mathsf{NoExtIns}(\listof{h_0}) \to
@@ -740,7 +740,7 @@ We can generate such a history by performing reductions:
 \item Try to pick the first external-input label that is \emph{not in the leftmost region of the history yet}. If it exists, it can always be pushed to the left, right after the external-input labels that are already in the leftmost region, by applying \autoref{thm-push-ext-labels}.
 \item Try to pick the last external output label that is \emph{not at the rightmost region of the history yet}. If it exists, it can always be pushed to the right, right before the external-output labels that are already in the rightmost region, by applying \autoref{thm-push-ext-labels}.
 \end{itemize}
-Note that pushing the external input (output) labels to the leftmost (rightmost), is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to postpone releasing all the external output messages as late as possible.
+Note that pushing the external input (output) labels to the leftmost (rightmost) positions is possible since the semantics of the protocol transition system is based on infinite-sized buffers, allowing the system to accept all the external input messages as early as possible and to postpone releasing all the external output messages as late as possible.
 
 \subsection{Interleaving and nonconfluent histories}
 \label{sec-itlv-ncf-hst}
@@ -762,7 +762,7 @@ The below notion of continuity lets us figure out whether two histories are rela
     \end{displaymath}
   \end{enumerate}
 \end{definition}
-Note that the discontinuity requires that the live messages of the previous history are \emph{disjoint} to the initial messages of the next history.
+Note that discontinuity requires that the live messages of the previous history are \emph{disjoint} to the initial messages of the next history.
 Therefore, it is not true that two atomic histories are always either continuous or discontinuous.
 We will very soon explore how to deal with the other case, where the next history takes multiple sets of live messages from the previous histories.
 
@@ -779,14 +779,14 @@ Using the notion of continuity, we can also formalize interleaving of atomic his
     & \listof{h} = \listapp{\listcons{\listapp{\listcons{\listof{h_1}}{h_1}}{\listof{h_2}}}{h_2}}{\listof{h_3}}\; \wedge \\
     & \hextcont{S}{h_1}{h_2} \wedge (\forall h' \in \listof{h_2}.\; \hdiscont{h_1}{h'}).
   \end{align*}
-  We also call a history $h$ interleaved, overrided as $(\hitlv{S}{h})$, iff we can find an interleaved sequence of histories $\listof{h_s}$ that satisfies $h = \listconcat{\listof{h_s}}$.
+  We also call a history $h$ interleaved, written $(\hitlv{S}{h})$, iff we can find an interleaved sequence of histories $\listof{h_s}$ that satisfies $h = \listconcat{\listof{h_s}}$.
 \end{definition}
 
 There are two subtleties in defining the notion of interleaving precisely.
 First, we look for \emph{externally continuous} histories, not just continuous ones, to define whether the whole history is interleaved or not.
-It does not restrict the notion since when continuous histories are found in a legal history, either they are already externally continuous or the ones are found at the beginning of the atomic-history chain that contains them.
+It does not restrict the notion since when continuous histories are found in a legal history, either they are already externally continuous or others are found at the beginning of the atomic-history chain that contains them.
 Second, we require that the earlier history ($h_1$) is \emph{discontinuous} to each history ($\forall h' \in \listof{h_2}$) between the two externally continuous histories ($h_1$ and $h_2$).
-This is to ensure that the live messages generated by $h_1$ are preserved -- \ie{} not consumed by some other atomic histories -- until $h_2$ takes its initial messages from those ones.
+This is to ensure that the live messages generated by $h_1$ are preserved -- \ie{} not consumed by some other atomic histories -- until $h_2$ takes its initial messages from the live messages.
 
 Note that our interleaving example is indeed interleaved: we can find externally continuous histories $[\rdcircf{1}]$ and $[\rdcircf{3}; \rdcircf{4}; \rdcircf{5}]$, and $[\rdcircf{1}]$ is discontinuous with the only intermediate atomic history $[\blcircf{2}]$.
 
@@ -905,7 +905,7 @@ We are finally equipped with enough definitions to introduce a convenient genera
 \begin{proof}
   For a given history $h$, by \autoref{thm-sseq-sz} there exists a sequence of atomic histories $\listof{h_s}$ such that $\listconcat{\listof{h_s}} = h$.
   In the sequence we try to find the first externally continuous histories.
-  If we cannot find the ones, then by definition $h$ is already sequential.
+  If we cannot find any, then by definition $h$ is already sequential.
   If there exist such histories, by the definition of nonconfluence (\autoref{def-ncf}) they are interleaved.
   Now by mergeability (\autoref{def-mgb}) we can find a new sequence of histories $\listof{h_r}$ that reaches the same state, where the externally continuous histories are merged, thus $\sizeof{\listof{h_r}} < \sizeof{\listof{h}}$.
   Applying \autoref{thm-sseq-sz}, we will eventually obtain a sequential history reaching the same state by repeating this process.
@@ -948,7 +948,7 @@ We begin with introducing the trivial reduction between two state transitions:
 \end{theorem}
 
 For a given history $h$, we denote by \aobjs{h} (\achns{h}) the set of object (channel) indices whose state is \emph{used} by $h$, obtained by collecting the object index (the input/output channel indices) in each label in $h$.
-We can then lift the trivial reduction theorem to the one for histories, using \aobjs{h} and \achns{h}:
+We can then lift the trivial reduction theorem to one for histories, using \aobjs{h} and \achns{h}:
 \begin{theorem}[Reduction by trivial separation]
   \label{thm-red-trivial-hsts}
   Two histories commute if they affect different objects and different input/output channels:
@@ -975,9 +975,9 @@ Given two internal labels \lblInt{\idxOf{O}}{\idxOf{r_1}}{\listof{\mathrm{ins}}_
 \end{displaymath}
 For instance, while using the \hemiola{} DSL, when an object forwards an upward request it sets an uplock.
 The object should be able to handle a downward request to it even after setting the uplock.
-These two state transitions are always commutative, since there is no state transition while forwarding the upward request (except locking) and handling the downward request does not affect the uplock.
+These two state transitions are always commutative, since there is no state transition while forwarding the upward request (except locking), and handling the downward request does not affect the uplock.
 
-This object separation is naturally extended to the one for atomic histories:
+This object separation is naturally extended to one for atomic histories:
 \begin{definition}\label{def-obj-comm}
   For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are object-separated, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
@@ -986,12 +986,13 @@ This object separation is naturally extended to the one for atomic histories:
       \objseph{h_1}{h_2} \triangleq & \forall l_1, l_2. & l_1 \in h_1 \;\wedge\; l_2 \in h_2 \to\\
       & & \mathsf{let}\ \lblInt{\idxOf{O_1}}{\idxOf{r_1}}{\listof{\mathrm{ins}}_1}{\listof{\mathrm{outs}}_1} := l_1\ \mathsf{in}\\
       & & \mathsf{let}\ \lblInt{\idxOf{O_2}}{\idxOf{r_2}}{\listof{\mathrm{ins}}_2}{\listof{\mathrm{outs}}_2} := l_2\ \mathsf{in}\\
-      & & \idxOf{O_1} \neq \idxOf{O_2} \;\vee\; (\idxOf{O_1} = \idxOf{O_2} \;\wedge\; \objsep{r_1}{r_2}).
+      %% & & \idxOf{O_1} \neq \idxOf{O_2} \;\vee\; (\idxOf{O_1} = \idxOf{O_2} \;\wedge\; \objsep{r_1}{r_2}).
+      & & \idxOf{O_1} \neq \idxOf{O_2} \;\vee\; \objsep{r_1}{r_2}.
     \end{array}
   \end{displaymath}
 \end{definition}
 Note that each label $l$ in $h_1$ (or $h_2$) is always an internal label, since it is an atomic history.
-The intuition here is that $h_1$ and $h_2$ are commutative in terms of object state transitions when each label -- representing an object state transition -- in $h_1$ and $h_2$ are commutative either by different objects (separation) or by the commutativity conditions within the same object.
+The intuition here is that $h_1$ and $h_2$ are commutative in terms of object state transitions when each pair of respective label -- representing object state transitions -- in $h_1$ and $h_2$ are commutative either because they use different objects (separation) or by the commutativity conditions within the same object.
 
 Next we consider message states.
 Instead of comparing channel indices regardless of their input/output types, we relax the notion to allow the live messages of $h_1$ and the initial messages of $h_2$ to be in the same channel but still different.
@@ -1010,7 +1011,7 @@ As seen in the definition, \ainputs{h} (\aoutputs{h}) collects all the input (ou
 We will also use \ainits{h} and \alives{h} to refer to the initial messages and live messages of $h$, respectively.
 
 \begin{definition}\label{def-msg-comm}
-  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are message-separated, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
+  Given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are message-separated, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
     \renewcommand{\arraystretch}{1.2}
     \begin{array}{rl}
@@ -1029,8 +1030,8 @@ Instead of having $\listdisj{\achns{h_1}}{\achns{h_2}}$ as a disjointness condit
 This relaxation is indeed required to prove serializability in \hemiola{}.
 We can find an instance from our interleaving example, again, specifically from \autoref{fig-ex-sz-comm-1}.
 It is the case where the atomic history $[\blcircf{6}]$ happens first, generating \blmsgsm{rqI} to the channel $5$ as the live message, and the atomic history $[\rdcircf{7}]$ happens next, consuming \rdmsgsm{rsM} from the same channel.
-These two histories commute, but if we just use \autoref{thm-red-trivial-hsts} with the trivial conditions, we cannot prove the commutativity.
-We can employ the relaxed condition (\autoref{def-msg-comm}), though, since \blmsgsm{rqI} and \rdmsgsm{rsM} are different messages thus the relaxed condition $\listdisj{\listof{\mathrm{lives}}_1}{\listof{\mathrm{inits}}_2}$ holds.
+These two histories commute, but if we just use \autoref{thm-red-trivial-hsts} with the trivial conditions, we cannot prove commutativity.
+We can employ the relaxed condition (\autoref{def-msg-comm}), though, since \blmsgsm{rqI} and \rdmsgsm{rsM} are different messages, thus the relaxed condition $\listdisj{\listof{\mathrm{lives}}_1}{\listof{\mathrm{inits}}_2}$ holds.
 
 Using the new, relaxed object and message separations, we present the following reduction theorem:
 \begin{theorem}[Reduction by separation]
@@ -1050,7 +1051,7 @@ Using the new, relaxed object and message separations, we present the following 
   $\listdisj{\listof{\mathrm{outs}_1}}{\listof{\mathrm{ins}_2}}$, and
   $\listdisj{\listof{\idxOf{\mathrm{outs}_1}}}{\listof{\idxOf{\mathrm{outs}_2}}}$ from $(\msgseph{h_1}{h_2})$.
   These conditions are enough to prove commutativity between $l_1$ and $l_2$ just by construction.
-  Induction cases are straightforward as well, \eg{} if $h_1 = \listcons{h_1'}{l_1}$ we perform reduction between $l_1$ and $h_2$ first, and do another reduction between $h_1'$ and $h_2$ by the induction hypothesis to perform the whole reduction between $h_1$ and $h_2$.
+  Induction cases are straightforward as well, \eg{} if $h_1 = \listcons{h_1'}{l_1}$ we perform reduction between $l_1$ and $h_2$ first and do another reduction between $h_1'$ and $h_2$ by the induction hypothesis to perform the whole reduction between $h_1$ and $h_2$.
 \end{proof}
 
 \subsubsection{Pushes by separation}
@@ -1083,9 +1084,9 @@ These three conditions are enough to merge $h_1$ and $h_2$.
   We first try to find the first left-pushable history in $\listof{h}$.
   If it does not exist, then all the atomic-history fragments in $\listof{h}$ are right-pushable.
   In this case $\commhst{\listconcat{\listof{h}}}{h_2}$ holds by repeatedly commuting the last fragment of \listof{h} and $h_2$.
-  If it exists, suppose $\listof{h} = \listapp{\listcons{\listof{h_r}}{h_l}}{\listof{h_e}}$, where $h_l$ is the first left-pushable history.
+  If the first left-pushable history exists, suppose $\listof{h} = \listapp{\listcons{\listof{h_r}}{h_l}}{\listof{h_e}}$, where $h_l$ is the first left-pushable history.
   By its definition, each history in $\listof{h_r}$ is right-pushable, thus we can prove $\commhst{(\listapp{h_1}{\listconcat{\listof{h_r}}})}{h_l}$, \ie{} $h_l$ can be pushed before $h_1$.
-  We will eventually have the intermediate histories that are all right-pushable, by repeatedly pushing the first left-pushable history before $h_1$.
+  We will eventually have intermediate histories that are all right-pushable, by repeatedly pushing the first left-pushable history before $h_1$.
   Once we obtain such histories, we can push them after $h_2$ finally to merge $h_1$ and $h_2$.
 \end{proof}
 
@@ -1103,7 +1104,8 @@ The third condition, however, is nontrivial, requiring the following property:
 \begin{displaymath}
   \forall h_l, h_r.\; \stseph{h_1}{h_l} \to \stseph{h_r}{h_2} \to \commhst{h_l}{h_r}.
 \end{displaymath}
-Since this property itself does not contain necessary conditions to prove, in our serializability proof we define the left/right pushability in a more restricted way.
+This is not provable by itself, since there are no conditions relating $h_1$ and $h_2$.
+Thus in our serializability proof we define left/right pushability in a more restricted way.
 We will introduce such restricted pushability definitions right in the next section.
 
 \subsection{All together: the serializability proof}
@@ -1115,8 +1117,8 @@ Recalling the requirements from \autoref{sec-hemiola-dsl}, a protocol should be 
 Throughout the section, we will deal with a system $S$ with these conditions.
 In order to prove serializability, we will use \autoref{thm-sz-when}, \ie{} nonconfluence and mergeability will be proven for the protocol defined with the \hemiola{} DSL.
 
-Both the nonconfluence and mergeability proofs require a number of invariants that any protocol satisfying $(\ontree{S}{t})$ and $(\goodrules{S}{t}$).
-All the invariants mentioned in the proof should be provable by inducting on state-transition steps, where each transition step requires a case analysis by the rule templates.
+Both the nonconfluence and mergeability proofs require a number of invariants that apply to any protocol satisfying $(\ontree{S}{t})$ and $(\goodrules{S}{t}$).
+All the invariants mentioned in the proof should be provable by inducting on state-transition steps, where each transition step requires a case analysis by rule template.
 
 The very first invariant is to categorize the input messages of each internal label:
 \begin{invariant}\label{inv-input-msgs}
@@ -1144,18 +1146,18 @@ Thus we should be able to find an external atomic history, say $h^0_e \in \listo
 $(\hextcont{S}{h^0_e}{h_i})$ trivially holds by $h^0_e$ generating the initial message of $h_i$.
 Therefore $(\hitlv{S}{(\listapp{\listconcat{\listof{h_e}}}{h_i})})$ holds by definition.
 
-The last category (multiple responses from children) is nontrivial, since there is a chance that the part of the messages is generated by an external atomic history and the other part is from another history.
-If we prove that the messages are from a single external atomic history, the nonconfluence is proven similarly to the first three cases.
+The last category (multiple responses from children) is nontrivial, since there is a chance that one part of the messages is generated by an external atomic history and the other part is from another history.
+If we prove that the messages are from a single external atomic history, nonconfluence is proven similarly to the first three cases.
 The idea comes from looking at the downlock associated with the responses.
 
 Suppose that an external atomic history $h_e$ outputted requests to children.
 It is trivial that $h_e$ is continuous to any (non-external) atomic history that takes one of the children requests as the initial message.
 Now according to what is specified by the designated rule template for making requests to children (by \goodrules{S}{t}), the parent \emph{sets a downlock and does not accept any other atomic histories} to make another set of requests to the children.
-We can use this fact to prove that any response to the parent after making the children requests is in the live messages of a non-external atomic history that took the corresponding request, since no other ongoing atomic histories can pass through the parent by the downlock.
-Let $h^c_j$ be an atomic history that generates a response, where $j=0,1,\cdots$ matches each corresponding children request.
+We can use this fact to prove that any response to the parent after making the child requests is in the live messages of a non-external atomic history that took the corresponding request, since no other ongoing atomic histories can pass through the parent by the downlock.
+Let $h^c_j$ be an atomic history that generates a response, where $j=0,1,\cdots$ matches each corresponding child request.
 
 Since $\listof{h_e}$ does not contain any non-external atomic histories, the only possible case is that $h_e$ and $\listof{h^c_j}$ are merged together to form a single external atomic history, \ie{} $h^c_e \triangleq (\listapp{h_e}{\sum_j h^c_j})$ itself is the external atomic history whose live messages contain all the responses to the parent.
-It is trivial to hold $(\hextcont{S}{h^c_e}{h_i})$, and the rest of the proof is same as the other three cases.
+By definition it is trivial to prove $(\hextcont{S}{h^c_e}{h_i})$, and the rest of the proof is same as the other three cases.
 \renewcommand\qedsymbol{${\color{mygray}\textit{(End of the nonconfluence proof)}}\ \blacksquare$}
 \qed{}
 \renewcommand\qedsymbol{$\blacksquare$}
@@ -1182,28 +1184,28 @@ The proof will use the following simple invariant about messages residing in the
 Following the definition of mergeability, let $h_1$ and $h_2$ be the externally continuous histories (\hextcont{S}{h_1}{h_2}) and $\listof{h}$ be the intermediate histories between the two.
 As already observed and used in the nonconfluence proof (\autoref{thm-ncf}), the initial messages of $h_2$ (\ie{} \ainits{h_2}) belong to the four categories: an upward request, a downward response, a downward request, or multiple upward responses (to the parent).
 
-In addition to this categorization, in order to prove mergeability, we need to categorize the live messages of $h_1$ (\ie{} \alives{h_1}) as well, which is formed as an invariant:
+In addition to this categorization, in order to prove mergeability, we need to categorize the live messages of $h_1$ (\ie{} \alives{h_1}) as well, which is phrased as an invariant:
 \begin{invariant}\label{inv-live-msgs}
   The live messages of an external atomic history belong to one of the following three categories: 1) an upward request, 2) a downward response, or 3) multiple downward requests and upward responses.
 \end{invariant}
 
-The mergeability will be proven for each combination of the live messages (of $h_1$) and the initial messages (of $h_2$), constrained by $\ainits{h_2} \subseteq \alives{h_1}$ due to the continuity.
+Mergeability will be proven for each combination of the live messages (of $h_1$) and the initial messages (of $h_2$), constrained by $\ainits{h_2} \subseteq \alives{h_1}$ due to continuity.
 The following case analyses are by the live messages of $h_1$.
 
 1) \emph{An upward request}: since $\ainits{h_2} \subseteq \alives{h_1}$, \ainits{h_2} can at most contain an upward request, and due to the categorization of \ainits{h_2} it should be a single upward request as well.
 We need to prove another invariant about upward requests:
 \begin{invariant}\label{inv-upward-rqs}
-  If an atomic history generates an upward request as the live message, it only consists of internal labels generated by the ``rquu'' rule template, \ie{} taking an upward request from a child and forwarding it to the parent.
+  If an atomic history generates an upward request as its live message, it only consists of internal labels generated by the ``rquu'' rule template, \ie{} taking an upward request from a child and forwarding it to the parent.
 \end{invariant}
 This invariant is proven by inducting on atomic-history steps, not on ordinary state-transition steps.
 
-For each case, we will apply \autoref{thm-push-imp-mgb} to merge $h_1$ and $h_2$, which requires to define left/right pushability.
+For each case, we will apply \autoref{thm-push-imp-mgb} to merge $h_1$ and $h_2$, which requires defining left/right pushability.
 In this upward-request case, we set the pushability as follows:
 \begin{displaymath}
   \renewcommand{\arraystretch}{1.2}
   \begin{array}{lr}
     \mathsf{LeftPushable}\ h \triangleq \mathsf{True}. &
-    \mathsf{RightPushable}\ h \triangleq \mathsf{False}
+    \mathsf{RightPushable}\ h \triangleq \mathsf{False}.
   \end{array}
 \end{displaymath}
 These definitions simply say that any atomic-history fragment between $h_1$ and $h_2$ is always left-pushable.
@@ -1217,14 +1219,14 @@ The message separation (\msgseph{h_1}{h}) is obvious as well, since $h$ cannot u
 2) \emph{A downward response}: by the same reasoning, \ainits{h_2} should be a single downward response.
 We need two dual invariants to prove this case.
 \begin{invariant}\label{inv-downward-rs-init}
-  If an atomic history $h$ consumes a downward response to the object $O$ as the initial message, the object state transitions performed by $h$ are constrained within the subtree with the root $O$ (denoted as \subtree{O}).
+  If an atomic history $h$ consumes a downward response to the object $O$ as the initial message, the object state transitions performed by $h$ are constrained to occur only within the subtree with the root $O$ (denoted as \subtree{O}).
 \end{invariant}
 \begin{invariant}\label{inv-downward-rs-live}
-  If an atomic history $h$ consumes a downward response to the object $O$ as the live message, then there exist $h_l$ and $h_r$ such that $h = h_l + h_r$, where $h_l$ only consists of internal labels generated by the ``rquu'' rule template and $h_r$ is constrained within the complement of the subtree with the root $O$ (denoted as \subtreec{O}).
+  If an atomic history $h$ consumes a downward response to the object $O$ as the live message, then there exist $h_l$ and $h_r$ such that $h = h_l + h_r$, where $h_l$ only consists of internal labels generated by the ``rquu'' rule template and $h_r$ is constrained to act only within the complement of the subtree with the root $O$ (denoted as \subtreec{O}).
 \end{invariant}
 
 Now considering the sequence of atomic histories $\listconcat{\listof{h}}$, we decide whether a history $h \in \listof{h}$ is left- or right-pushable, by looking at the object state transitions performed by it.
-An important fact here is that since the downward response to the object $O$ resides in the system after $h_1$, no intermediate history can perform the state transitions both in \subtree{O} and \subtreec{O}.
+An important fact here is that since the downward response to the object $O$ resides in the system after $h_1$, no intermediate history can perform state transitions both in \subtree{O} and \subtreec{O}.
 More specifically, if an intermediate history is within \subtreec{O}, it can have a downward request to $O$ (by \autoref{inv-same-type-msgs} it cannot have a downward response) as a live message, regarded as the closest effect to $O$.
 We can still use the message separation in \autoref{thm-red-by-sep}, since the downward response and a possible downward request by an intermediate history are different messages, determined by their message types.
 
@@ -1243,9 +1245,9 @@ Now \autoref{thm-red-by-sep} will be enough to prove the commutativity.
 The latter is already proven in the case (1) for upward requests; again from \autoref{inv-downward-rs-live} $h_l$ is like $h_1$ in the case (1).
 
 The second condition ($\forall h \in \listof{h}.\; \mathsf{RightPushable}\ h \to \commhst{h}{h_2}$) is proven very similarly but in the opposite way.
-From \autoref{inv-downward-rs-init} we get $h_2$ is constrained within \subtree{O}.
+From \autoref{inv-downward-rs-init} we get that $h_2$ is constrained within \subtree{O}.
 Since $h$ is constrained within \subtreec{O}, we can easily prove the object separation in \autoref{thm-red-by-sep}.
-For the message separation, the only corner case is when $h$ generates a downward request to $O$.
+For message separation, the only corner case is when $h$ generates a downward request to $O$.
 This case is still covered by the message-separation condition, since it requires the separation of messages ($\listdisj{\listof{\mathrm{lives}}_1}{\listof{\mathrm{inits}}_2}$), not the separation of channel indices.
 
 By these pushability definitions, the third condition is also proven naturally by applying \autoref{thm-red-by-sep}.
@@ -1255,7 +1257,7 @@ This concept will be used in the other cases as well.
 3) \emph{Multiple downward requests and upward responses}: this case is the most complex one in terms of setting the correct pushability conditions.
 We first define a new notion to define the common ancestor of the downward requests and upward responses:
 \begin{invariant}\label{inv-rqd-rsu-root}
-  If an atomic history $h$ has multiple downward requests and upward responses as the live messages, there exists a unique common ancestor of the messages (recall $\ontree{S}{t}$, which says that $S$ is defined on the tree topology), called the root of downward requests and upward responses, which has a downlock set by an upward request.
+  If an atomic history $h$ has multiple downward requests and upward responses as its live messages, there exists a unique common ancestor of the messages (recall $\ontree{S}{t}$, which says that $S$ is defined on the tree topology), called the root of downward requests and upward responses, which has a downlock set by an upward request.
   (Note that there are two ways to make a downlock: one by an upward request and the other by a downward request.)
 \end{invariant}
 Let $O_r$ be the root of the live messages.
@@ -1269,14 +1271,14 @@ Therefore, the following invariant about the coverage of $h_1$ will not mention 
   Borrowing the notions of the root and the index sets mentioned above, $h_1$ is constrained within $\subtreec{O_r} \cup (\bigcup_{j \in J}\; \subtree{O_j})$.
 \end{invariant}
 
-Considering $\ainits{h_2} \subseteq \alives{h_1}$ and the categorization of the initial messages, we get $h_2$ initiates with either an downward request or multiple upward responses.
+Considering $\ainits{h_2} \subseteq \alives{h_1}$ and the categorization of the initial messages, we get $h_2$ initiates with either a downward request or multiple upward responses.
 Based on this, we provide two invariants about the coverage of $h_2$:
 \begin{invariant}\label{inv-rqd-rsu-init}
   If $h_2$ consumes a downward request to $O_i$ with $i \in I$, it is constrained within $\subtree{O_r} - (\bigcup_{j \in J}\; \subtree{O_j})$.
   If $h_2$ consumes upward responses, then by the nonconfluence property (\autoref{thm-ncf}) the responses should be from $\{O_j\}_{j \in J}$ and $I = \varnothing$; it is also constrained within $\subtree{O_r} - (\bigcup_{j \in J}\; \subtree{O_j})$.
 \end{invariant}
 
-Now we finally define the following pushability definitions for this downware-requests-upward-responses case:
+Now we finally define the following pushability definitions for this downward-requests-upward-responses case:
 \begin{displaymath}
   \renewcommand{\arraystretch}{1.2}
   \begin{array}{rcl}
@@ -1284,7 +1286,7 @@ Now we finally define the following pushability definitions for this downware-re
     \mathsf{RightPushable}\ h & \triangleq & \exists O_h \in \aobjs{h}.\; O_h \in \subtreec{O} \;\vee\; O_h \in (\bigcup_{j \in J}\; \subtree{O_j}).
   \end{array}
 \end{displaymath}
-The proof of the pushability conditions is then very similar to the one in the case (2), by checking whether each separation meets the conditions in \autoref{thm-red-by-sep}.
+The proof of the pushability conditions is then very similar to the one in case (2), by checking whether each separation meets the conditions in \autoref{thm-red-by-sep}.
 
 \renewcommand\qedsymbol{${\color{mygray}\textit{(End of the mergeability proof)}}\ \blacksquare$}
 \qed{}

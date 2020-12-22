@@ -33,7 +33,7 @@ All the other caches between the L1 caches and the LLC are called intermediate c
 \subsection{Design and proof per-line}
 \label{sec-design-line}
 
-The protocol is defined just for a single cache line first and naturally extended to all cache lines using a protocol compiler that will be introduced in \autoref{sec-compiler}.
+Each case-study protocol is defined just for a single cache line first and naturally extended to all cache lines using a protocol compiler that will be introduced in \autoref{sec-compiler}.
 This approach is reasonable in terms of correctness, since a transaction does not affect coherence for lines other than its own.
 Consider the ``duplicated'' protocol first, where each cache line, its status, a directory entry, communication channels, and a lock holder are all duplicated per-line.
 It is infeasible to extend the protocol literally in this way, since we cannot require physically distinct channels and lock holders for all cache lines.
@@ -43,13 +43,13 @@ Note that in this sense the duplicated protocol can be regarded as the most gene
 \subsection{Nondeterministic invalidation/eviction}
 \label{sec-nondet-inv-ev}
 
-The protocol initiates invalidations and evictions nondeterministically.
+Each protocol initiates invalidations and evictions nondeterministically.
 In other words, there are rules in each cache that can be executed even without being triggered by input messages, to make invalidation requests to the child caches or to make an eviction request to the parent.
-This design choice is certainly not realistic, but it always has more behaviors than any design with specific invalidation/eviction policy, thus in terms of correctness a refinement to the specific design is trivial.
+This design choice is certainly not realistic, but it always has more behaviors than any design with a specific invalidation/eviction policy, thus in terms of correctness a refinement to the specific design is trivial.
 
-For instance, a number of practical cache-coherence protocols manage a data structure (a cache) to keep track of least-recently-used (LRU) cache line per set (lines with the same index)~\cite{cacheLRU}.
-Use of such a data structure and the decision algorithm is irrelevant to the correctness of a protocol.
-In other words, a protocol with the LRU replacement policy, regardless of its implementation, always has less behaviors than the one with nondeterministic eviction.
+For instance, a number of practical cache-coherence protocols manage a data structure (a cache) to keep track of the least-recently-used (LRU) cache line per set (lines with the same index)~\cite{cacheLRU}.
+Use of such a data structure and the decision algorithm are irrelevant to the correctness of a protocol.
+In other words, a protocol with the LRU replacement policy, regardless of its implementation, always has fewer behaviors than the one with nondeterministic eviction.
 
 Another instance is a back-invalidation policy used in an inclusive cache.
 Back invalidation is necessary to maintain the cache inclusion among the parent and child caches and may happen right before evicting a parent cache line.
@@ -59,7 +59,7 @@ Similar to the case of cache replacement, a protocol with nondeterministic inval
 \subsection{Directory-based coherence}
 \label{sec-dir-based}
 
-The protocol uses a directory structure to ensure coherence, introduced in \autoref{sec-design-space}.
+Each protocol uses a directory structure to ensure coherence, introduced in \autoref{sec-design-space}.
 In our designs, each node with children has its own directory structure to track their statuses.
 The directory holds sound information about the status of each child \emph{subtree}.
 For example, for a certain cache line, if an L1 cache $L_1$ has M status for the line, then all the ancestors (including the main memory) of $L_1$ have the directory status M pointing to the child subtree that contains $L_1$.
@@ -78,7 +78,7 @@ That said, we choose noninclusive caches as part of our case studies to demonstr
 
 The MSI protocol is known as a base cache-coherence protocol that can be optimized to more sophisticated protocols like MESI, MOSI, etc.
 Even though it is a base protocol, there are a lot of nontrivial cases that require deep understanding of the protocol itself and the nature of distributed protocols, especially in hierarchical protocols.
-In this section we design two hierarchical, directory-based MSI protocols, one with the inclusive cache-inclusion policy and the other with the noninclusive policy.
+In this section we design two hierarchical, directory-based MSI protocols, one with an inclusive cache-inclusion policy and the other with a noninclusive policy.
 As explained in \autoref{sec-design-principles}, the description and the correctness proof are for a single cache line, parameterized by a tree deciding the system topology.
 
 \subsection{Protocol description}
@@ -182,11 +182,11 @@ Definition l1GetSRqUpUp: Rule :=
   :requires (fun ost msgIn => ost#[status] (*$\leq$*) msiI)
   :transition (fun ost msgIn => <| rqS; 0 |>).
 \end{lstlisting}
-  \caption{$L_1$ requesting \stS{} to the parent}
+  \caption{$L_1$ requesting \stS{} to its parent}
   \label{fig-rule-l1-rqS}
 \end{figure}
 
-\autoref{fig-rule-l1-rqS} presents an actual rule definition, starting with an invocation of a particular rule template \slstinline{rule.rquu}, which takes a request from one of its children and sends a further request to the parent.
+\autoref{fig-rule-l1-rqS} presents an actual rule definition, starting with an invocation of a particular rule template \slstinline{rule.rquu}, which takes a request from one of its children and sends a further request to its parent.
 An L1 cache does not have any children; in this case \slstinline{cidx} will be instantiated to an abstract node referring to the external interface (\ie{} processor core) for it.
 Each line starting with a colon (\slstinline{:}) provides more information about the rule.
 This rule \slstinline{accepts} a message with the ID \slstinline{rqS} \slstinline{from} the child with the index \slstinline{cidx}.
@@ -248,10 +248,10 @@ Definition liDropImm: Rule :=
 
 \autoref{fig-rule-li-drop-imm} is a rule only used in the noninclusive protocol.
 Template \slstinline{rule.imm} is for making an immediate state transition that neither takes any input messages nor generates any output messages.
-Its precondition just says that the line is possibly shared but needs not be written back (the ownership bit is false).
+Its precondition just says that the line is possibly shared but need not be written back (the ownership bit is false).
 In this case, we can \emph{silently} drop the line by setting the status to \stNP{}, to denote explicitly that the line is removed.
 Note that there is no precondition about the directory status at all; a line can be dropped even when the directory status is \stS{} or \stM{}, which is not allowed in inclusive caches.
-Our noninclusive protocol employs NCID, and in this case the dropped line may migrate to so-called the extended directory~\cite{Zhao:2010}.
+Our noninclusive protocol employs NCID, and in this case the dropped line may migrate to the so-called extended directory~\cite{Zhao:2010}.
 We will see in \autoref{sec-compiler} how this migration is implicitly processed in the actual hardware implementation.
 
 \begin{figure}[h]
@@ -290,7 +290,7 @@ In this section, we provide necessary invariants to prove the correctness of the
 Before talking about invariants, we would like to clarify how to deal with cache statuses in transition.
 For example, what would be the representative cache status if a cache currently has a status \stS{} but is just about to handle the eviction response (say \msgsfsm{rsPut}) that will remove the line?
 It implies that the parent directory already accepted the eviction request and changed the directory status (for the child) properly.
-In this case, it would make more sense to regard the child cache status to \stI{}.
+In this case, it would make more sense to regard the child cache status as \stI{}.
 
 In order to deal with this situation, we introduce a notion called \emph{logical status} to obtain an abstract status of each cache.
 In the above example, even if the cache has not handled \msgsfsm{rsPut} yet, the logical status is \stI{}.
@@ -303,7 +303,7 @@ Logical statuses are defined formally as follows:
 Note that the logical status of a cache is \emph{not} \stM{} when there is a response \msgsfsm{rsM} to it, since the response could still imply an ongoing invalidation process.
 We will see the actual use case of the \msgsfsm{rsM} message very soon in \autoref{fig-pred-msg-msi}.
 
-\paragraph{Invariants.}
+\paragraph{Invariants}
 The MSI protocol largely requires three invariants, where each invariant corresponds to a desired property of one status -- \stM{}, \stS{}, and \stI{}.
 
 \begin{invariant}[Exclusiveness invariant]
@@ -324,7 +324,7 @@ The MSI protocol largely requires three invariants, where each invariant corresp
 
 \begin{invariant}[Invalidness invariant on directory status \stM{}]
   \label{inv-inv-dir-m}
-  If a parent $P$ has a directory status $M$ to a child $C_i$, then all the caches outside $C_i$ (including $P$) have logical \stI{} status, \ie{} $\objsinv{\subtreec{C_i}}$.
+  If a parent $P$ has a directory status \stM{} for a child $C_i$, then all the caches outside $C_i$ (including $P$) have logical \stI{} status, \ie{} $\objsinv{\subtreec{C_i}}$.
 \end{invariant}
 
 The sharing invariant (\autoref{inv-sharing}) is the easiest one to prove, since the rules involved with sharing the coherent value employ just simple value forwarding.
@@ -333,8 +333,8 @@ Proving the preservation of the invariant for this rule is very straightforward.
 
 \subsubsection{Invariant proofs using predicate messages}
 
-While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness (\autoref{inv-excl}) and invalidness invariants (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}), since these invariants are involved with global cache states.
-We have already learned in \autoref{sec-pred-msg} that in order to prove this kind of invariants, it is desirable to state some supporting invariants based on the existence of certain messages, called predicate messages.
+While proving the sharing invariant is easy, it is nontrivial to prove the exclusiveness (\autoref{inv-excl}) and invalidness (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}) invariants, since these invariants are involved with global cache states.
+We have already learned in \autoref{sec-pred-msg} that in order to prove this kind of invariant, it is desirable to state some supporting invariants based on the existence of certain messages, called predicate messages.
 We also discovered that on top of serializability it is much easier to state and prove predicate messages.
 
 \begin{figure}[t]
@@ -375,13 +375,13 @@ We also discovered that on top of serializability it is much easier to state and
 \end{figure}
 
 We would like to present a practical usage of predicate messages in proving the exclusiveness invariant, shown in \autoref{fig-pred-msg-msi}.
-Suppose that an L1 cache (shown as {\color{mygray} $L_1$ in gray} in the figure) requested to the parent to get the \stM{} status.
+Suppose that an L1 cache (shown as {\color{mygray} $L_1$ in gray} in the figure) requested to the parent to get \stM{} status.
 When it finally handles the response \msgsfsm{rsM}, it should know all the other caches (except itself) have the logical \stI{} status to prove the exclusiveness invariant (denoted as {\color{mygray} $\{\objsinv{\lambda c. c \neq L_1}\}$}).
-This proof case can be supported using the predicate message for \msgsfsm{rsM}, stating \objsinv{\subtreec{C}} (outside of the subtree rooted to $C$) when the message goes to $C$.
+This proof case can be supported using a predicate message for \msgsfsm{rsM}, stating \objsinv{\subtreec{C}} (outside of the subtree rooted at $C$) when the message goes to $C$.
 Since $L_1$ is the leaf node in the tree, it is trivial to prove $(\objsinv{\subtreec{L_1}} \to \objsinv{\lambda c. c \neq L_1})$, so we see an example of a predicate message helping prove a conventional invariant.
 
 \autoref{fig-pred-msg-msi} also shows another case, where conventional invariants and predicate messages coordinate to prove a predicate message for the next state.
-When a child $C_i$ sends the invalidation response \msgsfsm{rsI}, it should know that all the caches inside the subtree of $C_i$ have been invalidated (denoted as {\color{myblue} \objsinv{\subtree{C_i}}}).
+When a child $C_i$ sends its invalidation response \msgsfsm{rsI}, it should know that all the caches inside the subtree of $C_i$ have been invalidated (denoted as {\color{myblue} \objsinv{\subtree{C_i}}}).
 When the parent $P$ subsequently handles the invalidation responses, it responds with \msgsfsm{rsM} to the original requestor ($C_0$ in the figure), requiring to prove {\color{myred} \objsinv{\subtreec{C_0}}}.
 While $P$ also changes its status to \stI{} in this state transition, how do we infer that the caches outside $P$ are in the logical \stI{} status, which is required to prove the predicate over {\color{myred} \msgsfsm{rsM}}?
 In this case, we should prove a simple object-level invariant of $P$ that it has the ownership bit true.
@@ -475,7 +475,7 @@ We extend the notion of logical status from the MSI protocol, declaring that a c
 We should extend the invariants as well to cover caches with \stE{} status.
 \begin{itemize}
 \item The exclusiveness invariant (\autoref{inv-excl}) also applies to \stE{}; whenever a cache has logical status \stE{}, all the other caches are logically in \stI{}.
-\item The sharing (\autoref{inv-sharing}) and invalidness invariants (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}) remain the same.
+\item The sharing (\autoref{inv-sharing}) and invalidness (\autoref{inv-inv-ownership} and \autoref{inv-inv-dir-m}) invariants remain the same.
 \item A new invariant for \stE{} claims that if a cache takes an eviction request \emph{without writeback} from a child, and the directory status pointing to the child is \stE{}, then it has a coherent value.
 \end{itemize}
 
@@ -566,14 +566,14 @@ For instance, the rule-reification tactic (\slstinline{reify_rule}) reifies a \h
     Definition hl1GetMImmE: HRule l1GetMImmE := ltac:(reify_rule).
 \end{lstlisting}
 
-\subsubsection{Kami: the target register-transfer language}
+\subsubsection{Kami: the target language}
 
 Kami~\cite{kami} is a hardware-verification framework embedded in Coq with its own HDL at register-transfer level.
 A hardware design in Kami consists of modules with encapsulated private state (registers), public methods, and \emph{rules} that make atomic state changes.
 Rules are fired by a global scheduler by Bluespec, later synthesized to the corresponding scheduling circuitry.
-The Bluespec scheduler tries to find a maximal number of rules to execute at a cycle, with the convenient semantic guarantee that the execution can be interpreted as if the rules are executed atomically and sequentially, called \emph{one-rule-at-a-time execution}.
+The Bluespec scheduler tries to find a maximal number of rules to execute in a cycle, with the convenient semantic guarantee that the execution can be interpreted as if the rules are executed atomically and sequentially, called \emph{one-rule-at-a-time execution}.
 
-As mentioned in \autoref{sec-cc-as-mp}, the underlying transition system of \hemiola{} is also rule-based, and the semantics is based on the one-rule-at-a-time execution.
+As mentioned in \autoref{sec-cc-as-mp}, the underlying transition system of \hemiola{} is also rule-based, and the semantics is based on one-rule-at-a-time execution.
 In this sense, Kami is a good target HDL in that a rule in \hemiola{} can be compiled to a corresponding rule in Kami.
 
 Another advantage of using Kami as a target language is its verification tools defined in Coq.
@@ -586,25 +586,25 @@ Kami as a formal-verification framework provides an effective verification techn
   \end{displaymath}
 \end{theorem}
 
-A corollary of \autoref{thm-kami-modular-refinement} is called \emph{modular substitution}, where we can substitute a submodule to another submodule to have a simpler design as an intermediate step to the final refinement:
+A corollary of \autoref{thm-kami-modular-refinement} is called \emph{modular substitution}, where we can substitute a submodule in another submodule to have a simpler design as an intermediate step to the final refinement:
 \begin{theorem}[Modular substitution in Kami]
   \label{thm-kami-modular-subst}
   \begin{displaymath}
     \forall I_1, I_2, I_1'.\; I_1 \sqsubseteq I_1' \to I_1 + I_2 \sqsubseteq I_1' + I_2.
   \end{displaymath}
 \end{theorem}
-This corollary will be referred to when substituting our optimized cache-controller submodules in the entire memory subsystem to simpler ones, explained in \autoref{sec-compiler-correctness}.
+This corollary will be referred to when substituting our optimized cache-controller submodules in the entire memory subsystem with simpler ones, explained in \autoref{sec-compiler-correctness}.
 
 \subsubsection{Reification and compilation of custom data structures}
 
-Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for it.
+Since a \hemiola{} protocol may use its own custom data structure (\eg{} directory structure for the MESI protocol), the compiler requires a user to provide a reifier and a compiler for the data structure.
 This task is straightforward for the user, since both reification and compilation work at the level of expressions, not rules.
 For instance, a field access \slstinline{dir.(dir_sharers)} for a Coq record \slstinline{dir} is reified to an expression AST node \slstinline{(HDirGetSh hdir)}, where \slstinline{hdir} is the reified directory structure, and compiled to \slstinline{cdir@."dir_sharers"} in Kami, which uses a field-access expression.
 
 \subsubsection{Prebuilt cache-related components}
 
 The compiler uses prebuilt hardware components described in Kami.
-Some of them are for implementing NCID~\cite{Zhao:2010} introduced in \autoref{sec-inc-noninc}, whose interfaces include asynchronous read and write of the line information (ownership bits, statuses, directory statuses, etc.) and value.
+Some of them are for implementing NCID~\cite{Zhao:2010} introduced in \autoref{sec-inc-noninc}, whose operations include asynchronous read and write of the line information (ownership bits, statuses, directory statuses, etc.) and value.
 The cache normally uses a primitive BRAM (block RAM) module in Kami, later synthesized to a BRAM on an FPGA.
 The cache module also manages \emph{victim lines} that should be evicted eventually.
 
@@ -695,15 +695,15 @@ In the source protocol, a single line can be read (or written) \emph{immediately
   \label{fig-compilation-pipeline}
 \end{figure}
 
-In order to optimize asynchronous line accesses, the protocol compiler employs the prebuilt pipeline.
+In order to optimize asynchronous line accesses, the protocol compiler employs a prebuilt pipeline.
 \autoref{fig-compilation-pipeline} presents a source \hemiola{} cache object and the corresponding target Kami module, generated by the protocol compiler.
-Each \hemiola{} rule in the source cache object takes input messages from various channels, reads/writes values (\eg{} a line status, a line value, locks, etc.), and generates output messages (to various channels) atomically at a step.
+Each \hemiola{} rule in the source cache object takes input messages from various channels, reads/writes values (\eg{} a line status, a line value, locks, etc.), and generates output messages (to various channels) atomically.
 
-A \hemiola{} rule execution corresponds to the executions of multiple stages in the pipeline, each of which takes part of the source-rule execution.
+A \hemiola{} rule execution corresponds to the execution of multiple stages in the pipeline, each of which takes part in the source-rule execution.
 The first stage ({\small\tt\color{myblue} IN} in the figure) takes input messages from various channels; in order to avoid a deadlock, the pipeline has different entries for inputs from the parent and the children.
 The {\small\tt\color{myblue} IN} stage also checks MSHRs to see if the input message can be accepted to the pipeline or not.
-Depending on the management of MSHRs, it either accepts the input, stalls it, or puts it to the ``retry'' entries in the MSHR-managing module.
-Whether to stall or retry later determines the protocol \emph{blocking or nonblocking}; we will discuss the difference in detail right in the next section.
+Depending on the management of MSHRs, it either accepts the input, stalls it, or adds it to the ``retry'' entries in the MSHR-managing module.
+Whether to stall or retry later determines whether the protocol is \emph{blocking or nonblocking}; we will discuss the difference in detail right in the next section.
 
 The second stage ({\small\tt\color{myblue} IR}) asynchronously requests the line information (status, directory status, etc.) with the line address from the input message.
 It makes the request in terms of the index (from the line address), \ie{} it tries to read all the tags and information values with the same index.
@@ -722,25 +722,25 @@ The line information and value in this case are the ones for the new victim; the
 The protocol compiler takes a single-line \hemiola{} protocol and generates a corresponding multiline implementation.
 In terms of safety (correctness), this compilation is sound enough, since the coherence of each line is orthogonal to coherence of others.
 
-However, in terms of progress, since the implementation can only use finite resources (\eg{} communication channels, MSHRs, etc.), a transaction for a certain line is often \emph{blocked} by the other transaction for a different line.
+However, in terms of progress, since the implementation can only use finite resources (\eg{} communication channels, MSHRs, etc.), a transaction for a certain line is often \emph{blocked} by another transaction for a different line.
 For instance, suppose that a request is blocked (stalled) at the {\small\tt\color{myblue} IN} stage in \autoref{fig-compilation-pipeline}, because there is already an ongoing transaction with the same line address, represented as an acquired lock in MSHRs.
 If the pipeline just let this request remain in the pipeline, some other requests, possibly with different line addresses, will be blocked as well since the pipeline is in-order.
 This case just defines a \emph{blocking cache-coherence protocol}; a stalled request affects the other transactions to be blocked as well.
 
 We can optimize this blocking protocol by moving the blocking request to a designated slot (\eg{} a fresh MSHR) and allowing subsequent messages to pass through the pipeline.
-This is one way to implement a \emph{nonblocking protocol}~\cite{cacheNonblocking,cacheNonblocking2,cacheNonblocking3}; a transaction has a chance not to be blocked by the other messages.
-Note that the degree of nonblocking is determined by the number of resources, \eg{} the more MSHRs the pipeline has, the fewer blocking would happen.
+This is one way to implement a \emph{nonblocking protocol}~\cite{cacheNonblocking,cacheNonblocking2,cacheNonblocking3}; a transaction has a chance not to be blocked by other messages.
+Note that the degree of nonblocking is determined by the number of resources, \eg{} the more MSHRs the pipeline has, the less blocking would happen.
 
 The MSHR-managing module, prebuilt in Kami, supports this kind of nonblocking while maintaining the safety of interleavings.
 That is, a new input message is temporarily held in an MSHR slot when there is already a slot occupied with the same line address.
-The module manages MSHRs with tracking execution dependencies among them, so the pipeline retries processing the input message that was held temporarily in the MSHR right after the preoccupied MSHR slot is released, \ie{} the ongoing transaction is finished.
+The module manages MSHRs and tracks execution dependencies among them, so the pipeline retries processing the input message that was held temporarily in the MSHR right after the preoccupied MSHR slot is released, \ie{} the ongoing transaction is finished.
 
 \section{Correctness of the Protocol Compiler}
 \label{sec-compiler-correctness}
 
 As explained in \autoref{sec-compiler}, the protocol compiler takes a cache configuration as an argument, thus we can have several different implementations by providing different configurations.
 Then what would be the specification for all possible implementations from a given source protocol?
-In this section we naturally extend a single-line \hemiola{} protocol to a multiline one and argue its role as the specification for multiline implementations.
+In this section we naturally extend a single-line \hemiola{} protocol to a multiline one and justify its role as the specification for multiline implementations.
 
 The core idea is mentioned already in the previous section: \emph{the coherence of each line is orthogonal to coherence of others}.
 In this case, a single-line \hemiola{} protocol is naturally extended to a multiline one by using the notion of compositionality.
@@ -801,11 +801,11 @@ Thus the protocol can serve as a spec for all the multiline implementations gene
 \autoref{fig-multiline-spec} elaborates more on the role of the multiline specification.
 For a given \hemiola{} single-line protocol ($I^{h}_{0}$), we can lift the refinement using the replication theorem to obtain a refinement for the multiline protocol ($I^{h}_{M}$).
 Since both \hemiola{} and Kami are rule-based description languages, we expect it is straightforward to have an ideal multiline protocol in Kami ($I^{k}_{M}$) in the sense of simple transliteration, while preserving the refinement.
-After all, the correctness of the protocol compiler must be the refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
-In proving this refinement, \autoref{thm-kami-modular-subst} will be required, since every pipelined cache module in $I^{k}_{m}$ should be substituted to a naive module in $I^{k}_{M}$, transliterated from $I^{h}_{M}$.
+After all, the correctness of the protocol compiler must be refinement from a target Kami implementation ($I^{k}_{m}$) to the multiline protocol.
+In proving this refinement, \autoref{thm-kami-modular-subst} will be required, since every pipelined cache module in $I^{k}_{m}$ should be substituted with a naive module in $I^{k}_{M}$, transliterated from $I^{h}_{M}$.
 
 As presented in \autoref{fig-multiline-spec}, the compiler correctness proof is a part of the bigger correctness proof of a cache-coherent memory subsystem implementation at the lower level.
-While this thesis only focuses on proving cache-coherence protocols described in the high level, we believe that proving the low-level implementation in this manner is another great milestone.
+While this dissertation only focuses on proving cache-coherence protocols described in the high level, we believe that proving the low-level implementation in this manner is another valuable future work.
 
 \section{Synthesis of a \hemiola{} Protocol}
 \label{sec-synthesis}
@@ -846,6 +846,7 @@ We also set the number of MSHR slots in each cache between \briscy{} and \bhemt{
   \label{fig-evaluation}
 \end{figure}
 
+\todo{explain each workload.}
 \autoref{fig-evaluation} shows the performance result.
 We measured the performance by counting the number of transactions performed in $5 \times 10^5$ simulation cycles, with various workloads that make random requests but mimic some amount of temporal/spatial locality of memory accesses.
 Though one should not draw too many conclusions from the precise measurements, the result shows that the \hemiola{} protocols are competitive with a practical implementation coded by hand.
