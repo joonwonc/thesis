@@ -1317,10 +1317,10 @@ Before moving on to the next part of dissertation -- the actual use of serializa
 
 \paragraph{Noninterference lemmas}
 
-One of the ways to ensure safe interleavings is to claim that other execution units (concurrent threads, transactions, etc.) do not affect desired (pre)conditions to execute a unit.
+One of the methods to ensure safe interleavings is to claim that other execution units (concurrent threads, transactions, etc.) do not affect desired (pre)conditions to execute a unit.
 \emph{Noninterference} refers to such a property, where its definition and form vary by the target computer system to verify.
 
-We first look into the case in concurrent software; to our knowledge, the very first attempt to describe the property occurs in the foundational paper by Owicki and Gries:
+We first look into a case in concurrent software; to our knowledge, the very first attempt to describe such properties occurs in the foundational paper by Owicki and Gries:
 \begin{displayquote}
   In \cite{Owicki:1976} on page 324:
 
@@ -1330,14 +1330,14 @@ We first look into the case in concurrent software; to our knowledge, the very f
 \end{displayquote}
 This paper extends the conventional Hoare logic~\cite{Hoare} to reason about parallel (concurrent) execution of sequential programs.
 Here the noninterference property is described implicitly, as a requirement that the assertions used in the Hoare triple is not interfered by the concurrent execution of the other processes.
-The paper later defines noninterference formally, by providing sufficient conditions about the execution of a statement that never interferes a given Hoare-triple proof.
+The paper later defines noninterference formally, by providing sufficient conditions that any execution of a statement never interferes a given Hoare-triple proof.
 In this case, each property is presented as a specific lemma proving the noninterference conditions.
 
-The use of noninterference in Hoare logic has become more explicit by concurrent separation logic (CSL)~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
+The use of noninterference in Hoare logic has become more explicit by concurrent separation logic~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
 For example, in order to have ``rely'' conditions $R$ from the original Hoare triple $\{P\}C\{Q\}$, the precondition $P$ should be stable (not interfered) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
 
 Now we explore the use of noninterference in hardware verification, more related to the techniques used in the \hemiola{} framework.
-To our knowledge, the notion has been mentioned firstly in the paper by McMillan as a part of compositional model checking:
+To our knowledge, the notion was mentioned for the first time in the paper by McMillan as a part of compositional model checking:
 \begin{displayquote}
   In \cite{McMillan:1999} on page 234:
 
@@ -1346,16 +1346,16 @@ To our knowledge, the notion has been mentioned firstly in the paper by McMillan
   This, however, requires introducing a `noninterference lemma'.
   This states that no other execution unit spuriously produces the result in question.''
 \end{displayquote}
-In model checking, the noninterference property is usually represented as a lemma (invariant) described in linear temporal logic~\cite{licsBook}, and it is specific to the hardware design to verify.
-The use of such noninterference lemmas has been later systematized to the CMP method~\cite{McMillan:1999,McMillan:2001,Chou:2004}, for model checkers to use the lemmas to reduce state space to be explored.
+In model checking, noninterference properties are usually represented as lemmas (invariants) described in linear temporal logic~\cite{licsBook}, and the lemmas are specific to a hardware design to verify.
+The use of noninterference lemmas has been later systematized to the CMP method~\cite{McMillan:1999,McMillan:2001,Chou:2004}, for model checkers to use the lemmas to reduce state space to be explored.
 
 \paragraph{Commuting reduction}
 
-Another way to ensure safe interleavings is to prove commutativity between two adjacent state transitions representing partial executions by two different execution units, called \emph{(commuting) reduction}~\cite{reduction}.
+Another way to ensure safe interleavings is to prove commutativity between two adjacent state transitions representing partial executions by two different execution units, called \emph{(commuting) reductions}~\cite{reduction}.
 
-In verifying concurrent software, CIVL~\cite{Hawblitzel:2015} employed reductions and mover types~\cite{Flanagan:2008} to verify concurrent garbage collection.
+CIVL~\cite{Hawblitzel:2015} employed reductions and mover types~\cite{Flanagan:2008} to verify concurrent garbage collection.
 While the CIVL verifier also supports noninterference and rely-guarantee, the authors reported that the use of commutativity is optional but beneficial in their experience.
-CSPEC~\cite{Chajed:2018} is another framework, embedded in the Coq proof assistant, that also used mover types to verify a concurrent mail server.
+CSPEC~\cite{Chajed:2018} is another framework, embedded in the Coq proof assistant, that also uses mover types to verify a concurrent mail server.
 The framework also provides a library of reusable proof patterns, easing the commutativity proofs.
 
 Reductions have been employed in verifying distributed systems as well.
