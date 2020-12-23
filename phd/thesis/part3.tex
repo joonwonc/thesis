@@ -824,11 +824,16 @@ We compared the performance with an existing Bluespec implementation, \briscy{}~
 We set the cache sizes of \briscy{} the same as for \bhemt{}.
 We also set the number of MSHR slots in each cache between \briscy{} and \bhemt{} the same.
 
+\newcommand{\wlAllShared}{\ensuremath{\textsf{AllSh}}}
+\newcommand{\wlPairShared}{\ensuremath{\textsf{PairSh}}}
+\newcommand{\wlExShOne}{\ensuremath{\textsf{ExSh1}}}
+\newcommand{\wlExShTwo}{\ensuremath{\textsf{ExSh2}}}
+
 \begin{figure}[t]
   \centering
   \begin{tabular}{c|cccc}
     \hline
-    Performance & \multirow{2}{*}{all-shared} & \multirow{2}{*}{pair-shared} & \multirow{2}{*}{ex:sh=1:1} & \multirow{2}{*}{ex:sh=4:1} \\
+    Performance & \multirow{2}{*}{\wlAllShared{}} & \multirow{2}{*}{\wlPairShared{}} & \multirow{2}{*}{\wlExShOne{}} & \multirow{2}{*}{\wlExShTwo{}} \\
     (\#trs/cycle) & & & & \\
     \hline
     \bhemh{} & 0.259 & 0.868 & 0.506 & 0.764 \\
@@ -846,9 +851,32 @@ We also set the number of MSHR slots in each cache between \briscy{} and \bhemt{
   \label{fig-evaluation}
 \end{figure}
 
-\todo{explain each workload.}
-\autoref{fig-evaluation} shows the performance result.
-We measured the performance by counting the number of transactions performed in $5 \times 10^5$ simulation cycles, with various workloads that make random requests but mimic some amount of temporal/spatial locality of memory accesses.
+In order to measure the performance of the \hemiola{} protocols, we designed four artificial workloads, shown in \autoref{fig-evaluation}, that make random requests but mimic some amount of temporal/spatial locality of memory accesses.
+We measure the performance of each workload with a register-file-based 512KB reference memory, thus any memory address used in the workloads is within $[0, 2^{19}-1]$.
+
+The \wlAllShared{} workload generates random memory requests for each core, where each request address is randomly chosen throughout the entire memory range, regarding all the memory values are shared by all the cores.
+We assume the memory read/write ratio as $3:1$ (\ie{} memory reads are three-times more than writes) for each workload.
+
+The \wlPairShared{}, \wlExShOne{}, and \wlExShTwo{} workloads use designated exclusive and shared memory regions, determined by several parameters.
+An exclusive memory region is set for each L1 cache, whose size equals the size of the cache.
+Any two exclusive memory regions are disjoint to each other.
+A shared region has the size of $2^{\textsf{LgShRange}}$ lines, where {\sf LgShRange} specifies the log size of the shared region.
+All the three workloads use $\textsf{LgShRange} = 5$, \ie{} 32 lines are shared by the L1 caches.
+
+In the \wlPairShared{} workload, the first two L1 caches only accesses the first shared region, and the other two caches only accesses the second one.
+The two shared regions are disjoint to each other.
+Any exclusive region and shared region are disjoint as well, but they can have the same L1-cache index, thus some evictions may happen from each L1 cache.
+\wlExShOne{} and \wlExShTwo{} use a single shared region.
+
+Each of the three workloads takes two additional parameters to simulate temporal/spatial locality.
+{\sf LgExShRatio} specifies the access ratio between the exclusive and shared regions.
+\wlPairShared{} and \wlExShOne{} use $\textsf{LgExShRatio} = 1$, meaning that the workload makes memory accesses of the exclusive and shared regions by equal chances.
+\wlExShTwo{} uses $\textsf{LgExShRatio} = 2$, \ie{} the probability to access the shared region is $1/2^2$.
+{\sf NumTlCycles} specifies how many consecutive memory accesses happen in a specific region.
+All the workloads use $\textsf{NumTlCycles} = 25$, meaning that $25$ memory accesses happen for each visit of a region.
+
+\autoref{fig-evaluation} also shows the performance result.
+We measured the performance by counting the number of transactions performed in $5 \times 10^5$ simulation cycles.
 Though one should not draw too many conclusions from the precise measurements, the result shows that the \hemiola{} protocols are competitive with a practical implementation coded by hand.
 
 \begin{figure}[t]
