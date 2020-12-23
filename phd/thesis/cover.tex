@@ -1,9 +1,7 @@
-\title{Structural Design and Proof of\\ Hierarchical Cache-Coherence Protocols}
+\title{Structural Design and Proof of\\Hierarchical Cache-Coherence Protocols}
 
 \author{Joonwon Choi}
-\prevdegrees{M.S., Massachusetts Institute of Technology (2016) \\
-  B.S., Seoul National University (2013)}
-
+\prevdegrees{M.S., Massachusetts Institute of Technology (2016)\\B.S., Seoul National University (2013)}
 \department{Department of Electrical Engineering and Computer Science}
 \degree{Doctor of Philosophy in Electrical Engineering and Computer Science}
 
@@ -24,8 +22,7 @@
 % This is the department committee chairman, not the thesis committee
 % chairman.  You should replace this with your Department's Committee
 % Chairman.
-\chairman{Leslie A. Kolodziejski}{Professor of Electrical Engineering and Computer Science\\
-                                  Chair, Department Committee on Graduate Students}
+\chairman{Leslie A. Kolodziejski}{Professor of Electrical Engineering and Computer Science\\Chair, Department Committee on Graduate Students}
 
 % Make the titlepage based on the above information.  If you need
 % something special and can't use the standard form, you can specify
@@ -54,7 +51,20 @@
 % \pagestyle{empty}
 \setcounter{savepage}{\thepage}
 \begin{abstractpage}
-  In this thesis, ...
+  Cache-coherence protocols have been one of the greatest correctness challenges of the hardware world.
+  A memory subsystem usually consists of several caches and the main memory, and a cache-coherence protocol defined in such a system allows multiple memory-access transactions executed in a distributed manner, across the levels of a cache hierarchy.
+  This source of concurrency is the most challenging part in formal verification of cache coherence.
+
+  In this dissertation, we introduce \hemiola{}, a framework embedded in Coq to design, prove, and synthesize cache-coherence protocols in a structural way.
+  The framework guides the user to design protocols that never experience inconsistent interleavings while handling transactions concurrently.
+  Any protocol designed in \hemiola{} always satisfies the \emph{serializability} property, allowing a user to prove the protocol assuming that \emph{transactions are executed one-at-a-time}.
+  The proof relies on conditions on the protocol topology and state-change rules, but we have designed a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
+
+  The framework also provides a novel way to design and prove invariants by adding predicates to messages in the system, called \emph{predicate messages}.
+  On top of serializability, it is much simpler to prove a predicate message, since it is guaranteed that the predicate is not spuriously interfered by other messages at all.
+
+  We used \hemiola{} to design and prove hierarchical MSI and MESI protocols, in both inclusive and noninclusive variants, as case studies.
+  We also demonstrated that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in the framework.
 \end{abstractpage}
 
 % Additional copy: start a new page, and reset the page number.  This way,
