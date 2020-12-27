@@ -1,11 +1,11 @@
 \chapter*{Conclusion}
 \addcontentsline{toc}{chapter}{\protect\numberline{}Conclusion}
 
-In this dissertation, we discussed difficulties in designing and proving hardware cache-coherence protocols, proposed a methodology to ease the burden, and demonstrated it by building a framework \hemiola{} within the Coq proof assistant.
+In this dissertation, we discussed difficulties in designing and proving hardware cache-coherence protocols, proposed a methodology to ease the burden, and demonstrated it by building a framework \hemiola{} within the Coq interactive theorem prover.
 We also designed and proved various hierarchical cache-coherence protocols on top of the framework and synthesized them using the protocol compiler provided by the framework.
 
-As the last chapter, we summarize each previous chapter and discuss a number of future-work directions.
-Afterwards, we conclude by adding remarks, recalling our introduction to why hardware verification is complex.
+As the last chapter, we would like to summarize each previous chapter and to discuss a number of future-work directions.
+Afterwards, we conclude this dissertation by adding remarks, recalling our introduction to why hardware verification is complex and how we can use an interactive theorem prover to alleviate the verification burden.
 
 \subsubsection{Chapter summaries}
 
@@ -59,3 +59,18 @@ Extending the rule templates will require the extension of the serializability p
 
 \subsubsection{Concluding remarks}
 
+\hemiola{} as a research project has started to answer a question ``how we can formaly verify practical cache-coherence protocols with reasonable effort.''
+This question involves two research challenges.
+First, practical protocols are huge, designed with cache hierarchies, and it implies that a verification methodology should be scalable.
+Second, there are a lot of design options, and the methodology should be general enough to cover many designs.
+
+We tried to solve these problems by taking full advantage of an interactive theorem prover.
+Verification effort is reduced by proving a general theorem that can be applied to various purposes.
+The more general and large the theorem is, The more verification effort is reduced.
+This idea looks very trivial but is hard to realize in practical verification, since to design such a general theorem itself is challenging and the proof will be difficult as well.
+Indeed, in building the \hemiola{} framework, we spent significant amount of the time finding a general set of requirements that ensures serializability, plus proving that assertion in Coq.
+
+That said, we believe \hemiola{} represents a good instance that interactive theorem proving is worthwhile to use for practical hardware verification.
+While model checking has dominated the formal verification of hardware especially in industry, it apparently seems that (interactive) theorem proving has not been spread well, due to a stereotype that theorem proving requires too much human effort.
+We would like to argue that this stereotype is no longer true, once equipped with good proof structures, \eg{} big reusable proofs.
+Lastly, we hope that in the future there will be more approaches to verifying realistic hardware components by interactive theorem proving.
