@@ -1,24 +1,24 @@
 \chapter{Introduction: What Makes Hardware Verification Complex}
 
 Modern hardware designs are extremely complex.
-Such a statement has become so hackneyed nowadays that it does not draw any attention, but dealing with complex hardware is still a big problem.
-A single-core processor and a memory system were enough to run computer programs in early days.
+Such a statement has become so hackneyed that it does not draw any attention, but dealing with complex hardware is still a big problem.
+A single-core processor and a memory system were enough to run computer programs in the early days.
 Computer architecture has become much more complicated, equipped with multicores, various accelerators (\eg{} GPUs, NPUs, etc.), hardware security modules (HSMs), hierarchical memory subsystems, and so on.
 Such hardware components form a large, complex hardware circuit often called a system on a chip (SoC).
 
 Concurrency is one of the major challenges in hardware design.
 Concurrent execution has been very natural in hardware in terms of maximizing utility of hardware components.
-For instance, in a high level, processing units and a memory subsystem run concurrently; \eg{} a processor core may execute other instructions after making a memory request while the memory handles it.
-Looking at each component, a processor core may be pipelined, which is very common in these days, implying that (computer-architecture) instructions are executed concurrently as well.
+For instance, at a high level, processing units and a memory subsystem run concurrently; \eg{} a processor core may execute other instructions after making a memory request while the memory handles it.
+Looking at each component, a processor core may be pipelined, which is very common these days, implying that (computer-architecture) instructions are executed concurrently as well.
 The memory subsystem may be composed of several caches and the main memory, and several requests from different cores are handled concurrently in a distributed way throughout the caches and the memory.
-Concurrency does not mean complete parallelism; in order for correctness, some orders among execution units should be maintained, and managing this constraint is indeed a great challenge.
+Concurrency does not mean complete parallelism; for correctness, some ordering among execution units should be maintained, and managing this constraint is indeed a great challenge.
 
 As hardware has become large with extreme concurrency, hardware verification has become much more challenging as well.
 Industry has most commonly used testing and bounded model checking (BMC)~\cite{BMC} for quality assurance of hardware circuits, but these techniques are not sound and may miss subtle bugs.
-Due to such a shortcoming, both industry and academia have developed so-called \emph{formal-verification} techniques.
+Due to this shortcoming, both industry and academia have developed so-called \emph{formal-verification} techniques.
 At least in hardware verification, there are two mainstream approaches to formally verifying hardware: model checking and theorem proving.
 
-Model checking~\cite{ModelChecking1, ModelChecking2} basically tries to verify a hardware module by exploring all reachable states, checking whether the desired properties hold with those states.
+Model checking~\cite{ModelChecking1, ModelChecking2} basically tries to verify a hardware module by exploring all reachable states, checking whether the desired properties hold in those states.
 The biggest benefit of model checking is that it is fully automated.
 That being said, state-space explosion is a typical problem in model checking; it often requires too much time and (memory) space to explore all reachable states.
 
@@ -41,7 +41,7 @@ Interleavings make the verification much more difficult, by significantly increa
 Research on model checking has produced sound techniques to overcome state-space explosion by interleavings.
 One of the core techniques is to establish \emph{noninterference} lemmas~\cite{McMillan:1999,McMillan:2001,Chou:2004,flow:Talupur:2008,flow:OLeary:2009,flow:Sethi:2014}, which ensure that concurrent executions of transactions are not spuriously interleaved.
 In addition to this resolution, model checkers have supported \emph{parameterization} to verify cache-coherence protocols with unknown numbers of cores~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
-In order to cover hierarchical protocols, recent approaches~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} also employed \emph{modularity} to verify the protocol per hierarchy level.
+In order to cover hierarchical protocols, recent approaches~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} also employed \emph{modularity} to verify protocols per hierarchy level.
 
 While the same concern exists in theorem proving (by requiring additional proof effort to deal with interlevings), it also has employed similar techniques.
 Parameterization is a natural fit for theorem proving, thanks to rich logics, making it possible to prove a cache-coherence protocol with an arbitrary tree shape given as a parameter~\cite{Murali:2015}.
@@ -58,7 +58,7 @@ Noninclusive caches have been in common industrial use for a decade: AMD Opteron
 We would like to avoid all of these weaknesses via a new approach doing mechanized proof in an expressive logic, stating and proving once-and-for-all a general property and using it multiple times.
 Particularly, in proving cache-coherence protocols, we want to formalize \emph{the most-general form of noninterference}, find minimal and abstract conditions \emph{that are not coupled to any specific protocols} but still imply noninterference, state the implication as a theorem, prove it once, and use it repeatedly for various cache-coherence protocols.
 
-The abstract conditions that imply the noninterference can be found from the intuitions that protocol designers already have.
+The abstract conditions that imply noninterference can be found from the intuitions that protocol designers already have.
 In order to describe a case where the protocol deals with two different requests passing through the same cache, for instance, a designer often says ``this cache acts like a \emph{serialization point} so the two transactions can safely \emph{interleave} with each other.''
 While the notions of interleaving and serialization are already pervasive, we have found no past work trying to find a minimal set of conditions that ensure transactions are always serialized, formalizing them in a reusable framework.
 
@@ -74,14 +74,14 @@ Furthermore, \hemiola{} provides a novel invariant proof method that only requir
 To demonstrate usability of our framework, we provide complete correctness proofs for hierarchical cache-coherence protocols, in both inclusive and noninclusive variants, as case studies.
 We also demonstrate that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in \hemiola{}.
 
-All the code and proofs of the framework and the case studies are available as open source in the following link:
+All the code and proofs of the framework and the case studies are available as open source at the following link:
 \begin{center}
   \url{https://github.com/..}
 \end{center}
 
 \subsubsection{Contributions}
 
-To sum up, the contribution of this dissertation includes the following:
+To sum up, the contributions of this dissertation include the following:
 \begin{itemize}
 \item We discover a minimal set of topology and lock conditions that ensures \emph{serializability}, extracted from usual cache-coherence protocol designs.
   We then identify a domain-specific protocol language, where every protocol defined in this language ensures serializability by construction, backed up with mechanized Coq proof (\autoref{sec-hemiola-dsl}).
@@ -104,12 +104,12 @@ This chapter also demonstrates how serializability helps state and prove invaria
 
 The second part introduces \hemiola{}, a framework embedded in Coq to design and verify cache-coherence protocols more structurally, by using the serializability guarantee.
 \autoref{sec-hemiola-dsl} first presents the \hemiola{} domain-specific language for easier protocol design.
-\autoref{sec-sz-guarantee-hemiola} describes the biggest contribution of the framework, a general once-and-for-all property claiming that any protocol defined with the DSL obtains the serializability property for free.
+\autoref{sec-sz-guarantee-hemiola} describes the biggest contribution of the framework, a general once-and-for-all property claiming that any protocol defined with the DSL obtains serializability for free.
 We then discuss the first series of related work in \autoref{sec-related-work-i}, focusing on how previous approaches dealt with interleavings among transactions.
 
 The last part provides our case studies to demonstrate practicality of the framework.
 We present the designs and complete correctness proofs of hierarchical MSI and MESI protocols on top of \hemiola{} in \autoref{sec-case-study}.
-\autoref{sec-comp-syn} presents the protocol compiler, which compiles a protocol described in \hemiola{} to a corresponding hardware implementation, and discusses the correctness of the compiler.
+\autoref{sec-comp-syn} presents the protocol compiler, which compiles a protocol described in \hemiola{} to a corresponding hardware implementation and discusses the correctness of the compiler.
 We then discuss the other series of related work in \autoref{sec-related-work-ii}, exploring some previous approaches to verifying cache-coherence protocols.
 
 \chapter{Background}
@@ -117,7 +117,7 @@ We then discuss the other series of related work in \autoref{sec-related-work-ii
 
 Before introducing our proposed method to design and prove cache-coherence protocols more structurally, in this chapter we provide some background to understand conventional cache-coherence protocol designs and typical correctness challenges.
 We first introduce a very simple cache-coherence protocol to explain the purpose of the protocol, basic design, and a number of nontrivial corner cases that require careful design.
-After that, we explore some design space of cache-coherence protocols for better understanding of the case-study protocols that we will provide in \autoref{sec-case-study}.
+After that, we explore the design space of cache-coherence protocols for better understanding of the case-study protocols that we will provide in \autoref{sec-case-study}.
 
 \section{Cache-Coherence Protocols In a Nutshell}
 \label{sec-nutshell}
@@ -155,7 +155,7 @@ In this MSI protocol, an object can read/write the data with the M (``modified''
 The parent $P$ additionally has a data structure called a \emph{directory} to track the statuses of the children.
 For example, a directory might be $S_{\tuple{1, 2}}$, meaning that both $C_1$ and $C_2$ have S status, in some logical snapshot of state.
 
-Objects communicate through ordered channels, shown as $(\rightarrowtail)$ in the figure, where each of it has a unique index (shown as a natural number in the figure).
+Objects communicate through ordered channels, shown as $(\rightarrowtail)$ in the figure, where each has a unique index (shown as a natural number in the figure).
 $C_1$ and $C_2$ have channels to receive and respond to external requests (from processor cores).
 There are three types of channels between a parent and a child: a single channel for parent-to-child messages and two channels for child-to-parent requests and responses, respectively.
 It is natural to wonder why two separate channels are required from a child to a parent; we will see the reason very soon.
@@ -210,7 +210,7 @@ The parent, at this moment, changes its directory status to a transient state (n
 For instance, the parent should not handle \blrecmsgsm{f}{rqM}, since otherwise it will handle two ``\msgsf{rqM}''s simultaneously, which might lead to an incoherent state -- two M statuses in the caches.
 
 Lastly, $\rdcircf{4}$ shows the case that $C_2$ handles the invalidation request (\rdrecmsgsm{c}{rqI}).
-A number of corner cases should be handled carefully in this case:
+A number of corner cases should be handled carefully:
 \begin{itemize}[leftmargin=*]
 \item Since $C_2$ requested \blrecmsgsm{f}{rqM}, it has a transient state SM when \rdrecmsgsm{c}{rqI} arrives. It should still be able to handle this invalidation request even in the transient state (while not allowing any external requests). In this case $C_2$ accepts \rdrecmsgsm{c}{rqI} and changes its transient state to IM. We see that transient states should be fine-grained enough to distinguish which requests to handle.
 \item Due to the existence of \blrecmsgsm{f}{rqM}, if we had a single channel from a child to a parent, a deadlock would occur. $P$ cannot take \blrecmsgsm{f}{rqM} since it has been locked (in a transient state) after making an invalidation request. It cannot take \rdrecmsgsm{d}{rsI} as well since the response is not the first one of the ordered channel. This case shows the necessity of having multiple channels between a child and a parent.
@@ -270,7 +270,7 @@ $\blcircf{6}$ is the next transition step by $P$ to accept a new request.
 
 Looking at the message channel $5$, the one for parent-to-child messages (from $P$ to $C_1$), there are two messages, \rdrecmsgsm{g}{rsM} and \blrecmsgsm{h}{rqI}, residing in the channel.
 A single parent-to-child channel affects the correctness of the protocol in this case.
-If we had two separated downward channels, one for requests and the other for responses, $C_1$ could handle \blrecmsgsm{h}{rqI} first, changes its status to I, handles \rdrecmsgsm{g}{rsM} later, and changes its status to M again.
+If we had two separated downward channels, one for requests and the other for responses, $C_1$ could handle \blrecmsgsm{h}{rqI} first, change its status to I, handle \rdrecmsgsm{g}{rsM} later, and change its status to M again.
 Since it sent the invalidation response to the parent, eventually $C_2$ will also get the M status, which leads to an incoherent state.
 Therefore, it is crucial to have a single parent-to-child channel so that \rdrecmsgsm{g}{rsM} \emph{blocks} \blrecmsgsm{h}{rqI} to be handled first.
 After $C_1$ takes \rdrecmsgsm{g}{rsM} and responds back to the processor core with \rdrecmsgsm{i}{rsWr}, presented as $\rdcircf{7}$, it can subsequently take the invalidation request \blrecmsgsm{h}{rqI} and responds with \blrecmsgsm{j}{rsI}, as shown in $\blcircf{8}$.
@@ -288,7 +288,7 @@ That is exactly what \hemiola{} provides: it provides \emph{rule templates}, exp
 
 In \autoref{sec-nutshell}, we examined a very specific protocol design.
 There are different ways to design a cache-coherence protocol, and each design decision affects performance and correctness of the protocol.
-In this section, we explore major design space of conventional cache-coherence protocols.
+In this section, we explore the major design space of conventional cache-coherence protocols.
 
 \subsubsection{Snooping vs. Directory}
 
@@ -309,10 +309,10 @@ Considering the same invalidation scenario, since the parent knows which child h
 
 A snooping protocol is known to be easier to implement than a directory protocol, since an ordered bus enforces less interleavings among transactions.
 That being said, the snooping protocol is also known not to be scalable, since the cost of broadcasting significantly increases when more child caches are involved.
-A directory protocol, on the other hand, is known to be scalable and matches well hierarchical protocols, but design and verification are relatively more difficult than the snooping protocol.
+A directory protocol, on the other hand, is known to be scalable and matches hierarchical protocols well, but design and verification are relatively more difficult than for the snooping protocol.
 
 This dissertation only deals with directory protocols due to their inherent difficulties.
-We will build a framework that can ease the burden of designing and verifying directory protocols, and demonstrate the practicality of the framework with various hierarchical directory protocols as case studies.
+We will build a framework that can ease the burden of designing and verifying directory protocols and demonstrate the practicality of the framework with various hierarchical directory protocols as case studies.
 
 \subsubsection{Write-update vs. Write-invalidate}
 
@@ -321,7 +321,7 @@ Among various memory-write patterns, we classify protocols by when each legal wr
 Then we have two classes: \emph{write-update} and \emph{write-invalidate} protocols.
 
 In a write-update protocol, if a cache wants to write to a line, it requests to update the lines in the other caches first and updates its line after the updates by the others.
-This protocol is beneficial when a cache writes to a line and the other caches wants to read it right after the write.
+This protocol is beneficial when a cache writes to a line and the other caches want to read it right after the write.
 
 In a write-invalidate protocol, if a cache wants to write to a line, it first requests to invalidate the lines in the other caches so that they cannot read or write the line.
 Once all the other caches are invalidated, it can write a new value.
@@ -332,11 +332,11 @@ The write-invalidate policy is used more generally in practical cache-coherence 
 Another criterion about memory writes is when a write to a cache is applied to the main memory; it provides two classes as well: \emph{write-through} and \emph{write-back} protocols.
 
 In a write-through protocol, when a cache writes to a line (already with enough permission), it further requests a write to the main memory as well.
-This protocol is easier to design, since the up-to-date value can be always found in the main memory.
+This protocol is easier to design, since the up-to-date value can always be found in the main memory.
 
-On the other hand, in a write-back protocol, a cache does not requests to the main memory to send the up-to-date value when writing to a line.
+On the other hand, in a write-back protocol, a cache does not request to the main memory to send the up-to-date value when writing to a line.
 The value is eventually written back to the main memory when the line is evicted from the cache side.
-Write-back protocols are harder to implement than write-through ones, since they should provide a way to find the up-to-date value through all the caches, \eg{} by managing directories that point the cache that has the value.
+Write-back protocols are harder to implement than write-through ones, since they should provide a way to find the up-to-date value through all the caches, \eg{} by managing directories that point to caches with correct values.
 That being said, almost all practical cache-coherence protocols use the write-back policy to avoid unnecessary writeback to the main memory.
 
 All the case-study protocols in this dissertation, which will be introduced in \autoref{sec-case-study}, follow the write-invalidate and write-back policies.
@@ -356,16 +356,16 @@ It is indeed easier to design with such a policy, since it allows to combine an 
 This policy, in other words, means that whenever a line is in a child cache there is a corresponding line in the parent cache as well.
 We therefore call it \emph{inclusive}, meaning that the parent cache includes the lines in child caches.
 
-Inclusive caches have a benefit that certain requests from the parent can be responded immediately just by searching a directory status.
-For example, when a cache gets an invalidation request from the parent and the line entry does not exist in the directory, it does not need to forward the request to the children for the complete invalidation, since by the inclusion policy absense of a directory status already implies that the line does not exists in any of child caches.
+Inclusive caches have a benefit that certain requests from the parent can be answered immediately just by searching a directory status.
+For example, when a cache gets an invalidation request from the parent and the line entry does not exist in the directory, it does not need to forward the request to the children for complete invalidation, since by the inclusion policy absence of a directory status already implies that the line does not exist in any child caches.
 That said, inclusive caches have a drawback that some value entries are wasted; for example, when a directory status is M, meaning that a child has the up-to-date value, the parent still holds a stale value inside the value cache.
 
 A \emph{noninclusive} cache -- also called a noninclusive nonexclusive (NINE) cache -- does not require such inclusion.
 Since it is not inclusive, it has less chance to waste value lines.
 That said, the biggest drawback comes when a directory-status entry does not exist in the directory cache; the absense of a directory status does not imply that child caches do not have the line anymore.
-The same issue occurs in a snooping protocol as well, \eg{} a cache should always snoop all the child caches in order to handle an invalidation request from the parent.
+The same issue occurs in a snooping protocol as well, \eg{} a cache should always broadcast an invalidation request to all the child caches in order to handle the one from the parent.
 
-In order to resolve the addressed issues, a number of practical cache-coherence protocols use noninclusive value caches and inclusive directories, called NCID~\cite{Zhao:2010}, \eg{} Intel Skylake-X processors are known to use the NCID structure~\cite{intel-non-inclusive,Yan:2019}.
+In order to resolve these issues, a number of practical cache-coherence protocols use noninclusive value caches and inclusive directories, called NCID~\cite{Zhao:2010}, \eg{} Intel Skylake-X processors are known to use the NCID structure~\cite{intel-non-inclusive,Yan:2019}.
 By having noninclusive value caches we have less chance to waste value lines, and by having inclusive directories we do not always need to visit child caches for invalidation.
 
 As opposed to inclusive caches, an \emph{exclusive} cache intends to maximize the utility between child and the parent caches, by requiring that the lines of a child and the parent are always disjoint to each other.
@@ -378,5 +378,5 @@ The classifications introduced so far are orthogonal to each other, \ie{} every 
 For instance, the case-study protocols that will be introduced in \autoref{sec-case-study} are directory-based and follow the write-invalidate and write-back policies.
 One of the protocols is inclusive, whereas the others are noninclusive.
 
-Although not every combination of the policies is covered by the case studies, we would like to claim that our proposed framework \hemiola{} is general enough to design and verify cache-coherence protocols with any policies mentioned above, since the domain-specific language and verification methodologies provided by the framework are not coupled to any specific protocol policies.
+Although not every combination of the policies is covered by the case studies, we would like to claim that our proposed framework \hemiola{} is general enough to design and verify cache-coherence protocols with any policies mentioned above, since the domain-specific language and verification methodology provided by the framework are not coupled to any specific protocol policies.
 
