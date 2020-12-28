@@ -348,7 +348,7 @@ In other words, there are no intermediate caches between the lowest-level ones (
 There is an essential tradeoff between caches and the memory: caches have much faster latency than the memory but lower hit rate.
 In order to mitigate hit rate of a cache, hierarchical cache-coherence protocols have been developed and used.
 In a hierarchical protocol, a number of L1 caches are clustered to have an L2 cache as a parent, and so on.
-A higher-level cache usually has a lower latency than lower-level caches but has a better hit rate due to its increased size.
+A higher-level cache usually has a higher latency than lower-level caches but has a better hit rate due to its increased size.
 
 Hierarchical cache-coherence protocols can be classified by so-called \emph{cache-inclusion policies}.
 Especially when designing a protocol with directories, it is practically easier to design caches to require that every line in the value cache has its corresponding directory entry in the directory cache, and vice versa.
