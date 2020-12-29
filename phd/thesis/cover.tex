@@ -52,7 +52,7 @@
 \setcounter{savepage}{\thepage}
 \begin{abstractpage}
   Cache-coherence protocols have been one of the greatest correctness challenges of the hardware world.
-  A memory subsystem usually consists of several caches and the main memory, and a cache-coherence protocol defined in such a system allows multiple memory-access transactions executed in a distributed manner, across the levels of a cache hierarchy.
+  A memory subsystem usually consists of several caches and the main memory, and a cache-coherence protocol defined in such a system allows multiple memory-access transactions to execute in a distributed manner, across the levels of a cache hierarchy.
   This source of concurrency is the most challenging part in formal verification of cache coherence.
 
   In this dissertation, we introduce \hemiola{}, a framework embedded in Coq to design, prove, and synthesize cache-coherence protocols in a structural way.
@@ -61,7 +61,7 @@
   The proof relies on conditions on the protocol topology and state-change rules, but we have designed a domain-specific protocol language that guides the user to design protocols that satisfy these properties by construction.
 
   The framework also provides a novel way to design and prove invariants by adding predicates to messages in the system, called \emph{predicate messages}.
-  On top of serializability, it is much simpler to prove a predicate message, since it is guaranteed that the predicate is not spuriously interfered by other messages at all.
+  On top of serializability, it is much simpler to prove a predicate message, since it is guaranteed that the predicate is not spuriously broken by other messages.
 
   We used \hemiola{} to design and prove hierarchical MSI and MESI protocols, in both inclusive and noninclusive variants, as case studies.
   We also demonstrated that the case-study protocols are indeed hardware-synthesizable, by using a compilation/synthesis toolchain in the framework.
@@ -80,5 +80,45 @@
 
 \section*{Acknowledgments}
 
-This is the acknowledgements section.
-You should replace this with your own acknowledgements.
+%% When I was in the first year of my PhD, I happened to watch a very popular comic strip (probably only among graduate students) named ``PHD Comics''; this particular comic strip\footnote{PHD Comics: Professed? \url{http://phdcomics.com/comics.php?f=1672}} was composed only of four panels, with captions ``Impressed! Oppressed. Depressed. and Mostly Pressed,'' summarizing a life of a graduate student.
+%% I wondered if my student life would be like this cartoon.
+
+%% After 6.5 years of my PhD, now I recall this comic strip in this dissertation and think about it again.
+%% Indeed it was.
+%% I was impressed by brilliant faculties and students who I worked with.
+%% I was oppressed by research challenges that I had to get over.
+%% I was depressed by a number of rejections I got from conferences and the unknown future.
+%% I have felt constant pressure that I should make good research outcomes.
+
+%% That being said, I have never thought it was a bad decision that I joined MIT as a graduate student.
+%% I am rather grateful that I could do meaningful research in a great environment.
+%% I am also grateful to myself for overcoming all the oppression, depression, and pressure that I have had during the PhD period.
+
+%% Advisors
+
+%% Thesis committee members
+
+%% Colleagues in the PLV and CSG groups
+
+%% Other people
+
+%% Family
+
+%% I would like to thank a number of people who have contributed to this
+%% work or have given me thoughtful advice. Without help from these
+%% people, I would not have been able to develop the work and to write
+%% the thesis.
+
+%% First, I would like to thank my advisors, Professor Arvind and Adam
+%% Chlipala for giving me a significant amount of intuitions and
+%% motivations for the work. Before joining the master degree program, I
+%% had almost no experience in hardware verification. Thanks to advice
+%% from Arvind and Adam, I could learn a lot of knowledge and skills fast
+%% and efficiently.
+
+%% I would also like to thank the CSG and PLV group people for invaluable
+%% advice. I especially give my gratitude to Muralidaran Vijayaraghavan
+%% for discussing and developing the \Kami{} project with me.
+
+%% Last but not least, I would like to thank Kwanjeong Educational
+%% Foundation, which supported me financially for my master's degree.
