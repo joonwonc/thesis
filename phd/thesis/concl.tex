@@ -4,30 +4,30 @@
 In this dissertation, we discussed difficulties in designing and proving hardware cache-coherence protocols, proposed a methodology to ease the burden, and demonstrated it by building a framework \hemiola{} within the Coq interactive theorem prover.
 We also designed and proved various hierarchical cache-coherence protocols on top of the framework and synthesized them using the protocol compiler provided by the framework.
 
-As the last chapter, we would like to summarize each previous chapter and to discuss a number of future-work directions.
-Afterwards, we conclude this dissertation by adding remarks, recalling our introduction to why hardware verification is complex and how we can use an interactive theorem prover to alleviate the verification burden.
+As the last chapter of this dissertation, we would like to summarize each previous chapter and to discuss a number of future-work directions.
+Afterwards, we conclude by adding remarks, recalling our introduction to why hardware verification is complex and how we can use an interactive theorem prover to alleviate the verification burden.
 
 \subsubsection{Chapter summaries}
 
 We began with constructing an underlying basis to reason about hardware cache-coherence protocols.
-We defined the protocol transition systems in \autoref{sec-trs}, viewing cache-coherence protocols as message-passing systems.
+We defined protocol transition systems in \autoref{sec-trs}, viewing cache-coherence protocols as message-passing systems.
 A system consists of objects, and the objects communicate by ordered message channels.
 Local state transitions within an object are performed by rules, each of which has a precondition and a transition function.
 In a protocol transition system, thanks to the so-called one-rule-at-a-time semantics, it is safe to assume that a state-transition step of a system is always made nondeterministically by a rule in an object.
 
 On top of the protocol transition system, we provided the formal definition of serializability in \autoref{sec-sz-def}.
 A memory subsystem consists of several caches and the main memory, and a cache-coherence protocol defined within the system allows to handle multiple memory requests concurrently in a distributed way.
-Viewing cache-coherence protocols as distributed protocols, we call such concurrent execution interleaved, and the serializability property guarantees that any interleaving can be interpreted as a sequence of transaction executions by reaching the same resulting state.
+Viewing cache-coherence protocols as distributed protocols, we call such concurrent execution interleaved, and the serializability property guarantees that any interleaving can be interpreted as a sequence of transaction executions reaching the same resulting state.
 We also provided a novel mechanism to prove invariants, called predicate messages, and demonstrated that it is much easier to state and prove predicate-message invariants in a serializable system.
 
 As the next part of this dissertation, we established a framework called \hemiola{}, embedded in the Coq proof assistant, to design and prove cache-coherence protocols more easily.
 Even if serializability can ease the burden of stating and proving invariants, it will still be a large burden if a user has to prove serializability per-protocol.
 Thus we presented the \hemiola{} DSL in \autoref{sec-hemiola-dsl}, where any protocol defined by the DSL automatically obtains the serializability property for free.
-The DSL contains the rule templates, each of which takes input messages, sets/releases locks, and makes output messages properly to satisfy serializability.
+The DSL contains rule templates, each of which takes input messages, sets/releases locks, and makes output messages properly to satisfy serializability.
 
-We provided the full mechanized Coq proof in \autoref{sec-sz-guarantee-hemiola} that the use of the rule templates indeed implies serializability, using the well-known technique called commuting reductions.
-This implication theorem is the biggest theorem in \hemiola{}, but the theorem is general in that it can be applied to any protocol defined using the rule templates.
-Commuting reductions are the most basic notion of noninterference between two adjacent state transitions, and the serializability proof employs them by showing that any interleaved history by a system defined with the \hemiola{} DSL can be reduced to a sequential history that reaches the same state, by a finite number of reductions.
+We provided the full mechanized Coq proof in \autoref{sec-sz-guarantee-hemiola} that the use of the rule templates indeed implies serializability, using a well-known technique called commuting reductions.
+This implication is the biggest theorem in \hemiola{}, but the theorem is general (thus reusable) in that it can be applied to any protocol defined using the rule templates.
+Commuting reductions are the most basic notion of noninterference between two adjacent state transitions, and the serializability proof employs them by showing that any interleaved history of a system defined with the \hemiola{} DSL can be reduced to a sequential history that reaches the same state, by a finite number of reductions.
 In order to show that finitely many reductions suffice, we developed the notion of mergeability to figure out which two atomic-history fragments to merge while not breaking the other fragments.
 
 The final part of this dissertation was to design and synthesize hierarchical cache-coherence protocols as case studies.
@@ -48,14 +48,14 @@ First of all, as already mentioned in \autoref{sec-compiler-correctness}, we pla
 The compiler correctness proof will be used eventually for proving the correctness of low-level cache-coherent memory subsystems compiled from the \hemiola{} protocols.
 
 Another important future direction is to prove liveness of the protocols designed in Hemiola.
-Even though we designed the rule templates carefully to avoid deadlocks, we think a formal proof should be supported by the framework as well.
+Even though we designed the rule templates carefully to avoid deadlocks, we think that a formal proof should be supported by the framework as well.
 Proving liveness generally requires deadlock, livelock, and starvation freedom.
-Even though such properties should be properly stated and proven for low-level hardware implementations, it will be interesting to explore whether some properties in the protocol-description level can help proving the liveness or not.
+Even though such properties should be properly stated and proven for low-level hardware implementations, it will be interesting to explore some properties in the protocol-description level that can help prove the liveness.
 
 The last future work is to extend the rule templates to cover more sophisticated message-communication patterns.
 Highly optimized cache-coherence protocols often require message-communication patterns that cannot be performed by the current rule templates.
-For instance, some protocols require direct communication among siblings (\ie{} not arbitrated by the parent), and no rule templates support it.
-Extending the rule templates will require the extension of the serializability proof, which includes adding rule-template cases for each invariant proof.
+For instance, some protocols require direct communication among siblings (\ie{} not arbitrated by the parent), and no rule templates currently support it.
+Extending the rule templates will require the extension of the serializability proof, which includes adding more rule-template cases for each invariant proof.
 
 \subsubsection{Concluding remarks}
 
@@ -65,12 +65,12 @@ First, practical protocols are huge, designed with cache hierarchies, and it imp
 Second, there are a lot of design options, and the methodology should be general enough to cover many designs.
 
 We tried to solve these problems by taking full advantage of an interactive theorem prover.
-Verification effort is reduced by proving a general theorem that can be applied to various purposes.
-The more general and large the theorem is, The more verification effort is reduced.
+Verification effort is reduced by proving a general theorem that can be applied for various purposes.
+The more general and larger the theorem is, the more verification effort is reduced.
 This idea looks very trivial but is hard to realize in practical verification, since to design such a general theorem itself is challenging and the proof will be difficult as well.
 Indeed, in building the \hemiola{} framework, we spent significant amount of the time finding a general set of requirements that ensures serializability, plus proving that assertion in Coq.
 
 That said, we believe \hemiola{} represents a good instance that interactive theorem proving is worthwhile to use for practical hardware verification.
 While model checking has dominated the formal verification of hardware especially in industry, it apparently seems that (interactive) theorem proving has not been spread well, due to a stereotype that theorem proving requires too much human effort.
 We would like to argue that this stereotype is no longer true, once equipped with good proof structures, \eg{} big reusable proofs.
-Lastly, we hope that in the future there will be more approaches to verifying realistic hardware components by interactive theorem proving.
+Lastly, we hope that in the future there will be more approaches to verifying realistic hardware components with interactive theorem provers.
