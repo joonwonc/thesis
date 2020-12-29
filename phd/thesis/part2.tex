@@ -1334,7 +1334,10 @@ The paper later defines noninterference formally, by providing sufficient condit
 In this case, each property is presented as a specific lemma proving the noninterference conditions.
 
 The use of noninterference in Hoare logic has become more explicit in concurrent separation logic~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
-For example, in order to establish ``rely'' conditions $R$ from the original Hoare triple $\{P\}C\{Q\}$, the precondition $P$ should be stable (not interfered with) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
+For example, in rely-guarantee reasoning, two binary relations, called the ``rely'' and ``guarantee'' conditions, are added to the Hoare triple to reason about concurrent programs.
+The judgement has the form of $R,G \vdash \{P\}C\{Q\}$, meaning that every state change by another thread is in $R$ and every state change by $C$ is in $G$.
+($\{P\}C\{Q\}$ has the same meaning from the conventional Hoare triple.)
+Noninterference is then exhibited when constructing $R,G \vdash \{P\}C\{Q\}$ from the original Hoare triple $\{P\}C\{Q\}$, requiring that $P$ and $Q$ are stable (not interfered with) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
 
 Now we explore the use of noninterference in hardware verification, more related to the techniques used in the \hemiola{} framework.
 To our knowledge, the notion was mentioned for the first time in a paper by McMillan as a part of compositional model checking:
