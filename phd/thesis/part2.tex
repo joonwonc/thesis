@@ -22,7 +22,7 @@ We will indeed see in \autoref{sec-comp-syn} how logical channels in \hemiola{} 
 \hemiola{} as a Coq library generates the topology and network channels automatically from instances of a simple inductive type.
 For example, the following tree definition will generate topology and channels for four L1 caches, two L2 caches, the last-level cache (LLC), and the main memory:
 \begin{lstlisting}[numbers=none, frame=none]
-  Definition t: tree := Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]].
+Definition t: tree := Node [Node [Node [Leaf; Leaf]; Node [Leaf; Leaf]]].
 \end{lstlisting}
 
 \section{Locking Mechanism}
