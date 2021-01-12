@@ -951,6 +951,12 @@ They used aggregation of distributed transactions~\cite{thesis:Park:1996} to ver
 Another approach proved a write-invalidate cache-coherence protocol using the ACL2 theorem prover~\cite{Moore:1998}.
 The protocol is based on bus snooping, and the design and proof are parameterized by the number of processors.
 
+There was an approach trying to prove both correctness and liveness of adaptive cache-coherence protocols using the PVS theorem prover~\cite{Shen:1999,Stoy:Shen:2001,thesis:Shen:2000}.
+They verified the Cachet adaptive cache-coherence protocol that consists of several micro-protocols.
+Inside the protocol, each line in a cache can dynamically switch from one micro-protocol to another one for performance.
+In order to verify the protocol more easily, they suggested to design and prove protocols by two stages: one for imperative rules, which are only about correctness, and the other for directive rules that affect both correctness and liveness.
+Imperative rules correspond to the rules defined in \hemiola{} for protocol description, whereas directive rules correspond to the rules in the pipelined cache controller prebuilt in the \hemiola{} protocol compiler.
+
 A recent success was a proof of a hierarchical MSI protocol with an arbitrary tree topology using Coq~\cite{Murali:2015}.
 However, the proof was also for the specific protocol and thus not structured to promote streamlined reuse of results for other protocols.
 It also employed rather complex and ad-hoc invariants needed to characterize transient states.
