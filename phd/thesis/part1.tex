@@ -108,8 +108,13 @@ Note that our formalization of the protocol transition system is shallowly embed
 An object $O$ contains its object index (unique within a system), an initial state ($\objInit{o}$), and rules (\listof{r}) that make local state transitions within the object.
 The highest-level component is a system $S$, which contains information about objects and channels.
 It consists of objects (\listof{O}) and channel indices for internal messages (\hsysIn{i}), external inputs (\hsysRq{i}), and external outputs (\hsysRs{i}).
-The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
 It is necessary to distinguish between internal and external channels, in order to define external behaviors of the system, \ie{} the interface of the cache-coherence protocol with processor cores, which will be explained in \autoref{sec-semantics}.
+
+The definition is general in that any object can access any channel in the system, just by mentioning the channel index in a state transition.
+In practical cache-coherence protocols, however, only specific message-passing patterns are used.
+Recalling our interleaving example in \autoref{sec-nutshell}, we see that the three objects ($P$, $C_1$, and $C_2$) form a tree shape and communicate through the designated three channels between the parent and a child.
+One of the main intuitions of the \hemiola{} framework is that safe interleavings are ensured just by restricting the communication patterns among objects (with proper locking mechanisms).
+We will explore how such restriction is enforced by defining a domain-specific language (in \autoref{sec-hemiola-dsl}) and how it implies safe interleavings (in \autoref{sec-sz-guarantee-hemiola}).
 
 \subsection{Semantics}
 \label{sec-semantics}
@@ -267,7 +272,7 @@ In this section, we provide the formal definition of serializability on top of a
 
 \section{Cache-Coherence Protocols as Distributed Protocols}
 
-We already explored in \autoref{sec-nutshell} with a concrete example that the cache objects in a cache-coherent memory system handle multiple requests from the processor cores concurrently, in a distributed way.
+We already explored in \autoref{sec-nutshell} with the interleaving example that the cache objects in a cache-coherent memory system handle multiple requests from the processor cores concurrently, in a distributed way.
 We also learned that transactions to handle such requests are interleaved, so it is crucial in designing and proving a cache-coherence protocol to ensure safe interleavings.
 
 A very well-known approach to ensuring safe interleavings is to prove \emph{noninterference}, which basically claims that no other state transitions spuriously affect state relevant to an ongoing transaction.
@@ -350,26 +355,34 @@ A shorter notation $\atomicShort{h}$ will be used when $\listof{\amsgi{im}}$ and
       \pic at (0, 0) {skeleton-pcce1={$P$}{$C_1$}{$C_2$}};
       % C_1 external
       \pic at (0, 0) {skeleton-midx-e1};
-      \node[label={[label distance=-6pt,myred]left:{\sf\small rqWr}},color=myred] at (-1.8, -2.35) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]left:{\small {\sf rqWr}}},color=myred] at (-1.8, -2.3) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]right:{\small {\sf rsWr}}},color=myred] at (-1.6, -2.3) {$\bullet$};
       % Between P and C_1
       \pic at (0, 0) {skeleton-midx-pc1};
-      \node[label={[label distance=-6pt,myred]left:{\sf\small rqM}},color=myred] at (-1, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]left:{\small {\sf rqM}}},color=myred] at (-1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myred]below right:{\small {\sf rsM}}},color=myred] at (-0.6, -0.7) {$\bullet$};
       % Between P and C_2
       \pic at (0, 0) {skeleton-midx-pc2};
-      \node[label={[label distance=-9pt,myred]below left:{\sf\small rsI}},color=myred] at (0.8, -0.7) {$\bullet$};
-      \node[label={[label distance=-9pt,myred]above right:{\sf\small rqI}},color=myred] at (1, -0.7) {$\bullet$};
+      \node[label={[label distance=-9pt,myred]below left:{\small {\sf rsI}}},color=myred] at (0.8, -0.7) {$\bullet$};
+      \node[label={[label distance=-6pt,myred]right:{\small {\sf rqI}}},color=myred] at (1, -0.7) {$\bullet$};
 
       % Curves
-      \draw [->,color=myred] (-2.4, -2.0) to[out=90,in=-110] node[left=3pt] {$r_1$} (-1.7, -1.0);
-      \draw [->,color=myred] (-1.6, -0.45) to[out=70,in=120,distance=1.5cm] node[above] {$r_2$} (1.3, -0.1);
-      \draw [->,color=myred] (1.6, -0.7) to[out=-50,in=-50,distance=1.9cm] node[below] {$r_3$} (0.6, -1.3);
+      \draw [->,color=myred] (-2.3, -2.0) to[out=90,in=-90] node[left=3pt,color=black] {$r_1$} (-1.8, -1.0);
+      \draw [->,color=myred] (-1.7, -0.4) to[out=70,in=110,distance=1.8cm] node[left=20pt,color=black] {$r_2$} (1.4, -0.4);
+      \draw [->,color=myred] (1.6, -0.9) to[out=-50,in=-50,distance=1.9cm] node[below,color=black] {$r_3$} (0.5, -1.3);
+      \draw [->,color=myred] (0.4, -0.8) to[out=135,in=45,distance=0.6cm] (-0.3, -0.7);
+      \draw [densely dashed,color=myred,line width=0.3pt] (0, -0.35) to[out=90,in=-170] (1.6, 0.35);
+      \node at (1.9, 0.3) {$r_4$};
+      \draw [->,color=myred] (-0.6, -1.1) to[out=225,in=90] node[below right,color=black] {$r_5$} (-1.1, -2.0);
     \end{tikzpicture}\\
     \hline
     \begin{math}
       \begin{array}{rl}
         h \triangleq & [\lblInt{\idxOf{C_1}}{\idxOf{r_1}}{\listsingle{(1, {\sf rqWr})}}{\listsingle{(3, {\sf rqM})}};\\
           & \lblInt{\idxOf{P}}{\idxOf{r_2}}{\listsingle{(3, {\sf rqM})}}{\listsingle{(8, {\sf rqI})}};\\
-          & \lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, {\sf rqI})}}{\listsingle{(7, {\sf rsI})}}]\\
+          & \lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, {\sf rqI})}}{\listsingle{(7, {\sf rsI})}};\\
+          & \lblInt{\idxOf{P}}{\idxOf{r_4}}{\listsingle{(7, {\sf rsI})}}{\listsingle{(5, {\sf rsM})}};\\
+          & \lblInt{\idxOf{C_1}}{\idxOf{r_5}}{\listsingle{(5, {\sf rsM})}}{\listsingle{(2, {\sf rsWr})}}]\\
       \end{array}
     \end{math}
   \end{tabular}
@@ -377,15 +390,27 @@ A shorter notation $\atomicShort{h}$ will be used when $\listof{\amsgi{im}}$ and
   \label{fig-ex-atomic-history}
 \end{figure}
 
-\autoref{fig-ex-atomic-history} presents an example of an atomic history.
-$h$ is generated by executions of three rules, $r_1 \in \hobjrules{C_1}$, $r_2 \in \hobjrules{P}$, and $r_3 \in \hobjrules{C_2}$.
-Rule $r_1$ takes an input message $(1, \textsf{rqWr})$ (from the channel with index $1$) as an initial message of the history.
-Rule $r_2$ takes $(3, \textsf{rqM})$, the output message from $r_1$.
-Finally, $r_3$ takes $(7, \textsf{rqI})$, the output message from $r_2$.
-Summing up all the rule executions, by the definition of an atomic history we get the predicate $\atomic{\listsingle{(1,\textsf{rqWr})}}{h}{\listsingle{(7,\textsf{rsI})}}$.
+\autoref{fig-ex-atomic-history} presents an example of an atomic history from the interleaving example presented in \autoref{sec-nutshell}.
+$h$ is generated by executions of five rules, $r_1 \in \hobjrules{C_1}$, $r_2 \in \hobjrules{P}$, $r_3 \in \hobjrules{C_2}$, $r_4 \in \hobjrules{P}$, and $r_5 \in \hobjrules{C_1}$.
+$r_1$ takes an input message $(1, \textsf{rqWr})$ (from the channel with index $1$) as an initial message of the history.
+$r_2$ takes $(3, \textsf{rqM})$, the output message from $r_1$.
+$r_3$ takes $(8, \textsf{rqI})$, the output message from $r_2$.
+$r_4$ takes $(7, \textsf{rsI})$, the output message from $r_3$.
+Finally, $r_5$ takes $(5, \textsf{rsM})$, the output message from $r_4$.
+Summing up all the rule executions, by the definition of an atomic history we get the predicate $\atomic{\listsingle{(1,\textsf{rqWr})}}{h}{\listsingle{(2,\textsf{rsWr})}}$.
 This example shows that an atomic history intuitively captures a \emph{transaction flow} triggered by the initial messages.
+
 Note that an atomic history does not need to be a completed transaction.
-The history $h$ in the example is not completed, in the sense that the live message ($\textsf{rsI}$) is not a response sent on an external channel.
+For example, taking the first three rule executions (by $r_1$, $r_2$, and $r_3$) will generate the following history:
+\begin{displaymath}
+  \renewcommand{\arraystretch}{1.0}
+  \begin{array}{rl}
+    h_p \triangleq & [\lblInt{\idxOf{C_1}}{\idxOf{r_1}}{\listsingle{(1, {\sf rqWr})}}{\listsingle{(3, {\sf rqM})}};\\
+      & \lblInt{\idxOf{P}}{\idxOf{r_2}}{\listsingle{(3, {\sf rqM})}}{\listsingle{(8, {\sf rqI})}};\\
+      & \lblInt{\idxOf{C_2}}{\idxOf{r_3}}{\listsingle{(8, {\sf rqI})}}{\listsingle{(7, {\sf rsI})}}].\\
+  \end{array}
+\end{displaymath}
+$h_p$ is still an atomic history satisfying $\atomic{\listsingle{(1,\textsf{rqWr})}}{h_p}{\listsingle{(7,\textsf{rsI})}}$ and is not completed in the sense that the live message ($\textsf{rsI}$) is not a response sent on an external channel.
 
 We call a history \emph{externally atomic} if initial messages are external requests ($\listof{\idxOf{\amsgi{m}}} \subseteq \hsysRqA{S}$), denoted as $(\extatomic{S}{\listof{\amsgi{im}}}{h}{\listof{\amsge{im}}})$.
 We sometimes use the shorter notation \extatomicShort{S}{h} for some \listof{\amsgi{im}} and \listof{\amsge{im}}.
@@ -412,16 +437,16 @@ With a clear notion of transactions, we can easily define sequential histories a
 \begin{definition}[Sequential Histories and Serializability]
   \label{def-seq-sz}\mbox{}\vspace{-8pt}\\
   \begin{enumerate}[leftmargin=*]
-  \item A history $h$ is \emph{sequential} iff the history is a concatenation of transactions:
+  \item A history $h$ is \temph{sequential} iff the history is a concatenation of transactions:
     \begin{displaymath}
       \hseq{S}{h} \triangleq \exists\, \listof{t}.\; (\forall t \in \listof{t}.\; \trsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
     \end{displaymath}
-  \item A legal history $h$ is \emph{serializable} in the system $S$ iff there exists a sequential history that reaches the same state:
+  \item A legal history $h$ is \temph{serializable} in the system $S$ iff there exists a sequential history that reaches the same state:
     \begin{align*}
       \hsrzl{S}{h} \triangleq\; & \forall s.\; \semsteps{S}{\sysInit{S}}{h}{s} \to\\
       & \exists\, h_{\textrm{seq}}.\; \hseq{S}{h_{\textrm{seq}}} \wedge \semsteps{S}{\sysInit{S}}{h_{\textrm{seq}}}{s}.
     \end{align*}
-  \item A system $S$ is \emph{serializable} iff every legal history is serializable:
+  \item A system $S$ is \temph{serializable} iff every legal history is serializable:
     \begin{displaymath}
       \hsrz{S} \triangleq \forall h.\; \hsrzl{S}{h}.
     \end{displaymath}
@@ -429,6 +454,54 @@ With a clear notion of transactions, we can easily define sequential histories a
   \label{def-sz}
 \end{definition}
 
+\begin{figure}[h]
+  \centering
+  \renewcommand{\arraystretch}{1.2}
+  \setlength\tabcolsep{2.5pt}
+  \begin{tabular}{|ccc|}
+    \hline
+    \multicolumn{1}{|l}{
+      \begin{tikzpicture}
+        \node at (0, 0) {};
+        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
+        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
+    \end{tikzpicture}} & &
+    \multicolumn{1}{l|}{
+      \begin{tikzpicture}
+        \node at (0, 0) {};
+        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
+        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
+    \end{tikzpicture}}\\
+    \begin{tabular}{c|ccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & & & \rdcircf{7} & \blcircf{8} \\
+      \hline
+      $P$ & & & & \rdcircf{3} & & \rdcircf{5} & \blcircf{6} & & \\
+      \hline
+      $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & \\
+      \hline
+    \end{tabular} & $\Rightarrow$ &
+    \begin{tabular}{c|ccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & \rdcircf{7} & & & \blcircf{8} \\
+      \hline
+      $P$ & & & \rdcircf{3} & & \rdcircf{5} & & & \blcircf{6} & \\
+      \hline
+      $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & \\
+      \hline
+    \end{tabular}\\
+    {\small An original history $h$} & & {\small A sequential history $h_{\textrm{seq}}$}\\
+    \hline
+  \end{tabular}
+  \caption{An example of a serializable history}
+  \label{fig-sz-ex}
+\end{figure}
+
+\autoref{fig-sz-ex} presents an example of a serializable history, brought from the example in \autoref{sec-nutshell}, where two histories (in {\color{myred} red} and {\color{myblue} blue}) are interleaved to form a history $h$.
+A corresponding sequential history $h_{\textrm{seq}}$ is also presented, formed by concatenating two atomic histories in {\color{myred} red} and {\color{myblue} blue}.
+Following the rule executions in $h_{\textrm{seq}}$, we see that it is indeed a legal history and reaches the same state as the one by the original history $h$.
+
+It is quite natural to think of sequential histories only with atomic histories, but why do we have to separate external inputs/outputs labels from atomic histories?
 Suppose that an object $C$ in a system $S$ takes two external requests, say $\textsf{rq}_1$ and $\textsf{rq}_2$, in-order from the same channel and finishes handling $\textsf{rq}_2$ earlier than $\textsf{rq}_1$.
 Even if $C$ should start handling $\textsf{rq}_1$ first because the channel is ordered, this case may happen when $\textsf{rq}_1$ requires further treatment by other objects while $C$ can take $\textsf{rq}_2$ and respond immediately to the corresponding external channel.
 We may have the following legal history $h$ in $S$ for this kind of scenario:
@@ -450,13 +523,13 @@ However, we can bridge the gap by using serializability to help prove \emph{inva
 
 We start by defining a conventional notion of an invariant:
 \begin{definition}[Invariants]
-  We call $\mathcal{I}: \hstt{} \to \propt{}$ an \emph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}(s)$.
+  We call $\mathcal{I}: \hstt{} \to \propt{}$ an \temph{invariant} over a system $S$ if $\mathcal{I}$ holds for all reachable states, \ie{} $\forall s.\; \semrch{S}{s} \to \mathcal{I}(s)$.
 \end{definition}
 
 In proving the correctness of a distributed protocol, it is quite common to state an invariant like ``some important property holds whenever the system includes a certain message in a certain channel.''
 We call such an invariant a \emph{predicate message}, formally defined as following:
 \begin{definition}[Predicate Messages]
-  A predicate message, denoted as \spredmsg{S}{im}{P}, is an invariant over a system $S$ that additionally requires $im$, a pair of a channel and a message, to be in the system:
+  A \temph{predicate message}, denoted as \spredmsg{S}{im}{P}, is an invariant over a system $S$ that additionally requires $im$, a pair of a channel and a message, to be in the system:
   \begin{displaymath}
     \spredmsg{S}{im}{\mathcal{I}} \triangleq \forall s.\; \semrch{S}{s} \wedge im \in s.M \to \mathcal{I}(s).
   \end{displaymath}
@@ -503,7 +576,7 @@ Investigating this corner case carefully, we can find that actually no two diffe
 This finding implies that now the predicate message for \msgsf{rsM} should have a much-more-complicated form, which considers \emph{all possible noninterference cases}.
 The complete desired predicate message for \idmsf{8}{rsM} will then look like:
 \begin{displaymath}
-  \renewcommand{\arraystretch}{1.0}
+  \renewcommand{\arraystretch}{0.8}
   \idmsf{8}{rsM}%
   \left\{\begin{array}{l}
   \textcolor{mygray}{\textit{// The original predicate}}\\

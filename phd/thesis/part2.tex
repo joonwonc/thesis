@@ -88,12 +88,37 @@ On the contrary, a downlock is set when an object makes a downward request(s) to
 \end{figure}
 
 \autoref{fig-locking-conditions} shows the conditions to acquire or release the locks.
-An uplock can be set if the object is not yet uplocked; it can be set even when the object is downlocked.
-This locking mechanism means that an object can make a request to the parent even when it has made requests to the children.
+We explore each case with examples in actual cache-coherence protocols:
+
+\paragraph{An uplock cannot be set if the object is already uplocked.}
+As already explained with the interleaving history in \autoref{sec-nutshell}, we do not want to make a further request to the parent (with the same line) when it already made an upward request.
+Requesting to the parent twice would result in spurious interleavings.
+
+\paragraph{An uplock can be set even when the object is downlocked; instead, it cannot be released when downlocked.}
+It means that an object can make a request to the parent even when it has made requests to the children.
 It is still safe, since the lock release will not be allowed when downlocked, \ie{} the uplock release should always wait for the downlock to be released.
-On the other hand, a downlock \emph{can be set and released even when uplocked}.
-This relaxation is very important to make the locking mechanism both safe and live.
+
+This case happens only when a protocol is defined with caches forming at least 3-level, \ie{} there is an intermediate cache object that has both a parent and children.
+Suppose an intermediate cache is in an invalidation process, \ie{} invalidation requests have been sent to children and the cache has been downlocked since then.
+Also suppose that a child with the S status made an upward request to get the M status.
+In this case, the intermediate cache should be able to deal with this upward request and to make a further request to its parent, even when it is in the invalidation process.
+Granting the M status to the child, however, will happen after the invalidation process is finished, since the uplock can be released only after the downlock being released.
+
+\paragraph{A downlock cannot be set if the object is already downlocked.}
+This case is also presented in the example in \autoref{sec-nutshell}; we do not want to make another set of invalidation requests to children (with the same line) when it is in the invalidation process.
+Handling two invalidation processes would lead to an incoherent state due to spurious interleavings.
+
+\paragraph{A downlock can be set and released even when uplocked.}
+This relaxation is very important to make the locking mechanism live.
 If a downlock could not be released when uplocked, we would have a deadlock case, where both locks wait for each other.
+
+This case also happens when a protocol is at least 3-level.
+Similar to the above case, suppose that an intermediate cache already forwarded a request from its child to the parent to get the M status so it has been uplocked.
+When it receives an invalidation request from the parent at this moment, it should be able to deal with this request and possibly make further invalidation requests to some of its children.
+It sets a downlock for the invalidation process, even when it has been uplocked.
+We will see a couple of actual cases in \autoref{sec-case-study} with the case-study protocols, where both an uplock and a downlock are acquired to deal with two respective transactions.
+
+\subsubsection{Remarks on transient states}
 
 Now every cache object defined in \hemiola{} \emph{does not need to set transient states} to consider all combinations among stable statuses;
 instead, the framework helps maintain the cache status and claim proper locks.
@@ -352,7 +377,7 @@ We first present our intuition of how commuting reductions are used in the seria
 The most basic commuting reduction happens between two adjacent state-transition steps:
 \begin{definition}[Commutativity of steps]
   \label{def-comm-steps}
-  Two adjacent state-transition steps commute, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
+  Two adjacent state-transition steps \temph{commute}, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
   \begin{displaymath}
     \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})} \triangleq \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
   \end{displaymath}
@@ -575,8 +600,6 @@ Based on the intuitions from \autoref{sec-sz-pf-intuition}, in this section we p
 The biggest contribution of the \hemiola{} framework includes precise formalization of the intuitions -- merging atomic fragments, commutativity among rule templates, left/right pushes, etc. -- and the serializability proof employing those intuitions.
 The highest-level theorem will simply claim that use of good topology and the rule templates automatically guarantees serializability.
 
-We will use the example of interleaving transactions shown in \autoref{fig-ex-sz-trs} throughout the proof to convey the intuitions in the proof better, referred to as the ``interleaving example.''
-
 \subsection{Semi-sequential histories}
 \label{sec-semi-seq-hst}
 
@@ -609,7 +632,7 @@ Thanks to this relaxation, any atomic-history fragment is a semi-transaction.
 
 Semi-sequential histories are also defined in a similar way:
 \begin{definition}[Semi-Sequential Histories]
-  A history $h$ is \emph{semi-sequential} with \emph{degree} $n$ iff the history is a concatenation of $n$ semi-transactions.
+  A history $h$ is \temph{semi-sequential} with degree $n$ iff the history is a concatenation of $n$ semi-transactions.
   \begin{displaymath}
     \hsseq{S}{h}{n} \triangleq \exists\, \listof{t}.\; \sizeof{\listof{t}} = n \wedge (\forall t \in \listof{t}.\; \strsn{S}{t}) \wedge h = \listconcat{\listof{t}}.
   \end{displaymath}
@@ -751,12 +774,12 @@ From this section, we will just deal with histories only consisting of internal 
 The below notion of continuity lets us figure out whether two histories are related as adjacent parts of a whole atomic history:
 \begin{definition}[Continuity]\mbox{}\vspace{-8pt}\\
   \begin{enumerate}
-  \item Two atomic histories $h_1$ and $h_2$ are continuous (\hcontsymb{}) iff the initial messages of $h_2$ are in the live messages of $h_1$:
+  \item Two atomic histories $h_1$ and $h_2$ are \temph{continuous} (\hcontsymb{}) iff the initial messages of $h_2$ are in the live messages of $h_1$:
     \begin{displaymath}
       \hcont{h_1}{h_2}\; \triangleq\quad \atomic{\listof{\amsgi{im_1}}}{h_1}{\listof{\amsge{im_1}}} \;\wedge\; \atomic{\listof{\amsgi{im_2}}}{h_2}{\listof{\amsge{im_2}}} \;\wedge\; \listof{\amsgi{im_2}} \subseteq \listof{\amsge{im_1}}.
     \end{displaymath}
-  \item We say $h_1$ and $h_2$ are externally continuous (denoted as $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally atomic.
-  \item Two atomic histories $h_1$ and $h_2$ are discontinuous iff the live messages of $h_1$ are disjoint from the initial messages of $h_2$:
+  \item We say $h_1$ and $h_2$ are \temph{externally continuous} (denoted as $\hextcont{S}{h_1}{h_2}$) if they are continuous and $h_1$ is externally atomic.
+  \item Two atomic histories $h_1$ and $h_2$ are \temph{discontinuous} iff the live messages of $h_1$ are disjoint from the initial messages of $h_2$:
     \begin{displaymath}
       \hdiscont{h_1}{h_2}\; \triangleq\quad \atomic{\listof{\amsgi{im_1}}}{h_1}{\listof{\amsge{im_1}}} \;\wedge\; \atomic{\listof{\amsgi{im_2}}}{h_2}{\listof{\amsge{im_2}}} \;\wedge\; \listdisj{\listof{\amsge{im_1}}}{\listof{\amsgi{im_2}}}.
     \end{displaymath}
@@ -772,7 +795,7 @@ $\atomicHsts{\listof{h}} \triangleq \forall h \in \listof{h}.\; \atomicShort{h}$
 
 Using the notion of continuity, we can also formalize interleaving of atomic histories:
 \begin{definition}[Interleaved Histories]
-  In a given system $S$, a sequence of atomic histories $\listof{h}$ is interleaved iff there exist two histories $h_1$ and $h_2$ in the sequence that are externally continuous and any history between the two is discontinuous to $h_1$:
+  In a given system $S$, a sequence of atomic histories $\listof{h}$ is \temph{interleaved} iff there exist two histories $h_1$ and $h_2$ in the sequence that are externally continuous and any history between the two is discontinuous to $h_1$:
   \begin{align*}
     \hitlv{S}{\listof{h}}\; \triangleq\quad & \atomicHsts{\listof{h}}\; \wedge\\
     & \exists h_1, h_2, \listof{h_1}, \listof{h_2}, \listof{h_3}. \\
@@ -848,7 +871,7 @@ The \emph{nonconfluence} predicate removes this case, by claiming that any atomi
 \newcommand{\sncf}[1]{\ensuremath{\mathsf{Nonconfluent}\ #1}}
 \begin{definition}[Nonconfluence]
   \label{def-ncf}
-  A system $S$ is \emph{nonconfluent} iff any first non-external history (if it exists) is interleaved (with an external atomic history):
+  A system $S$ is \temph{nonconfluent} iff any first non-external history (if it exists) is interleaved (with an external atomic history):
   \begin{displaymath}
     \begin{array}{rcl}
       \sncf{S}\; \triangleq\quad & \forall \listof{h}, h_0, s. &
@@ -872,7 +895,7 @@ As mentioned in \autoref{sec-itlv-ncf-hst}, the main purpose of merging two cont
 Focusing solely on this purpose, we formally define the notion of mergeability as follows:
 \begin{definition}[Mergeability]
   \label{def-mgb}
-  For a given system $S$, two histories $h_1$ and $h_2$ are \emph{mergeable} iff any history containing the two histories can be reduced to the one where the two histories are merged and the number of atomic-history fragments for the other histories is preserved:
+  For a given system $S$, two histories $h_1$ and $h_2$ are \temph{mergeable} iff any history containing the two histories can be reduced to the one where the two histories are merged and the number of atomic-history fragments for the other histories is preserved:
   \begin{displaymath}
     \begin{array}{rrl}
       \hmgb{S}{h_1}{h_2}\; \triangleq & \forall s_1. & \semrch{S}{s_1} \to\\
@@ -979,7 +1002,7 @@ These two state transitions are always commutative, since there is no state tran
 
 This object separation is naturally extended to one for atomic histories:
 \begin{definition}\label{def-obj-comm}
-  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are object-separated, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
+  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are \temph{object-separated}, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
     \renewcommand{\arraystretch}{1.2}
     \begin{array}{rcl}
@@ -1011,7 +1034,7 @@ As seen in the definition, \ainputs{h} (\aoutputs{h}) collects all the input (ou
 We will also use \ainits{h} and \alives{h} to refer to the initial messages and live messages of $h$, respectively.
 
 \begin{definition}\label{def-msg-comm}
-  Given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are message-separated, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
+  Given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are \temph{message-separated}, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
     \renewcommand{\arraystretch}{1.2}
     \begin{array}{rl}
