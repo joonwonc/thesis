@@ -1436,11 +1436,32 @@ Here the noninterference property is described implicitly, as a requirement that
 The paper later defines noninterference formally, by providing sufficient conditions that any execution of a statement never interferes with a given Hoare-triple proof.
 In this case, each property is presented as a specific lemma proving the noninterference conditions.
 
-The use of noninterference in Hoare logic has become more explicit in concurrent separation logic~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
-For example, in rely-guarantee reasoning, two binary relations, called the ``rely'' and ``guarantee'' conditions, are added to the Hoare triple to reason about concurrent programs.
-The judgement has the form of $R,G \vdash \{P\}C\{Q\}$, meaning that every state change by another thread is in $R$ and every state change by $C$ is in $G$.
-($\{P\}C\{Q\}$ has the same meaning from the conventional Hoare triple.)
-Noninterference is then exhibited when constructing $R,G \vdash \{P\}C\{Q\}$ from the original Hoare triple $\{P\}C\{Q\}$, requiring that $P$ and $Q$ are stable (not interfered with) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
+The use of noninterference in Hoare logic has become more explicit later by several variants like concurrent separation logic (CSL)~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
+CSL provides the ``Critical Region Rule'' to reason about interaction among processes via a shared resource~\cite{Brookes:OHearn:2016}:
+\begin{displaymath}
+  \inference{\{ (P \ast RI_r) \wedge B \}\, C\, \{ Q \ast RI_r \}}
+            {\{ P \}\, \texttt{with}\; r\; \texttt{when}\; B\; \texttt{do}\; C\, \{ Q \}}
+\end{displaymath}
+Here $r$ is the shared resource, acting like a lock to enter critical regions in a program.
+This rule requires to define a resource invariant $RI_r$, stating desired properties when a process holds $r$.
+Mutual exclusion by a shared lock is one of typical ways to ensure noninterference.
+The uplock and downlock used in \hemiola{} function similarly.
+For example, acquiring a downlock means entering a ``subtree'' section (although not entirely critical) whose root is the downlocked object; a transaction holding the downlock iterates the subtree, makes state transitions, and releases it when getting out of the subtree.
+
+The most basic rule in CSL is the ``Parallel Composition Rule,'' which composes completely parallel processes~\cite{Brookes:OHearn:2016}:
+\begin{displaymath}
+  \inference{\{P_1\}\,C_1\,\{Q_1\}\;\cdots\;\{P_n\}\,C_n\,\{Q_n\}}
+            {\{P_1 \ast \cdots \ast P_n\}\,C_1 \parallel \cdots \parallel C_n\,\{Q_1 \ast \cdots \ast Q_n\}}
+\end{displaymath}
+It is interesting to compare this rule with how we use predicate messages in \hemiola{} for a single transaction on top of serializability.
+There is still certain concurrency in executing a single transaction; \eg{} after a parent cache makes invalidation requests to children, each child (subtree) handles its request concurrently.
+Since the child subtrees are disjoint, this kind of execution is completely parallel, and indeed resulting predicate messages for corresponding invalidation responses deal with disjoint parts of the system state.
+In the sense of dealing with trivial concurrency, we would like to note that using the predicate messages for input messages to prove the one for an output message is quite similar to the Parallel Composition Rule in CSL.
+
+On the other hand, in rely-guarantee reasoning, two binary relations, called the ``rely'' and ``guarantee'' conditions, are added to the Hoare triple to reason about concurrent programs.
+The judgement has the form of $R,G \vdash \{P\}\,C\,\{Q\}$, meaning that every state change by another thread is in $R$ and every state change by $C$ is in $G$.
+($\{P\}\,C\,\{Q\}$ has the same meaning from the conventional Hoare triple.)
+Noninterference is then exhibited when constructing $R,G \vdash \{P\}\,C\,\{Q\}$ from the original Hoare triple $\{P\}\,C\,\{Q\}$, requiring that $P$ and $Q$ are stable (not interfered with) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
 
 Now we explore the use of noninterference in hardware verification, more related to the techniques used in the \hemiola{} framework.
 To our knowledge, the notion was mentioned for the first time in a paper by McMillan as a part of compositional model checking:
