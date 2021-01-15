@@ -88,35 +88,49 @@ On the contrary, a downlock is set when an object makes a downward request(s) to
 \end{figure}
 
 \autoref{fig-locking-conditions} shows the conditions to acquire or release the locks.
+\revised{
 We explore each case with examples in actual cache-coherence protocols:
+} %% end of \revised
 
 \paragraph{An uplock cannot be set if the object is already uplocked.}
+\revised{
 As already explained with the interleaving history in \autoref{sec-nutshell}, we do not want to make a further request to the parent (with the same line) when it already made an upward request.
 Requesting to the parent twice would result in spurious interleavings.
+} %% end of \revised
 
 \paragraph{An uplock can be set even when the object is downlocked; instead, it cannot be released when downlocked.}
+\revised{
 It means that an object can make a request to the parent even when it has made requests to the children.
 It is still safe, since the lock release will not be allowed when downlocked, \ie{} the uplock release should always wait for the downlock to be released.
+} %% end of \revised
 
+\revised{
 This case happens only when a protocol is defined with caches forming at least 3-level, \ie{} there is an intermediate cache object that has both a parent and children.
 Suppose an intermediate cache is in an invalidation process, \ie{} invalidation requests have been sent to children and the cache has been downlocked since then.
 Also suppose that a child with the S status made an upward request to get the M status.
 In this case, the intermediate cache should be able to deal with this upward request and to make a further request to its parent, even when it is in the invalidation process.
 Granting the M status to the child, however, will happen after the invalidation process is finished, since the uplock can be released only after the downlock being released.
+} %% end of \revised
 
 \paragraph{A downlock cannot be set if the object is already downlocked.}
+\revised{
 This case is also presented in the example in \autoref{sec-nutshell}; we do not want to make another set of invalidation requests to children (with the same line) when it is in the invalidation process.
 Handling two invalidation processes would lead to an incoherent state due to spurious interleavings.
+} %% end of \revised
 
 \paragraph{A downlock can be set and released even when uplocked.}
+\revised{
 This relaxation is very important to make the locking mechanism live.
 If a downlock could not be released when uplocked, we would have a deadlock case, where both locks wait for each other.
+} %% end of \revised
 
+\revised{
 This case also happens when a protocol is at least 3-level.
 Similar to the above case, suppose that an intermediate cache already forwarded a request from its child to the parent to get the M status so it has been uplocked.
 When it receives an invalidation request from the parent at this moment, it should be able to deal with this request and possibly make further invalidation requests to some of its children.
 It sets a downlock for the invalidation process, even when it has been uplocked.
 We will see a couple of actual cases in \autoref{sec-case-study} with the case-study protocols, where both an uplock and a downlock are acquired to deal with two respective transactions.
+} %% end of \revised
 
 \subsubsection{Remarks on transient states}
 
@@ -399,34 +413,46 @@ $\stsilent{}$ annotates that the rule template forbids any state modification be
   \label{fig-rule-templates-use}
 \end{figure}
 
+\revised{
 In order to understand the rule templates better, we present how they can be used to describe an actual cache-coherence protocol.
 \autoref{fig-rule-templates-use} presents a number of rule templates used to describe the interleaving example described in \autoref{sec-nutshell}.
 We use an arrow ({\color{myred} $\to$}) and a label (\rdcircfl{1}{\textrm{rquu}}) to denote a state transition by a rule defined with a certain rule template, \eg{} \rdcircfl{1}{rquu} is a rule in $C_1$ using the {\bf rquu} rule template, taking an input message \idmsf{1}{rqWr} and outputting \idmsf{3}{rqM}.
+} %% end of \revised
 
+\revised{
 $\rdcircf{1}$ (or $\blcircf{2}$) uses the {\bf rquu} rule template.
 It takes \msgsfsm{rqWr} from the external-input channel of $C_1$ (or $C_2$) and makes a request \msgsfsm{rqM} to the parent $P$ to obtain the M status.
 By the definition of {\bf rquu}, it implicitly checks if the object is not uplocked and acquires the uplock.
 As explained in \autoref{sec-nutshell}, this uplock is not to allow any further external requests.
+} %% end of \revised
 
+\revised{
 $\rdcircf{3}$ (or $\blcircf{6}$) uses the {\bf rqud} rule template.
 It takes \msgsfsm{rqM} from the upward-request channel of $C_1$ (or $C_2$) and makes an invalidation request \msgsfsm{rqI} to the other child $C_2$ (or $C_1$).
 By the definition of {\bf rqud}, it implicitly checks if the object is not downlocked and acquires the downlock.
 This downlock is not to allow any further upward requests to $P$.
 Indeed, after $\rdcircf{3}$ is executed, \blrecmsgsm{f}{rqM} has been stalled until the downlock is released by $\rdcircf{5}$.
+} %% end of \revised
 
+\revised{
 $\rdcircf{4}$ (or $\blcircf{8}$) uses the {\bf immu} rule template.
 It takes \msgsfsm{rqI} from the downward channel to $C_2$ (or $C_1$) and responds to the parent with \msgsfsm{rsI}.
 Note that {\bf immu} does not require the uplock be free.
 Indeed, at the moment $\rdcircf{4}$ is executed, $C_2$ has been uplocked by \blcircfl{2}{rquu}.
+} %% end of \revised
 
+\revised{
 $\rdcircf{5}$ uses the {\bf rsud} rule template.
 It takes \msgsfsm{rsI} from the upward-response channel from $C_2$ and responds back to $C_1$ with \msgsfsm{rsM}.
 {\bf rsud} by definition releases the downlock at this moment so $P$ can take another upward request (\eg{} \blrecmsgsm{f}{rqM}).
+} %% end of \revised
 
+\revised{
 Lastly, $\rdcircf{7}$ uses the {\bf rsdd} rule template.
 It takes \msgsfsm{rsM} from the downward channel to $C_1$ and responds back with \msgsfsm{rsWr} to the external world.
 The uplock is released at this moment.
 {\bf rsdd} by definition also checks if the object is downlock-free, but in this case $C_1$ is a leaf node (an L1 cache) so it never sets the downlock.
+} %% end of \revised
 
 \subsubsection{Remarks}
 
@@ -1436,6 +1462,7 @@ Here the noninterference property is described implicitly, as a requirement that
 The paper later defines noninterference formally, by providing sufficient conditions that any execution of a statement never interferes with a given Hoare-triple proof.
 In this case, each property is presented as a specific lemma proving the noninterference conditions.
 
+\revised{
 The use of noninterference in Hoare logic has become more explicit later by several variants like concurrent separation logic (CSL)~\cite{OHearn:2004} and rely-guarantee reasoning~\cite{Jones:1983}.
 CSL provides the ``Critical Region Rule'' to reason about interaction among processes via a shared resource~\cite{Brookes:OHearn:2016}:
 \begin{displaymath}
@@ -1447,7 +1474,9 @@ This rule requires to define a resource invariant $RI_r$, stating desired proper
 Mutual exclusion by a shared lock is one of typical ways to ensure noninterference.
 The uplock and downlock used in \hemiola{} function similarly.
 For example, acquiring a downlock means entering a ``subtree'' section (although not entirely critical) whose root is the downlocked object; a transaction holding the downlock iterates the subtree, makes state transitions, and releases it when getting out of the subtree.
+} %% end of \revised
 
+\revised{
 The most basic rule in CSL is the ``Parallel Composition Rule,'' which composes completely parallel processes~\cite{Brookes:OHearn:2016}:
 \begin{displaymath}
   \inference{\{P_1\}\,C_1\,\{Q_1\}\;\cdots\;\{P_n\}\,C_n\,\{Q_n\}}
@@ -1457,11 +1486,14 @@ It is interesting to compare this rule with how we use predicate messages in \he
 There is still certain concurrency in executing a single transaction; \eg{} after a parent cache makes invalidation requests to children, each child (subtree) handles its request concurrently.
 Since the child subtrees are disjoint, this kind of execution is completely parallel, and indeed resulting predicate messages for corresponding invalidation responses deal with disjoint parts of the system state.
 In the sense of dealing with trivial concurrency, we would like to note that using the predicate messages for input messages to prove the one for an output message is quite similar to the Parallel Composition Rule in CSL.
+} %% end of \revised
 
+\revised{
 On the other hand, in rely-guarantee reasoning, two binary relations, called the ``rely'' and ``guarantee'' conditions, are added to the Hoare triple to reason about concurrent programs.
 The judgement has the form of $R,G \vdash \{P\}\,C\,\{Q\}$, meaning that every state change by another thread is in $R$ and every state change by $C$ is in $G$.
 ($\{P\}\,C\,\{Q\}$ has the same meaning from the conventional Hoare triple.)
 Noninterference is then exhibited when constructing $R,G \vdash \{P\}\,C\,\{Q\}$ from the original Hoare triple $\{P\}\,C\,\{Q\}$, requiring that $P$ and $Q$ are stable (not interfered with) under $R$, \ie{} $\forall s, t.\; P(s) \wedge R(s, t) \to P(t)$.
+} %% end of \revised
 
 Now we explore the use of noninterference in hardware verification, more related to the techniques used in the \hemiola{} framework.
 To our knowledge, the notion was mentioned for the first time in a paper by McMillan as a part of compositional model checking:
