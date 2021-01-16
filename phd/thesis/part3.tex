@@ -952,10 +952,10 @@ Another approach proved a write-invalidate cache-coherence protocol using the AC
 The protocol is based on bus snooping, and the design and proof are parameterized by the number of processors.
 
 \revised{
-There was an approach trying to prove both correctness and liveness of adaptive cache-coherence protocols using the PVS theorem prover~\cite{Shen:1999,Stoy:Shen:2001,thesis:Shen:2000}.
+One past project tried to prove both correctness and liveness of adaptive cache-coherence protocols using the PVS theorem prover~\cite{Shen:1999,Stoy:Shen:2001,thesis:Shen:2000}.
 They verified the Cachet adaptive cache-coherence protocol that consists of several micro-protocols.
 Inside the protocol, each line in a cache can dynamically switch from one micro-protocol to another one for performance.
-In order to verify the protocol more easily, they suggested to design and prove protocols by two stages: one for imperative rules, which are only about correctness, and the other for directive rules that affect both correctness and liveness.
+In order to verify the protocol more easily, they suggested to design and prove protocols in two stages: one for imperative rules, which are only about correctness, and the other for directive rules that affect both correctness and liveness.
 Imperative rules correspond to the rules defined in \hemiola{} for protocol description, whereas directive rules correspond to the rules in the pipelined cache controller prebuilt in the \hemiola{} protocol compiler.
 } %% end of \revised
 

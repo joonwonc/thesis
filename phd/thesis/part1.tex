@@ -115,7 +115,7 @@ The definition is general in that any object can access any channel in the syste
 In practical cache-coherence protocols, however, only specific message-passing patterns are used.
 Recalling our interleaving example in \autoref{sec-nutshell}, we see that the three objects ($P$, $C_1$, and $C_2$) form a tree shape and communicate through the designated three channels between the parent and a child.
 One of the main intuitions of the \hemiola{} framework is that safe interleavings are ensured just by restricting the communication patterns among objects (with proper locking mechanisms).
-We will explore how such restriction is enforced by defining a domain-specific language (in \autoref{sec-hemiola-dsl}) and how it implies safe interleavings (in \autoref{sec-sz-guarantee-hemiola}).
+We will explore how such a restriction is enforced by defining a domain-specific language (DSL) in \autoref{sec-hemiola-dsl} and how the DSL implies safe interleavings in \autoref{sec-sz-guarantee-hemiola}.
 } %% end of \revised
 
 \subsection{Semantics}
@@ -506,11 +506,11 @@ With a clear notion of transactions, we can easily define sequential histories a
 \revised{
 \autoref{fig-sz-ex} presents an example of a serializable history, brought from the example in \autoref{sec-nutshell}, where two histories (in {\color{myred} red} and {\color{myblue} blue}) are interleaved to form a history $h$.
 A corresponding sequential history $h_{\textrm{seq}}$ is also presented, formed by concatenating two atomic histories in {\color{myred} red} and {\color{myblue} blue}.
-Following the rule executions in $h_{\textrm{seq}}$, we see that it is indeed a legal history and reaches the same state as the one by the original history $h$.
+Following the rule executions in $h_{\textrm{seq}}$, we see that it is indeed a legal history and reaches the same state as the original history $h$ does.
 } %% end of \revised
 
 \revised{
-It is quite natural to think of sequential histories only with atomic histories, but why do we have to separate external inputs/outputs labels from atomic histories?
+It is quite natural to think of sequential histories only with atomic histories, but why do we have to separate external input/output labels from atomic histories?
 } %% end of \revised
 Suppose that an object $C$ in a system $S$ takes two external requests, say $\textsf{rq}_1$ and $\textsf{rq}_2$, in-order from the same channel and finishes handling $\textsf{rq}_2$ earlier than $\textsf{rq}_1$.
 Even if $C$ should start handling $\textsf{rq}_1$ first because the channel is ordered, this case may happen when $\textsf{rq}_1$ requires further treatment by other objects while $C$ can take $\textsf{rq}_2$ and respond immediately to the corresponding external channel.
