@@ -112,7 +112,7 @@ We present the designs and complete correctness proofs of hierarchical MSI and M
 \autoref{sec-comp-syn} presents the protocol compiler, which compiles a protocol described in \hemiola{} to a corresponding hardware implementation and discusses the correctness of the compiler.
 We then discuss the other series of related work in \autoref{sec-related-work-ii}, exploring some previous approaches to verifying cache-coherence protocols.
 
-\chapter{Background}
+\chapter{Background and Overview}
 \label{sec-background}
 
 Before introducing our proposed method to design and prove cache-coherence protocols more structurally, in this chapter we provide some background to understand conventional cache-coherence protocol designs and typical correctness challenges.
@@ -280,15 +280,24 @@ Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \
 As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} from further processing.
 Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf{3}]$ was not spuriously affected by $\blcircf{6}$ or $\blcircf{8}$, thanks to the correct channel setting.
 
+\revised{Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaved history.''}
+
+\section{Overview: the \hemiola{} Framework and Its Formal Guarantee}
+\label{sec-overview}
+
+In the last section, we confirmed that proper locking (by transient states) and topology are crucial for designing a correct cache-coherence protocol.
 If proper locking (by transient states) and topology are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
 That is exactly what \hemiola{} provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates}, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
 
-\revised{Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaved history.''}
+In this section, we provide the brief overview of the \hemiola{} framework by redefining the example protocol shown in \autoref{sec-nutshell} using rule templates.
+We will also provide high-level intuitions about the formal meaning of safe interleavings and how the rule templates ensure this property.
+
+\todo{write the section.}
 
 \section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}
 
-In \autoref{sec-nutshell}, we examined a very specific protocol design.
+In \autoref{sec-nutshell} and \autoref{sec-overview}, we examined a very specific protocol design.
 There are different ways to design a cache-coherence protocol, and each design decision affects performance and correctness of the protocol.
 In this section, we explore the major design space of conventional cache-coherence protocols.
 
