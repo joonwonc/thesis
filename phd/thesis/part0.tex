@@ -524,8 +524,17 @@ The biggest contribution of the \hemiola{} framework is that the use of the rule
 \hemiola{} provides a theorem that we can find a sequential history for any legal history in any protocol designed with the rule templates.
 In other words, the theorem says that good request/response patterns with proper locking mechanisms are enough to prove serializability.
 
-In this section, we would like to provide just a highest-level intuition why this theorem holds, while the actual proof and all the required proof techniques will be introduced in \autoref{sec-sz-guarantee-hemiola}.
+How does this nontrivial theorem hold?
+The highest-level intuition behind this theorem is the \emph{mutual exclusions} by uplocks and downlocks.
+For instance, when an object is uplocked, it cannot generate any further upward requests from it, indicating that only a single transaction can (upwardly) pass through this object by acquiring an uplock.
+Likewise, when an object is downlocked, it cannot generate any further downward requests, meaning that a single transaction can (downwardly) pass through this object by acquiring a downlock.
 
+Mutual exclusion by a lock is one typical way to make an execution of a transaction (thread) atomic.
+By repeatedly applying the atomicity guarantee by a lock, we can change a given interleaved history to a corresponding sequential one.
+Note again that the state transitions by a transaction (other than locking) are irrelevant to the locking mechanism, implying that the serializability proof indeed does not require any specific conditions on a protocol.
+
+All the required proof techniques to reason about these mutual exclusions and the actual serializability proof will be introduced in \autoref{sec-sz-guarantee-hemiola}.
+We will also present our suggested methodology to exploit serializability for the verification of cache-coherence protocols in \autoref{sec-pred-msg}.
 
 \section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}
