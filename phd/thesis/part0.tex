@@ -280,18 +280,20 @@ Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \
 As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} from further processing.
 Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf{3}]$ was not spuriously affected by $\blcircf{6}$ or $\blcircf{8}$, thanks to the correct channel setting.
 
-\revised{Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaved history.''}
+\revised{Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaving example.''}
 
 \section{Overview: the \hemiola{} Framework and Its Formal Guarantee}
 \label{sec-overview}
 
-In the last section, we confirmed that proper locking (by transient states) and topology are crucial for designing a correct cache-coherence protocol.
+In the previous section, we confirmed that proper locking (by transient states) and topology are crucial for designing a correct cache-coherence protocol.
 If such ingredients are that essential, can we craft a domain-specific language where only conformant protocols are expressible?
-That is exactly what \hemiola{} provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates}, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
+That is exactly what the \hemiola{} framework provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates} in more detail, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
 
-In this section, we provide the brief overview of the \hemiola{} framework by redefining the example protocol shown in \autoref{sec-nutshell} using rule templates.
-%% We will use transient states we discussed in \autoref{sec-nutshell} directly in conventional descriptions.
-We will also provide high-level intuitions about the formal meaning of safe interleavings and how the rule templates ensure this property.
+Before diving into the details of the theory, in this section, we provide the brief overview of the \hemiola{} framework by redefining the example protocol shown in \autoref{sec-nutshell} using rule templates.
+Specifically, we will show the use of transient states discussed in \autoref{sec-nutshell} directly in conventional description and compare them with the alternative locking mechanism suggested in \hemiola{}.
+After the comparison, we will provide high-level intuitions about the formal meaning of safe interleavings and how the rule templates ensure this property.
+
+\subsubsection{The \hemiola{} rule templates}
 
 \newcommand{\cann}[1]{{\color{mygreen}#1}}
 \newcommand{\ccompo}[1]{{\color{myred}#1}}
@@ -320,19 +322,24 @@ We will also provide high-level intuitions about the formal meaning of safe inte
   \label{fig-overview-1}
 \end{figure}
 
-\autoref{fig-overview-1} presents a conventional rule description (in pseudocode) used to request the M status to its parent on the left side of the figure.
-This rule matches the rules $\rdcircf{1}$ and $\blcircf{2}$ in the interleaving example shown in \autoref{fig-motive-2}.
-This figure also presents a corresponding rule in \hemiola{} using the proper rule template.
-There are largely three benefits of using the \hemiola{} rule templates in this case; we explain them by matching the number annotations in the figure.
+\autoref{fig-overview-1} presents a conventional rule description (in pseudocode) used to request the M status to a parent on the left side of the figure.
+This rule definition matches the rules $\rdcircf{1}$ and $\blcircf{2}$ in the interleaving example shown in \autoref{fig-motive-2}.
+This figure also presents a corresponding rule in \hemiola{} using one of the rule templates.
+There are largely three benefits of using the \hemiola{} rule templates; we explain them by matching the number annotations in the figure.
 \begin{enumerate}[(1)]
-\item Input/output patterns: in conventional description, it is required to designate a FIFO module to dequeue an input message and to check the purpose of the message by looking at its message ID.
-  In \hemiola{}, each rule template is restricted in terms of input/output patterns; for instance, the \slstinline{rquu} rule template (where \slstinline{rquu} stands for request-up-up) always takes an input message from one of its children (\slstinline{:from} the \slstinline{ext}ernal world in this case) and generates an output message to the parent of \slstinline{:me C1}.
+\item Input/output patterns: in conventional description, a user has to find and designate a FIFO module to dequeue an input message and to check the purpose of the message by looking at its message ID.
+  In \hemiola{}, each rule template is restricted in terms of input/output patterns; for instance, the \slstinline{rquu} rule template (where \slstinline{rquu} stands for request-up-up) always takes an input request from one of its children (\slstinline{:from} the \slstinline{ext}ernal world in this case) and generates an output request to the parent of \slstinline{:me C1}.
   We can also annotate that this rule only \slstinline{:accepts} an input message with an ID \slstinline{rqWr}.
 \item In-transition checks: conventional description uses a miss status holding register (\ccomph{\slstinline{mshr}}) to record whether a line is \slstinline{in_transition} or not.
   \hemiola{} employs an abstract locking mechanism, and each rule template automatically sets/releases the locks.
-  Hence, a user does not need to consider any in-transition checks or transient states, which is one of the major headaches in designing a protocol.
-\item Use of transient states: again, in conventional desription, a user should manually update \ccomph{\slstinline{mshr}} to set a proper transient state and find a FIFO to enqueue an output message.
+  Hence, a user does not need to describe any in-transition checks or transient states manually, which is one of the major headaches in designing a protocol.
+  More specifically, \hemiola{} provides two kinds of locks: \emph{an uplock and a downlock}.
+  The \slstinline{rquu} rule template automatically sets an uplock, since it makes an upward request (to the parent).
+  The uplock is released when handling the corresponding response from the parent.
+  We will see some other use cases of the locks in the other rule templates.
+\item Use of transient states: in conventional description, a user should manually update \ccomph{\slstinline{mshr}} to set a proper transient state and find a FIFO to enqueue an output message.
   Neither is required in \hemiola{}; in this \slstinline{rquu} rule template we just need to construct an output message.
+  All the rule templates assume the three-channel system introduced in \autoref{sec-nutshell}; \eg{} the \slstinline{rquu} rule template enqueues an output message to the upward-request channel.
 \end{enumerate}
 
 \begin{figure}[h]
@@ -357,11 +364,13 @@ There are largely three benefits of using the \hemiola{} rule templates in this 
   \label{fig-overview-2}
 \end{figure}
 
-\autoref{fig-overview-2} shows another request rule pattern used in the parent object to make an invalidation request to the other sharer.
+\autoref{fig-overview-2} shows another rule pattern to make a further request, used in the parent object to send an invalidation request to the other sharer.
 This rule matches the rules $\rdcircf{3}$ and $\blcircf{6}$ in the interleaving example shown in \autoref{fig-motive-2} and \autoref{fig-motive-3}, respectively.
-We have the same three benefits in this rule template: to use correct input/output channels, no need of in-transition checks, and no need to consider transient states.
+We have the same three benefits in the suggested rule template on the right side of the figure: to use correct input/output channels, no in-transition checks, and no need to consider transient states.
 The only difference from the \slstinline{rquu} template is that this one generates further requests to children, not to the parent.
 (\slstinline{rqud} here stands for request-up-down.)
+It automatically sets a downlock, since it makes downward requests to children.
+Likewise, the downlock is released when handling the corresponding responses from the children.
 
 \begin{figure}[h]
   \centering\footnotesize\tt\frenchspacing
@@ -386,12 +395,12 @@ The only difference from the \slstinline{rquu} template is that this one generat
   \label{fig-overview-3}
 \end{figure}
 
-The next pattern, shown in \autoref{fig-overview-3}, is used to respond to a request from a parent immediately.
-(\slstinline{immu} stands for immediate-up.)
-The rules $\rdcircf{4}$ and $\blcircf{8}$ in the interleaving example uses this pattern to handle an invalidation request.
+The next pattern, shown in \autoref{fig-overview-3}, is used to respond immediately to a request from a parent.
+The rules $\rdcircf{4}$ and $\blcircf{8}$ in the interleaving example use this pattern to handle an invalidation request.
 As already discussed in \autoref{sec-nutshell}, the child object should be able to handle this invalidation request from its parent even though it is in transition.
-In conventional description, it is required to change the transient state properly (from \slstinline{msiSM} to \slstinline{msiIM} in this example); in \hemiola{}, as seen in the figure, it is not required to manage such transient states.
-%% The locking mechanism using an uplock and a downlock is still enough to handle this case by priortizing downward requests to the uplock.
+In conventional description, it is required to change the transient state properly (from \slstinline{msiSM} to \slstinline{msiIM} in this example).
+In \hemiola{}, as seen in the figure, it is not required to manage such transient states; a user can just use the \slstinline{immu} rule template (where \slstinline{immu} stands for immediate-up).
+The locking mechanism using an uplock and a downlock is still enough to implement this case properly by priortizing downward requests to the uplock.
 
 \begin{figure}[h]
   \centering\footnotesize\tt\frenchspacing
@@ -418,11 +427,12 @@ In conventional description, it is required to change the transient state proper
   \label{fig-overview-4}
 \end{figure}
 
-In a usual cache-coherence protocol, when a cache object gets a response message from another object, it must have sent a corresponding request to that object.
+In a usual cache-coherence protocol, when a cache object gets a response message from another object, it must have previously sent a corresponding request to that object.
 \autoref{fig-overview-4} describes this case, where a parent cache object handles an invalidation response from a child, like the rule $\rdcircf{5}$ in the interleaving example.
 In conventional description, we need to check that the line is currently \slstinline{in_transition} and the original request held in the MSHR matches the input response.
 It is also required to release the MSHR slot by setting \slstinline{in_transition} to none.
-As expected, in \hemiola{} we do not need to manage transient states explicitly at all; the \slstinline{rsud} rule template (standing for response-up-down) just requires additional annotation \slstinline{:holding rqM} to declare that the rule handles a response message where the ID of the original request message is \slstinline{rqM}.
+As expected, in \hemiola{} we do not need to manage transient states at all; the \slstinline{rsud} rule template (standing for response-up-down) just requires additional annotation \slstinline{:holding rqM} to declare that the rule handles a response message where the ID of the original request message is \slstinline{rqM}.
+This rule template automatically releases the downlock previously acquired when sending a downward invalidation request.
 
 \begin{figure}[h]
   \centering\footnotesize\tt\frenchspacing
@@ -448,8 +458,74 @@ As expected, in \hemiola{} we do not need to manage transient states explicitly 
   \label{fig-overview-5}
 \end{figure}
 
-Lastly, \autoref{fig-overview-5} deals with the case where a child finally gets a response from its parent to update its status to M, like the rule $\rdcircf{7}$.
-The \slstinline{rsdd} rule template (standing for response-down-down) is very similar to the \slstinline{rsud} template but has a notable implicit difference that it releases the uplock, not the downlock in \slstinline{rsud}.
+Lastly, \autoref{fig-overview-5} deals with the case where a child finally gets a response from its parent to update its status to M, like the rule $\rdcircf{7}$ in the interleaving example.
+The \slstinline{rsdd} rule template (standing for response-down-down) is very similar to the \slstinline{rsud} template but has a difference that it automaticlly releases the uplock that was previously acquired when sending the \slstinline{rqM} request.
+
+We will explore much more details of the locking mechanism and the rule templates provided by \hemiola{} in \autoref{sec-hemiola-dsl}.
+
+\subsubsection{The serializability guarantee by \hemiola{}}
+
+We have emphasized that it is easier to describe cache-coherence protocols with the \hemiola{} rule templates, but it does not mean a lot if the rule templates are just the alternative representation of transient states.
+The biggest contribution of the \hemiola{} framework is that using the rule templates (implicitly with the locking mechanism) already implies safe interleavings among transactions.
+
+\hemiola{} provides the formal definition of serializability as a criterion for safe interleavings.
+Informally, it claims that for any legal history of a system we can always find a sequential history that reaches the same resulting state, where each transaction is performed atomically (without any interleavings) in it.
+
+\begin{figure}[h]
+  \centering
+  \renewcommand{\arraystretch}{1.2}
+  \setlength\tabcolsep{2.5pt}
+  \begin{tabular}{|ccc|}
+    \hline
+    \multicolumn{1}{|l}{
+      \begin{tikzpicture}
+        \node at (0, 0) {};
+        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
+        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
+    \end{tikzpicture}} & &
+    \multicolumn{1}{l|}{
+      \begin{tikzpicture}
+        \node at (0, 0) {};
+        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
+        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
+    \end{tikzpicture}}\\
+    \begin{tabular}{c|ccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & & & \rdcircf{7} & \blcircf{8} \\
+      \hline
+      $P$ & & & & \rdcircf{3} & & \rdcircf{5} & \blcircf{6} & & \\
+      \hline
+      $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & \\
+      \hline
+    \end{tabular} & $\Rightarrow$ &
+    \begin{tabular}{c|ccccccccc}
+      \hline
+      $C_1$ & & \rdcircf{1} & & & & \rdcircf{7} & & & \blcircf{8} \\
+      \hline
+      $P$ & & & \rdcircf{3} & & \rdcircf{5} & & & \blcircf{6} & \\
+      \hline
+      $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & \\
+      \hline
+    \end{tabular}\\
+    {\small An original history $h$} & & {\small A sequential history $h_{\textrm{seq}}$}\\
+    \hline
+  \end{tabular}
+  \caption{An example of a serializable history}
+  \label{fig-sz-ex}
+\end{figure}
+
+\autoref{fig-sz-ex} presents a history brought from the example in \autoref{sec-nutshell}, where two histories (in {\color{myred} red} and {\color{myblue} blue}) are interleaved to form a history $h$.
+We can find a corresponding sequential history $h_{\textrm{seq}}$, formed by concatenating two transactions in {\color{myred} red} and {\color{myblue} blue}.
+Following the rule executions in $h_{\textrm{seq}}$, we see that it indeed reaches the same state as the original history $h$ does.
+We will introduce all the required formalization to define serializability in \autoref{sec-sz-def}.
+
+The biggest contribution of the \hemiola{} framework is that the use of the rule templates implies serializability.
+\autoref{fig-sz-ex} just presents a specific history and its corresponding sequential history.
+\hemiola{} provides a theorem that we can find a sequential history for any legal history in any protocol designed with the rule templates.
+In other words, the theorem says that good request/response patterns with proper locking mechanisms are enough to prove serializability.
+
+In this section, we would like to provide just a highest-level intuition why this theorem holds, while the actual proof and all the required proof techniques will be introduced in \autoref{sec-sz-guarantee-hemiola}.
+
 
 \section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}

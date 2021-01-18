@@ -460,58 +460,7 @@ With a clear notion of transactions, we can easily define sequential histories a
   \label{def-sz}
 \end{definition}
 
-\begin{figure}[h]
-  \centering
-  \renewcommand{\arraystretch}{1.2}
-  \setlength\tabcolsep{2.5pt}
-  \begin{tabular}{|ccc|}
-    \hline
-    \multicolumn{1}{|l}{
-      \begin{tikzpicture}
-        \node at (0, 0) {};
-        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
-        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
-    \end{tikzpicture}} & &
-    \multicolumn{1}{l|}{
-      \begin{tikzpicture}
-        \node at (0, 0) {};
-        \node[anchor=west] at (0.7, 0.4) {{\small\it State transition timeline}};
-        \draw [>=stealth,->,line width=1pt] (0.7, 0) to (5.8, 0);
-    \end{tikzpicture}}\\
-    \begin{tabular}{c|ccccccccc}
-      \hline
-      $C_1$ & & \rdcircf{1} & & & & & & \rdcircf{7} & \blcircf{8} \\
-      \hline
-      $P$ & & & & \rdcircf{3} & & \rdcircf{5} & \blcircf{6} & & \\
-      \hline
-      $C_2$ & & & \blcircf{2} & & \rdcircf{4} & & & & \\
-      \hline
-    \end{tabular} & $\Rightarrow$ &
-    \begin{tabular}{c|ccccccccc}
-      \hline
-      $C_1$ & & \rdcircf{1} & & & & \rdcircf{7} & & & \blcircf{8} \\
-      \hline
-      $P$ & & & \rdcircf{3} & & \rdcircf{5} & & & \blcircf{6} & \\
-      \hline
-      $C_2$ & & & & \rdcircf{4} & & & \blcircf{2} & & \\
-      \hline
-    \end{tabular}\\
-    {\small An original history $h$} & & {\small A sequential history $h_{\textrm{seq}}$}\\
-    \hline
-  \end{tabular}
-  \caption{An example of a serializable history}
-  \label{fig-sz-ex}
-\end{figure}
-
-\revised{
-\autoref{fig-sz-ex} presents an example of a serializable history, brought from the example in \autoref{sec-nutshell}, where two histories (in {\color{myred} red} and {\color{myblue} blue}) are interleaved to form a history $h$.
-A corresponding sequential history $h_{\textrm{seq}}$ is also presented, formed by concatenating two atomic histories in {\color{myred} red} and {\color{myblue} blue}.
-Following the rule executions in $h_{\textrm{seq}}$, we see that it is indeed a legal history and reaches the same state as the original history $h$ does.
-} %% end of \revised
-
-\revised{
-It is quite natural to think of sequential histories only with atomic histories, but why do we have to separate external input/output labels from atomic histories?
-} %% end of \revised
+It is quite natural to think of sequential histories only with atomic histories, \eg{} like the one in \autoref{fig-sz-ex}, but why do we have to separate external input/output labels from atomic histories?
 Suppose that an object $C$ in a system $S$ takes two external requests, say $\textsf{rq}_1$ and $\textsf{rq}_2$, in-order from the same channel and finishes handling $\textsf{rq}_2$ earlier than $\textsf{rq}_1$.
 Even if $C$ should start handling $\textsf{rq}_1$ first because the channel is ordered, this case may happen when $\textsf{rq}_1$ requires further treatment by other objects while $C$ can take $\textsf{rq}_2$ and respond immediately to the corresponding external channel.
 We may have the following legal history $h$ in $S$ for this kind of scenario:
