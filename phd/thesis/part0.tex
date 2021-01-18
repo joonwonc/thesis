@@ -414,7 +414,7 @@ The locking mechanism using an uplock and a downlock is still enough to implemen
     & c2ToPRs.deq(); & \\
     & \cann{assert} (\ccompo{msgIn}.id == rsI); & \\[7pt]
     (2) & \cann{assert} (\ccomph{mshr}.\underline{in\_transition}); & :\cann{holding} rqM\\
-    & \cann{assert} (\ccomph{mshr}.rq.id == rqM) & :\cann{requires} (fun \_ \_ \_ => True)\\[7pt]
+    & \cann{assert} (\ccomph{mshr}.rq.id == rqM); & :\cann{requires} (fun \_ \_ \_ => True)\\[7pt]
     (3) & \ccomph{mshr}.\underline{in\_transition} <= None; & :\cann{transition}\\
     & \ccompt{line}.dir.st <= msiM; & \ (fun \ccompt{line} \ccompo{msgIn} rq rsbTo =>\\
     & \ccompt{line}.dir.excl <= \ccomph{mshr}.rsbTo; & \ \ (\ccompt{line} +\#[status $\leftarrow$ msiI]\\
