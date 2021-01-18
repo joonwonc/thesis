@@ -286,13 +286,170 @@ Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf
 \label{sec-overview}
 
 In the last section, we confirmed that proper locking (by transient states) and topology are crucial for designing a correct cache-coherence protocol.
-If proper locking (by transient states) and topology are crucial for designing a correct protocol, can we craft a domain-specific language where only conformant protocols are expressible?
+If such ingredients are that essential, can we craft a domain-specific language where only conformant protocols are expressible?
 That is exactly what \hemiola{} provides: it provides \emph{rule templates}, explained in \autoref{sec-rule-templates}, that employ proven-safe topologies and network structures and automatically set associated locks, so designers can design protocols without worrying about corner cases due to interleavings.
 
 In this section, we provide the brief overview of the \hemiola{} framework by redefining the example protocol shown in \autoref{sec-nutshell} using rule templates.
+%% We will use transient states we discussed in \autoref{sec-nutshell} directly in conventional descriptions.
 We will also provide high-level intuitions about the formal meaning of safe interleavings and how the rule templates ensure this property.
 
-\todo{write the section.}
+\newcommand{\cann}[1]{{\color{mygreen}#1}}
+\newcommand{\ccompo}[1]{{\color{myred}#1}}
+\newcommand{\ccompt}[1]{{\color{myblue}#1}}
+\newcommand{\ccomph}[1]{{\color{mygray}#1}}
+
+\begin{figure}[h]
+  \centering\footnotesize\tt\frenchspacing
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    & {\sf\it Conventional description} & {\sf\it In Hemiola}\\
+    \hline
+    (1) & \cann{rule} := & \cann{rule}.rquu\\
+    & \ccompo{msgIn} = extToC1.first; & :\cann{from} ext\\
+    & extToC1.deq(); & :\cann{me} C1\\
+    & \cann{assert} (\ccompo{msgIn}.id == rqWr); & :\cann{accepts} rqWr\\[7pt]
+    (2) & \cann{assert} (!\ccomph{mshr}.\underline{in\_transition}); & :\cann{requires}\\
+    & \cann{assert} (\ccompt{line}.status $\leq$ msiS); & \ (fun \ccompt{line} \ccompo{msgIn} => \ccompt{line}\#[status] $\leq$ msiS)\\[7pt]
+    (3) & \ccomph{mshr}.\underline{in\_transition} <= \underline{msiSM}; & :\cann{transition}\\
+    & c1ToPRq.enq(\{id: rqM, val: 0\}); & \ (fun \ccompt{line} \ccompo{msgIn} => <| rqM, 0 |>).\\
+    & \cann{endrule} & \\
+    \hline
+  \end{tabular}
+  \caption{A child requesting M to its parent}
+  \label{fig-overview-1}
+\end{figure}
+
+\autoref{fig-overview-1} presents a conventional rule description (in pseudocode) used to request the M status to its parent on the left side of the figure.
+This rule matches the rules $\rdcircf{1}$ and $\blcircf{2}$ in the interleaving example shown in \autoref{fig-motive-2}.
+This figure also presents a corresponding rule in \hemiola{} using the proper rule template.
+There are largely three benefits of using the \hemiola{} rule templates in this case; we explain them by matching the number annotations in the figure.
+\begin{enumerate}[(1)]
+\item Input/output patterns: in conventional description, it is required to designate a FIFO module to dequeue an input message and to check the purpose of the message by looking at its message ID.
+  In \hemiola{}, each rule template is restricted in terms of input/output patterns; for instance, the \slstinline{rquu} rule template (where \slstinline{rquu} stands for request-up-up) always takes an input message from one of its children (\slstinline{:from} the \slstinline{ext}ernal world in this case) and generates an output message to the parent of \slstinline{:me C1}.
+  We can also annotate that this rule only \slstinline{:accepts} an input message with an ID \slstinline{rqWr}.
+\item In-transition checks: conventional description uses a miss status holding register (\ccomph{\slstinline{mshr}}) to record whether a line is \slstinline{in_transition} or not.
+  \hemiola{} employs an abstract locking mechanism, and each rule template automatically sets/releases the locks.
+  Hence, a user does not need to consider any in-transition checks or transient states, which is one of the major headaches in designing a protocol.
+\item Use of transient states: again, in conventional desription, a user should manually update \ccomph{\slstinline{mshr}} to set a proper transient state and find a FIFO to enqueue an output message.
+  Neither is required in \hemiola{}; in this \slstinline{rquu} rule template we just need to construct an output message.
+\end{enumerate}
+
+\begin{figure}[h]
+  \centering\footnotesize\tt\frenchspacing
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    & {\sf\it Conventional description} & {\sf\it In Hemiola}\\
+    \hline
+    (1) & \cann{rule} := & \cann{rule}.rqud\\
+    & \ccompo{msgIn} = c1ToPRq.first; & :\cann{from} C1\\
+    & c1ToPRq.deq(); & :\cann{me} P\\
+    & \cann{assert} (\ccompo{msgIn}.id == rqM); & :\cann{accepts} rqM\\[7pt]
+    (2) & \cann{assert} (!\ccomph{mshr}.\underline{in\_transition}); & :\cann{requires}\\
+    & \cann{assert} (\ccompt{line}.dir.st == msiS); & \ (fun \ccompt{line} \ccompo{msgIn} => \ccompt{line}\#[dir].st == msiS)\\[7pt]
+    (3) & \ccomph{mshr}.\underline{in\_transition} <= \underline{msiSD}; & :\cann{transition}\\
+    & pToC2.enq(\{id: rqI, val: 0\}); & \ (fun \ccompt{line} \ccompo{msgIn} => (C2, <| rqI, 0 |>).\\
+    & \cann{endrule} & \\
+    \hline
+  \end{tabular}
+  \caption{A parent requesting invalidation to the other child sharer}
+  \label{fig-overview-2}
+\end{figure}
+
+\autoref{fig-overview-2} shows another request rule pattern used in the parent object to make an invalidation request to the other sharer.
+This rule matches the rules $\rdcircf{3}$ and $\blcircf{6}$ in the interleaving example shown in \autoref{fig-motive-2} and \autoref{fig-motive-3}, respectively.
+We have the same three benefits in this rule template: to use correct input/output channels, no need of in-transition checks, and no need to consider transient states.
+The only difference from the \slstinline{rquu} template is that this one generates further requests to children, not to the parent.
+(\slstinline{rqud} here stands for request-up-down.)
+
+\begin{figure}[h]
+  \centering\footnotesize\tt\frenchspacing
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    & {\sf\it Conventional description} & {\sf\it In Hemiola}\\
+    \hline
+    (1) & \cann{rule} := & \cann{rule}.immu\\
+    & \ccompo{msgIn} = pToC2.first; & :\cann{me} C2\\
+    & pToC2.deq(); & :\cann{accepts} rqI\\
+    & \cann{assert} (\ccompo{msgIn}.id == rqI); & \\[7pt]
+    (2) & \cann{assert} (\ccomph{mshr}.\underline{in\_transition} & :\cann{requires}\\
+    & \ \ \ \ \ \ \ \ == msiSM); & \ (fun \ccompt{line} \_ \_ => \ccompt{line}\#[status] == msiS)\\[7pt]
+    (3) & \ccomph{mshr}.\underline{in\_transition} <= \underline{msiIM}; & :\cann{transition}\\
+    & \ccompt{line}.status <= msiI; & \ (fun \ccompt{line} \ccompo{msgIn} =>\\
+    & c2ToPRs.enq(\{id: rsI, val: 0\}); & \ \ (\ccompt{line} +\#[status $\leftarrow$ msiI], <| rsI, 0 |>).\\
+    & \cann{endrule} & \\
+    \hline
+  \end{tabular}
+  \caption{A child responding to invalidation immediately even in transition}
+  \label{fig-overview-3}
+\end{figure}
+
+The next pattern, shown in \autoref{fig-overview-3}, is used to respond to a request from a parent immediately.
+(\slstinline{immu} stands for immediate-up.)
+The rules $\rdcircf{4}$ and $\blcircf{8}$ in the interleaving example uses this pattern to handle an invalidation request.
+As already discussed in \autoref{sec-nutshell}, the child object should be able to handle this invalidation request from its parent even though it is in transition.
+In conventional description, it is required to change the transient state properly (from \slstinline{msiSM} to \slstinline{msiIM} in this example); in \hemiola{}, as seen in the figure, it is not required to manage such transient states.
+%% The locking mechanism using an uplock and a downlock is still enough to handle this case by priortizing downward requests to the uplock.
+
+\begin{figure}[h]
+  \centering\footnotesize\tt\frenchspacing
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    & {\sf\it Conventional description} & {\sf\it In Hemiola}\\
+    \hline
+    (1) & \cann{rule} := & \cann{rule}.rsud\\
+    & \ccompo{msgIn} = c2ToPRs.first; & :\cann{accepts} rsI\\
+    & c2ToPRs.deq(); & \\
+    & \cann{assert} (\ccompo{msgIn}.id == rsI); & \\[7pt]
+    (2) & \cann{assert} (\ccomph{mshr}.\underline{in\_transition}); & :\cann{holding} rqM\\
+    & \cann{assert} (\ccomph{mshr}.rq.id == rqM) & :\cann{requires} (fun \_ \_ \_ => True)\\[7pt]
+    (3) & \ccomph{mshr}.\underline{in\_transition} <= None; & :\cann{transition}\\
+    & \ccompt{line}.dir.st <= msiM; & \ (fun \ccompt{line} \ccompo{msgIn} rq rsbTo =>\\
+    & \ccompt{line}.dir.excl <= \ccomph{mshr}.rsbTo; & \ \ (\ccompt{line} +\#[status $\leftarrow$ msiI]\\
+    & \ccompt{line}.status <= msiI; & \ \ \ \ \ \ \ \ +\#[dir $\leftarrow$ setDirM rsbTo],\\
+    & pToC1.enq(\{id: rsM, val: 0\}); & \ \ \ <| rsM, 0 |>).\\
+    & \cann{endrule} & \\
+    \hline
+  \end{tabular}
+  \caption{A parent responding back to the child requestor to grant M}
+  \label{fig-overview-4}
+\end{figure}
+
+In a usual cache-coherence protocol, when a cache object gets a response message from another object, it must have sent a corresponding request to that object.
+\autoref{fig-overview-4} describes this case, where a parent cache object handles an invalidation response from a child, like the rule $\rdcircf{5}$ in the interleaving example.
+In conventional description, we need to check that the line is currently \slstinline{in_transition} and the original request held in the MSHR matches the input response.
+It is also required to release the MSHR slot by setting \slstinline{in_transition} to none.
+As expected, in \hemiola{} we do not need to manage transient states explicitly at all; the \slstinline{rsud} rule template (standing for response-up-down) just requires additional annotation \slstinline{:holding rqM} to declare that the rule handles a response message where the ID of the original request message is \slstinline{rqM}.
+
+\begin{figure}[h]
+  \centering\footnotesize\tt\frenchspacing
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{|c|l|l|}
+    \hline
+    & {\sf\it Conventional description} & {\sf\it In Hemiola}\\
+    \hline
+    (1) & \cann{rule} := & \cann{rule}.rsdd\\
+    & \ccompo{msgIn} = pToC1.first; & :\cann{accepts} rsM\\
+    & pToC1.deq(); & \\
+    & \cann{assert} (\ccompo{msgIn}.id == rsM); & \\[7pt]
+    (2) & \cann{assert} (\ccomph{mshr}.\underline{in\_transition}); & :\cann{holding} rqWr\\
+    & \cann{assert} (\ccomph{mshr}.rq.id == rqWr); & :\cann{requires} (fun \_ \_ \_ => True)\\[7pt]
+    (3) & \ccomph{mshr}.\underline{in\_transition} <= None; & :\cann{transition}\\
+    & \ccompt{line}.status <= msiM; & \ (fun \ccompt{line} \ccompo{msgIn} rq rsbTo =>\\
+    & \ccompt{line}.value <= \ccomph{mshr}.rq.value; & \ \ (\ccompt{line} +\#[status $\leftarrow$ msiM]\\
+    & c1ToExt.enq(\{id: rsWr, val: 0\}); & \ \ \ \ \ \ \ \ +\#[value $\leftarrow$ rq.(msg\_value)],\\
+    & \cann{endrule} & \ \ \ <| rsWr, 0 |>). \\
+    \hline
+  \end{tabular}
+  \caption{A child responding to the write request}
+  \label{fig-overview-5}
+\end{figure}
+
+Lastly, \autoref{fig-overview-5} deals with the case where a child finally gets a response from its parent to update its status to M, like the rule $\rdcircf{7}$.
+The \slstinline{rsdd} rule template (standing for response-down-down) is very similar to the \slstinline{rsud} template but has a notable implicit difference that it releases the uplock, not the downlock in \slstinline{rsud}.
 
 \section{Design Space of Cache-Coherence Protocols}
 \label{sec-design-space}
