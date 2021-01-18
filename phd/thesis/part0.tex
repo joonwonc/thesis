@@ -530,7 +530,7 @@ For instance, when an object is uplocked, it cannot generate any further upward 
 Likewise, when an object is downlocked, it cannot generate any further downward requests, meaning that a single transaction can (downwardly) pass through this object by acquiring a downlock.
 
 Mutual exclusion by a lock is one typical way to make an execution of a transaction (thread) atomic.
-By repeatedly applying the atomicity guarantee by a lock, we can change a given interleaved history to a corresponding sequential one.
+By repeatedly applying the atomicity guarantee by each lock, we can derive a sequential history from a given interleaved one.
 Note again that the state transitions by a transaction (other than locking) are irrelevant to the locking mechanism, implying that the serializability proof indeed does not require any specific conditions on a protocol.
 
 All the required proof techniques to reason about these mutual exclusions and the actual serializability proof will be introduced in \autoref{sec-sz-guarantee-hemiola}.
