@@ -43,7 +43,7 @@ One of the core techniques is to establish \emph{noninterference} lemmas~\cite{M
 In addition to this resolution, model checkers have supported \emph{parameterization} to verify cache-coherence protocols with unknown numbers of cores~\cite{Zhang:2010,Zhang:2014,Banks:2017}.
 In order to cover hierarchical protocols, recent approaches~\cite{Chen:2008,Chen:2010,Opeoluwa:2016,Opeoluwa:2017,Oswald:2020} also employed \emph{modularity} to verify protocols per hierarchy level.
 
-While the same concern exists in theorem proving (by requiring additional proof effort to deal with interlevings), it also has employed similar techniques.
+While the same concern exists in theorem proving (by requiring additional proof effort to deal with interleavings), it also has employed similar techniques.
 Parameterization is a natural fit for theorem proving, thanks to rich logics, making it possible to prove a cache-coherence protocol with an arbitrary tree shape given as a parameter~\cite{Murali:2015}.
 Modularity has been harnessed as well, \eg{} with assume-guarantee reasoning~\cite{McMillan:2016}.
 
@@ -280,7 +280,7 @@ Regarding the sequence of rule executions (in red) $[\rdcircf{1}; \rdcircf{3}; \
 As explained above case-by-case, proper transient states and network channels block \blrecmsgsm{f}{rqM} from further processing.
 Similarly, in \autoref{fig-motive-3}, the execution flow $[\rdcircf{5}; \rdcircf{3}]$ was not spuriously affected by $\blcircf{6}$ or $\blcircf{8}$, thanks to the correct channel setting.
 
-\revised{Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaving example.''}
+Throughout the dissertation, we will use this example to convey various intuitions in formal definitions and proofs, referred to as the ``interleaving example.''
 
 \section{Overview: the \hemiola{} Framework and Its Formal Guarantee}
 \label{sec-overview}
@@ -459,7 +459,7 @@ This rule template automatically releases the downlock previously acquired when 
 \end{figure}
 
 Lastly, \autoref{fig-overview-5} deals with the case where a child finally gets a response from its parent to update its status to M, like a rule $\rdcircf{7}$ in the interleaving example.
-The \slstinline{rsdd} rule template (standing for response-down-down) is very similar to the \slstinline{rsud} template but has a difference that it automaticlly releases the uplock that was previously acquired when sending the \slstinline{rqM} request.
+The \slstinline{rsdd} rule template (standing for response-down-down) is very similar to the \slstinline{rsud} template but has a difference that it automatically releases the uplock that was previously acquired when sending the \slstinline{rqM} request.
 
 We will explore much more detail of the locking mechanism and the rule templates provided by \hemiola{} in \autoref{sec-hemiola-dsl}.
 
@@ -615,7 +615,7 @@ That said, inclusive caches have a drawback that some value entries are wasted; 
 
 A \emph{noninclusive} cache -- also called a noninclusive nonexclusive (NINE) cache -- does not require such inclusion.
 Since it is not inclusive, it has less chance to waste value lines.
-That said, the biggest drawback comes when a directory-status entry does not exist in the directory cache; the absense of a directory status does not imply that child caches do not have the line anymore.
+That said, the biggest drawback comes when a directory-status entry does not exist in the directory cache; the absence of a directory status does not imply that child caches do not have the line anymore.
 The same issue occurs in a snooping protocol as well, \eg{} a cache should always broadcast an invalidation request to all the child caches in order to handle the one from the parent.
 
 In order to resolve these issues, a number of practical cache-coherence protocols use noninclusive value caches and inclusive directories, called NCID~\cite{Zhao:2010}, \eg{} Intel Skylake-X processors are known to use the NCID structure~\cite{intel-non-inclusive,Yan:2019}.

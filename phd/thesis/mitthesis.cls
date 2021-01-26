@@ -203,6 +203,7 @@
 % If the user wants single spacing, set baselinestretch=1.
 
 \usepackage{setspace}
+\usepackage{changepage}
 
 % Note - doublespace.sty has some float-related troubles in
 % combination with graphics or color, and is not officially compliant
@@ -455,19 +456,22 @@ by\par
 \par
 \@prevdegrees
 \par
-\choosecase{Submitted to the} \choosecase{\@department} \\
-\choosecase{in partial fulfillment of the requirements for the}
-\choosecase{\@degreeword}
-\choosecase{of}
-\par
-\choosecase{\@degree}
-\par
-at the
-\par\MIT\par
-\@degreemonth\ \@degreeyear
-\par
-\@copyrightnotice
-\par
+\begin{adjustwidth}{-20pt}{-20pt}
+  \centering
+  \choosecase{Submitted to the} \choosecase{\@department} \\
+  \choosecase{in partial fulfillment of the requirements for the}
+  \choosecase{\@degreeword}
+  \choosecase{of}
+  \par
+  \choosecase{\@degree}
+  \par
+  at the
+  \par\MIT\par
+  \@degreemonth\ \@degreeyear
+  \par
+  \@copyrightnotice
+  \par
+\end{adjustwidth}
 \vskip 3\baselineskip
 \signature{Author}{\@department \\ \@thesisdate}
 \par
