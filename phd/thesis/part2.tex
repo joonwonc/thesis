@@ -458,7 +458,7 @@ We first present our intuition of how commuting reductions are used in the seria
 The most basic commuting reduction happens between two adjacent state-transition steps:
 \begin{definition}[Commutativity of steps]
   \label{def-comm-steps}
-  Two adjacent state-transition steps \temph{commute}, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
+  Two adjacent state-transition steps commute, denoted as \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})}, if the state transitions with the opposite order reach the same state:
   \begin{displaymath}
     \commstep{(\semstep{S}{s_0}{l_0}{s_1})}{(\semstep{S}{s_1}{l_1}{s_2})} \triangleq \exists s_1'.\; \semstep{S}{s_0}{l_1}{s_1'} \wedge \semstep{S}{s_1'}{l_0}{s_2}.
   \end{displaymath}
@@ -1082,7 +1082,7 @@ These two state transitions are always commutative, since there is no state tran
 
 This object separation is naturally extended to one for atomic histories:
 \begin{definition}\label{def-obj-comm}
-  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are \temph{object-separated}, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
+  For given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are object-separated, denoted as $(\objseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
     \renewcommand{\arraystretch}{1.2}
     \begin{array}{rcl}
@@ -1114,7 +1114,7 @@ As seen in the definition, \ainputs{h} (\aoutputs{h}) collects all the input (ou
 We will also use \ainits{h} and \alives{h} to refer to the initial messages and live messages of $h$, respectively.
 
 \begin{definition}\label{def-msg-comm}
-  Given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are \temph{message-separated}, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
+  Given atomic histories $h_1$ and $h_2$, we say $h_1$ and $h_2$ are message-separated, denoted as $(\msgseph{h_1}{h_2})$, if the following conditions are satisfied:
   \begin{displaymath}
     \renewcommand{\arraystretch}{1.2}
     \begin{array}{rl}
