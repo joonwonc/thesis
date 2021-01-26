@@ -456,7 +456,7 @@ by\par
 \par
 \@prevdegrees
 \par
-\begin{adjustwidth}{-20pt}{-20pt}
+%% \begin{adjustwidth}{-20pt}{-20pt}
   \centering
   \choosecase{Submitted to the} \choosecase{\@department} \\
   \choosecase{in partial fulfillment of the requirements for the}
@@ -471,7 +471,7 @@ by\par
   \par
   \@copyrightnotice
   \par
-\end{adjustwidth}
+%% \end{adjustwidth}
 \vskip 3\baselineskip
 \signature{Author}{\@department \\ \@thesisdate}
 \par
